@@ -1,0 +1,2100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Indie Game Pricing Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=DM+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #f7f4ee;
+    --cream-dark: #eae7e0;
+    --white: #fdfcf9;
+    --dark: #232323;
+    --mid: #6b6660;
+    --faint: #bab9b4;
+    --border: #d2cdc3;
+    --gold: #c3a55f;
+    --gold-dark: #a8893a;
+    --teal: #2a8f76;
+    --teal-light: #6dc4ab;
+    --coral: #b85a3a;
+    --coral-light: #e0a088;
+    --purple: #6b64b3;
+    --serif: 'Playfair Display', serif;
+    --sans: 'DM Sans', sans-serif;
+    --mono: 'IBM Plex Mono', monospace;
+    --max-w: 960px;
+    --radius: 6px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--sans);
+    background: var(--cream);
+    color: var(--dark);
+    line-height: 1.7;
+    font-size: 15px;
+    min-height: 100vh;
+  }
+  .container { max-width: var(--max-w); margin: 0 auto; padding: 0 2rem; }
+
+  header {
+    background: var(--cream);
+    border-bottom: 1px solid var(--border);
+    padding: 24px 0 20px 0;
+    position: sticky; top: 0; z-index: 100;
+  }
+  header h1 {
+    font-family: var(--serif); font-size: 28px; font-weight: 700;
+    text-align: center; margin-bottom: 4px; color: var(--dark);
+  }
+  header p {
+    text-align: center; color: var(--mid); font-family: var(--sans);
+    font-size: 14px; margin-bottom: 20px;
+  }
+
+  nav { display: flex; gap: 28px; overflow-x: auto; justify-content: center; }
+  nav button {
+    background: transparent; border: none; color: var(--mid); padding: 4px 0;
+    font-family: var(--sans); font-size: 0.875rem; font-weight: 500; cursor: pointer;
+    border-bottom: 2px solid transparent; white-space: nowrap; transition: color 0.18s;
+  }
+  nav button:hover { color: var(--dark); }
+  nav button.active { color: var(--dark); border-bottom-color: var(--gold); }
+
+  .nav-select { display: none; width: 100%; }
+
+  @media (max-width: 768px) {
+    nav { display: none; }
+    .nav-select {
+      display: block;
+      background: var(--cream); border: 1px solid var(--border); border-radius: var(--radius);
+      color: var(--dark); padding: 10px 14px; font-family: var(--sans); font-size: 0.875rem;
+      font-weight: 500; width: 100%; margin: 0 0 12px; cursor: pointer; appearance: auto;
+    }
+    .nav-select:focus { outline: none; border-color: var(--gold); }
+    .nav-wrapper { padding: 0 1rem 8px; }
+  }
+
+  main { padding: 36px 0 60px; }
+  .tab { display: none; }
+  .tab.active { display: block; }
+
+  .section-label {
+    font-family: var(--mono); font-size: 9px; font-weight: 500;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold);
+    margin-bottom: 16px;
+  }
+
+  h2 { font-family: var(--serif); font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+  h3 { font-family: var(--serif); font-size: 18px; font-weight: 700; margin-bottom: 14px; }
+  .subtitle {
+    color: var(--mid); font-family: var(--sans); font-size: 14px;
+    margin-bottom: 28px; max-width: 640px;
+  }
+
+  .card {
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1.25rem; margin-bottom: 16px;
+  }
+  .card h3 {
+    font-family: var(--serif); font-size: 18px; font-weight: 700;
+    color: var(--dark); margin-bottom: 14px;
+  }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  @media (max-width: 768px) { .grid-2, .grid-4 { grid-template-columns: 1fr; } }
+
+  /* Stat grid — from brand guide .stat-grid-demo pattern */
+  .stat-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px;
+    background: var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 20px;
+  }
+  .stat-grid .stat-cell {
+    background: var(--white); text-align: center; padding: 16px 8px;
+  }
+  .stat-grid .stat-value {
+    font-family: var(--serif); font-size: 24px; font-weight: 700; margin-bottom: 2px;
+    color: var(--dark); display: block; line-height: 1.2;
+  }
+  .stat-grid .stat-cell:nth-child(1) .stat-value { color: #6b64b3; }
+  .stat-grid .stat-cell:nth-child(2) .stat-value { color: #a8893a; }
+  .stat-grid .stat-cell:nth-child(3) .stat-value { color: #2a8f76; }
+  .stat-grid .stat-cell:nth-child(4) .stat-value { color: #b85a3a; }
+  .stat-grid .stat-label {
+    font-family: var(--mono); font-size: 8px; color: var(--mid);
+    text-transform: uppercase; letter-spacing: 0.12em;
+  }
+
+  /* Data tables — rigorous fixed-height alignment */
+  table { border-collapse: collapse; width: 100%; table-layout: fixed; }
+  th {
+    background: var(--cream-dark); font-family: var(--mono); font-weight: 500;
+    font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em;
+    text-align: left; padding: 10px 12px; color: var(--dark);
+    border-bottom: 1px solid var(--border); height: 40px; vertical-align: middle;
+    box-sizing: border-box;
+  }
+  td {
+    padding: 14px 10px; border-bottom: 1px solid var(--border);
+    color: var(--dark); vertical-align: middle;
+    box-sizing: border-box; height: 88px; position: relative;
+  }
+  tr:hover { background: rgba(195,165,95,0.04); }
+  td > input, td > select, td > button:not(.steam-row button) {
+    box-sizing: border-box; width: 100%; height: 36px; padding: 0 10px;
+    margin: 0; vertical-align: middle; display: block;
+  }
+
+  /* Fixed-height flex row for cells with side-by-side controls */
+  td .steam-row {
+    display: flex; align-items: center; gap: 6px; height: 36px; padding: 0; margin: 0;
+  }
+  td .steam-row input { flex: 1; height: 36px; }
+  td .steam-row button { height: 36px; flex-shrink: 0; }
+
+  /* Secondary text — absolutely positioned below primary control */
+  td .fetch-status, td .genres-tags, td .reception-auto-note, td .steam-badge {
+    position: absolute; top: calc(14px + 36px + 12px); left: 10px; right: 10px;
+    font-size: 10px; line-height: 1.3; white-space: nowrap; overflow: hidden;
+    text-overflow: ellipsis; pointer-events: none; margin: 0; min-height: 0; font-weight: 500;
+  }
+  td .steam-badge {
+    display: inline-block; padding: 2px 6px; border-radius: 3px;
+    font-family: var(--mono); font-size: 8px; font-weight: 500;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    background: rgba(42,143,118,0.15); color: #1a6e5a;
+    top: 4px; right: 10px; left: auto; width: auto;
+    pointer-events: none;
+  }
+  .fetch-status { font-family: var(--mono); letter-spacing: 0.04em; }
+  .fetch-status.error { color: var(--coral); }
+  .fetch-status.ok { color: var(--teal); }
+  .genres-tags { font-family: var(--mono); color: var(--mid); letter-spacing: 0.04em; }
+  .reception-auto-note { font-family: var(--mono); color: var(--teal); letter-spacing: 0.03em; }
+
+  /* Inputs */
+  input, select {
+    font-family: var(--mono); font-size: 12px;
+    background: var(--cream); border: 1px solid var(--border); border-radius: var(--radius);
+    color: var(--dark); padding: 0 8px; width: 100%; height: 36px;
+    transition: border-color 0.2s; box-sizing: border-box;
+  }
+  input:focus, select:focus { outline: none; border-color: var(--gold); }
+  input[type="range"] { padding: 0; accent-color: var(--gold); height: auto; }
+  input:invalid { border-color: var(--coral); }
+  input[readonly] { background: var(--cream-dark); }
+  .input-warning { font-family: var(--mono); font-size: 9px; color: var(--coral); margin-top: 2px; display: none; }
+
+  .highlight { color: var(--teal); font-weight: 500; }
+  .muted { font-family: var(--sans); color: var(--mid); font-size: 13px; }
+
+  /* Badges — from brand guide exact specs */
+  .badge {
+    display: inline-flex; align-items: center; padding: 3px 7px; border-radius: 3px;
+    font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em;
+    text-transform: uppercase; font-weight: 500;
+  }
+  .badge-gold   { background: rgba(195,165,95,0.15); color: #7a5e1a; }
+  .badge-teal   { background: rgba(42,143,118,0.15); color: #1a6e5a; }
+  .badge-coral  { background: rgba(184,90,58,0.15);  color: #8b3a22; }
+  .badge-purple { background: rgba(107,100,179,0.15); color: #3d3680; }
+  .badge-dim    { background: rgba(107,102,96,0.12); color: var(--mid); }
+
+  /* Sliders */
+  .slider-group { margin-bottom: 16px; }
+  .slider-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+  .slider-header label { font-family: var(--sans); font-weight: 600; font-size: 14px; }
+  .slider-header .score { font-family: var(--mono); font-size: 13px; font-weight: 500; color: var(--gold); }
+  .slider-desc { font-family: var(--sans); font-size: 13px; color: var(--mid); margin-bottom: 8px; }
+  .slider-weight { font-family: var(--mono); font-size: 9px; color: var(--mid); letter-spacing: 0.06em; }
+
+  .tier-row { transition: all 0.2s; }
+  .tier-row.active { background: rgba(195,165,95,0.08); }
+  .tier-row.active td { font-weight: 500; }
+
+  .score-display { text-align: center; padding: 1.25rem; }
+  .score-display .big-score { font-family: var(--serif); font-size: 40px; font-weight: 700; }
+  .score-display .tier-result { font-family: var(--sans); font-size: 15px; font-weight: 600; margin-top: 4px; color: var(--dark); }
+
+  .output-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 9px 0; border-bottom: 1px solid var(--border);
+  }
+  .output-row:last-child { border-bottom: none; }
+  .output-label { font-family: var(--sans); font-size: 13px; color: var(--mid); max-width: 65%; }
+  .output-value {
+    font-family: var(--mono); font-size: 13px; font-weight: 500;
+    color: var(--dark); text-align: right;
+  }
+  .output-note {
+    font-family: var(--mono); font-size: 8px; color: var(--faint); display: block;
+    letter-spacing: 0.04em;
+  }
+
+  .framework-card {
+    padding: 1rem; border-radius: var(--radius); margin-bottom: 12px;
+    border: 1px solid var(--border); background: var(--white);
+  }
+  .framework-card h4 { font-family: var(--sans); font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+  .framework-yes, .framework-no {
+    font-family: var(--sans); font-size: 13px; padding: 8px 10px;
+    border-radius: var(--radius); margin-top: 8px;
+  }
+  .framework-yes { background: rgba(42,143,118,0.06); border-left: 3px solid var(--teal); }
+  .framework-no  { background: rgba(184,90,58,0.05); border-left: 3px solid var(--coral); }
+
+  .source-link { color: var(--teal); text-decoration: underline; font-family: var(--mono); font-size: 11px; }
+  .source-link:hover { color: var(--gold); }
+
+  /* Buttons — action buttons use brand teal (green), ghost buttons stay neutral */
+  .btn, .btn-green {
+    font-family: var(--mono); font-size: 10px; font-weight: 500; letter-spacing: 0.06em;
+    background: var(--teal); border: none; color: #fdfcf9; padding: 0 14px; height: 36px;
+    border-radius: var(--radius); cursor: pointer; transition: background 0.2s;
+    text-transform: uppercase; display: inline-flex; align-items: center;
+  }
+  .btn:hover, .btn-green:hover { background: #1a6e5a; }
+  .btn-ghost {
+    font-family: var(--mono); font-size: 10px; font-weight: 500; letter-spacing: 0.06em;
+    background: transparent; border: 1px solid var(--border); color: var(--dark);
+    padding: 0 14px; height: 36px; border-radius: var(--radius); cursor: pointer;
+    transition: border-color 0.2s; display: inline-flex; align-items: center;
+  }
+  .btn-ghost:hover { border-color: var(--gold); }
+  .row-del { height: 30px; width: 30px; padding: 0; justify-content: center; font-size: 12px; min-width: auto; }
+
+  .compare-card {
+    padding: 1rem; border-radius: var(--radius); border: 1px solid var(--border);
+    background: var(--white);
+  }
+  .compare-card h4 { font-family: var(--sans); font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+  .compare-card .tradeoff {
+    font-family: var(--sans); font-size: 12px; color: var(--mid);
+    margin-top: 8px; font-style: italic;
+  }
+
+  .floor-row {
+    background: rgba(195,165,95,0.05);
+    border-top: 2px solid rgba(195,165,95,0.25);
+  }
+  .floor-row td { font-weight: 500; color: #7a5e1a; }
+  .floor-warning { font-family: var(--mono); font-size: 10px; color: var(--coral); margin-top: 6px; }
+
+  .checklist-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .checklist-item:last-child { border-bottom: none; }
+  .checklist-item h4 { font-family: var(--sans); font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+  .checklist-item p { font-family: var(--sans); font-size: 13px; color: var(--mid); }
+
+  .band-highlight { background: rgba(195,165,95,0.10); font-weight: 500; }
+
+  .steam-row { display: flex; gap: 4px; align-items: center; }
+  .steam-row input { font-family: var(--mono); font-size: 11px; height: 36px; flex: 1; min-width: 60px; }
+  .fetch-btn {
+    font-family: var(--mono); font-size: 9px; font-weight: 500; letter-spacing: 0.05em;
+    background: var(--teal); border: none; color: #fdfcf9; padding: 0 10px; height: 36px;
+    border-radius: 4px; cursor: pointer; white-space: nowrap; transition: background 0.2s;
+    flex-shrink: 0; display: inline-flex; align-items: center;
+  }
+  .fetch-btn:hover { background: #1a6e5a; }
+  .fetch-btn:disabled { background: var(--border); color: var(--mid); cursor: not-allowed; opacity: 1; }
+  .fetch-btn.fetching { opacity: 0.6; }
+  .tooltip-icon {
+    display: inline-block; width: 13px; height: 13px; border-radius: 50%;
+    background: var(--border); color: var(--mid);
+    font-family: var(--sans); font-size: 8px; text-align: center;
+    line-height: 13px; cursor: help; vertical-align: middle; margin-left: 2px;
+    font-weight: 600;
+  }
+  .proxy-config { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+  .proxy-config input { max-width: 420px; font-family: var(--mono); font-size: 11px; height: 36px; }
+
+  footer {
+    text-align: center; padding: 1.25rem; color: var(--faint);
+    font-family: var(--mono); font-size: 9px; letter-spacing: 0.06em;
+    border-top: 1px solid var(--border); margin-top: 40px;
+  }
+  footer a { color: var(--teal); text-decoration: underline; }
+
+  /* ===== STEPPER ===== */
+  .stepper { display: flex; gap: 0; align-items: center; justify-content: center; padding: 10px 0 6px; border-bottom: 1px solid var(--border); background: var(--cream); }
+  .stepper-step { display: flex; align-items: center; gap: 5px; cursor: pointer; background: none; border: none; font-family: var(--mono); font-size: 9px; color: var(--faint); padding: 3px 6px; transition: color 0.18s; white-space: nowrap; letter-spacing: 0.04em; }
+  .stepper-step:hover { color: var(--dark); }
+  .stepper-step .dot { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 9px; font-weight: 500; transition: all 0.2s; }
+  .stepper-step.active { color: var(--dark); }
+  .stepper-step.active .dot { border-color: var(--gold); background: var(--gold); color: var(--white); }
+  .stepper-step.done { color: var(--teal); }
+  .stepper-step.done .dot { border-color: var(--teal); background: var(--teal); color: var(--white); }
+  .stepper-divider { width: 16px; height: 1px; background: var(--border); flex-shrink: 0; }
+  .stepper-mobile { display: none; text-align: center; padding: 6px 0; border-bottom: 1px solid var(--border); background: var(--cream); font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em; color: var(--mid); }
+  .stepper-mobile .progress-bar { height: 3px; background: var(--border); border-radius: 2px; margin: 4px 2rem 0; overflow: hidden; }
+  .stepper-mobile .progress-bar-fill { height: 100%; background: var(--gold); transition: width 0.3s; }
+  @media (max-width: 768px) { .stepper { display: none; } .stepper-mobile { display: block; } }
+
+  /* ===== WIZARD NAV ===== */
+  .wizard-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border); gap: 12px; }
+  .wizard-prev { font-family: var(--mono); font-size: 10px; background: transparent; border: 1px solid var(--border); color: var(--mid); padding: 0 14px; height: 36px; border-radius: var(--radius); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; letter-spacing: 0.05em; }
+  .wizard-prev:hover { border-color: var(--gold); color: var(--dark); }
+  .wizard-next { font-family: var(--mono); font-size: 10px; background: var(--teal); border: none; color: #fdfcf9; padding: 0 16px; height: 36px; border-radius: var(--radius); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-weight: 500; letter-spacing: 0.05em; margin-left: auto; }
+  .wizard-next:hover { background: #1a6e5a; }
+
+  /* ===== SUMMARY BAR ===== */
+  .summary-bar { background: var(--cream-dark); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 14px; margin-bottom: 16px; }
+  .summary-bar summary { font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); cursor: pointer; list-style: none; }
+  .summary-bar summary::-webkit-details-marker { display: none; }
+  .summary-bar summary::before { content: '+ '; margin-right: 4px; }
+  .summary-bar[open] summary::before { content: '− '; }
+  .summary-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .summary-chip { font-family: var(--mono); font-size: 10px; padding: 4px 8px; border-radius: 4px; background: var(--white); border: 1px solid var(--border); color: var(--dark); }
+
+  /* ===== PHASE SWITCHER ===== */
+  .phase-switcher { display: flex; gap: 0; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin: 0 auto 12px; max-width: 780px; }
+  .phase-switcher button {
+    flex: 1; background: var(--white); border: none; border-right: 1px solid var(--border); padding: 14px 16px; cursor: pointer; text-align: left;
+    font-family: var(--sans); transition: background 0.2s; min-width: 0;
+  }
+  .phase-switcher button:last-child { border-right: none; }
+  .phase-switcher button:hover:not(.locked) { background: var(--cream-dark); }
+  .phase-switcher button.active { background: rgba(42,143,118,0.06); }
+  .phase-switcher button.active .phase-num { background: var(--teal); color: #fff; }
+  .phase-num { display: inline-block; width: 22px; height: 22px; border-radius: 50%; background: var(--cream-dark); color: var(--mid); font-family: var(--mono); font-size: 10px; font-weight: 500; text-align: center; line-height: 22px; margin-bottom: 6px; transition: background 0.2s, color 0.2s; }
+  .phase-title { font-family: var(--serif); font-size: 15px; font-weight: 700; color: var(--dark); margin-bottom: 2px; display: block; }
+  .phase-desc { font-family: var(--sans); font-size: 10.5px; color: var(--mid); line-height: 1.3; display: block; }
+  .phase-switcher button.active .phase-title { color: var(--teal); }
+  .phase-switcher button.done .phase-num { background: var(--teal); color: #fff; }
+  .phase-switcher button.done .phase-num::after { content: '✓'; }
+  .phase-switcher button.locked { opacity: 0.45; cursor: not-allowed; }
+  .phase-switcher button.locked .phase-num { background: var(--border); }
+  .phase-lock-icon { font-size: 12px; margin-right: 3px; }
+  .phase-unlock-link { display: block; font-family: var(--mono); font-size: 9px; color: var(--teal); margin-top: 4px; cursor: pointer; text-decoration: underline; letter-spacing: 0.04em; }
+  .phase-unlock-link:hover { color: var(--gold); }
+  @media (max-width: 640px) {
+    .phase-switcher { flex-direction: column; border-radius: var(--radius); }
+    .phase-switcher button { border-right: none; border-bottom: 1px solid var(--border); padding: 12px 14px; }
+    .phase-switcher button:last-child { border-bottom: none; }
+  }
+
+  /* Stepper: Phase 1 only (4 dots) */
+  .stepper.p1-only {
+    display: flex; gap: 0; align-items: center; justify-content: center; padding: 10px 0 6px;
+    border-bottom: 1px solid var(--border); background: var(--cream);
+  }
+
+  /* ===== PHASE 2 CARD GRID ===== */
+  .phase2-grid { display: flex; flex-direction: column; gap: 16px; margin-bottom: 20px; }
+  .phase2-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .phase2-card summary {
+    font-family: var(--serif); font-size: 16px; font-weight: 700; padding: 14px 16px; cursor: pointer;
+    list-style: none; display: flex; justify-content: space-between; align-items: center;
+    user-select: none; background: var(--white);
+  }
+  .phase2-card summary::-webkit-details-marker { display: none; }
+  .phase2-card summary::after {
+    content: '+'; font-family: var(--mono); font-size: 16px; color: var(--mid);
+    transition: transform 0.2s; width: 20px; text-align: center; flex-shrink: 0;
+  }
+  .phase2-card[open] summary::after { content: '−'; }
+  .phase2-card .card-body { padding: 0 16px 16px; }
+  .phase2-card .card-body .tab { display: block; } /* override .tab display:none inside cards */
+  .phase2-card .card-status {
+    font-family: var(--mono); font-size: 9px; letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 2px 8px; border-radius: 3px; flex-shrink: 0; margin-left: 8px;
+  }
+  .phase2-card .card-status.active { background: rgba(42,143,118,0.12); color: var(--teal); }
+  .phase2-card .card-status.neutral { background: rgba(107,102,96,0.1); color: var(--mid); }
+  .phase2-card .card-status.warning { background: rgba(195,165,95,0.12); color: var(--gold-dark); }
+
+  /* ===== PHASE 3 LOCK ===== */
+  .phase3-locked { position: relative; }
+  .phase3-locked .lock-overlay {
+    position: absolute; inset: 0; background: rgba(247,244,238,0.7); z-index: 2;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    border-radius: var(--radius); backdrop-filter: blur(2px);
+  }
+  .phase3-locked .lock-overlay .lock-icon { font-size: 32px; margin-bottom: 8px; opacity: 0.5; }
+  .phase3-locked .lock-overlay .lock-text { font-family: var(--serif); font-size: 18px; color: var(--mid); font-weight: 700; margin-bottom: 4px; }
+  .phase3-locked .lock-overlay .lock-sub { font-family: var(--sans); font-size: 13px; color: var(--faint); margin-bottom: 10px; }
+  .phase3-locked .lock-overlay .lock-btn {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em; background: var(--teal); color: #fdfcf9;
+    border: none; padding: 6px 14px; border-radius: var(--radius); cursor: pointer; text-transform: uppercase;
+  }
+  .phase3-locked .lock-overlay .lock-btn:hover { background: #1a6e5a; }
+  .phase3-unlocked .lock-overlay { display: none; }
+
+  /* ===== CONFIRMATION SCREEN (Phase 1 end) ===== */
+  .confirm-screen { display: none; background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 32px; text-align: center; }
+  .confirm-screen.show { display: block; }
+  .confirm-screen .big-price { font-family: var(--serif); font-size: 48px; font-weight: 700; color: var(--teal); margin: 12px 0 4px; }
+  .confirm-screen .tier-badge { display: inline-block; font-family: var(--mono); font-size: 10px; padding: 4px 10px; border-radius: 4px; background: rgba(195,165,95,0.15); color: var(--gold-dark); letter-spacing: 0.06em; margin-bottom: 20px; }
+  .confirm-screen .confirm-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 20px; }
+  .launch-date-field { display: flex; align-items: center; gap: 8px; margin-top: 12px; justify-content: center; flex-wrap: wrap; }
+  .launch-date-field label { font-family: var(--mono); font-size: 10px; color: var(--mid); letter-spacing: 0.06em; }
+  .launch-date-field input { font-family: var(--mono); font-size: 11px; padding: 4px 8px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--cream); color: var(--dark); width: auto; height: 32px; }
+  @media (max-width: 768px) { .confirm-screen .big-price { font-size: 36px; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <h1>Indie Game Pricing Dashboard</h1>
+    <p>Based on GameStudioUnlocked's pricing methodology</p>
+    <div class="phase-switcher" id="phase-switcher">
+      <button data-phase="1" onclick="switchPhase(1)">
+        <span class="phase-num">1</span>
+        <span class="phase-title">Set Your Price</span>
+        <span class="phase-desc">Comp Analysis, Four Variables, Price &amp; Discount, Regional &amp; DLC</span>
+      </button>
+      <button data-phase="2" onclick="switchPhase(2)">
+        <span class="phase-num">2</span>
+        <span class="phase-title">Track Launch Readiness</span>
+        <span class="phase-desc">Wishlist Estimator, Demo Performance, Early Access</span>
+      </button>
+      <button data-phase="3" onclick="switchPhase(3)" class="locked" id="phase3-btn">
+        <span class="phase-num">3</span>
+        <span class="phase-title">After You Ship</span>
+        <span class="phase-desc">Post-Launch Monitoring, Sources &amp; Summary</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="stepper p1-only" id="stepper-desktop" aria-label="Phase 1 progress" style="display:flex">
+  <button class="stepper-step active" data-step="1" data-idx="0"><span class="dot">1</span>Comp</button>
+  <span class="stepper-divider"></span>
+  <button class="stepper-step" data-step="2" data-idx="1"><span class="dot">2</span>Variables</button>
+  <span class="stepper-divider"></span>
+  <button class="stepper-step" data-step="3" data-idx="2"><span class="dot">3</span>Pricing</button>
+  <span class="stepper-divider"></span>
+  <button class="stepper-step" data-step="4" data-idx="3"><span class="dot">4</span>Regional</button>
+</div>
+<div class="stepper-mobile" id="stepper-mobile">
+  Phase 1 — Step <span id="stepper-current">1</span> of 4
+  <div class="progress-bar"><div class="progress-bar-fill" id="stepper-fill" style="width:25%"></div></div>
+</div>
+
+<main class="container">
+
+  <!-- TAB 1 — COMP ANALYSIS -->
+  <section class="tab active" id="tab-comp">
+    <h2>Comp Analysis</h2>
+    <p class="subtitle">
+      Find and capture 8 to 12 games released in the last 3 years with similar genre, content length, polish level and target audience. Use SteamDB tag search and "More Like This" on Steam.
+    </p>
+
+    <!-- Stat grid — brand guide pattern -->
+    <div class="stat-grid">
+      <div class="stat-cell">
+        <div class="stat-value" id="stat-median" style="color:var(--purple)">—</div>
+        <div class="stat-label">Median Launch Price</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-value" id="stat-avg" style="color:var(--gold)">—</div>
+        <div class="stat-label">Average Launch Price</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-value" id="stat-min" style="color:var(--teal)">—</div>
+        <div class="stat-label">Lowest (Floor)</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-value" id="stat-max" style="color:var(--coral)">—</div>
+        <div class="stat-label">Highest (Ceiling)</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Steam API Proxy</h3>
+      <div class="proxy-config">
+        <span class="output-note" style="flex-shrink:0">Proxy URL:</span>
+        <input type="text" id="steam-proxy-url" value="" placeholder="https://your-worker.workers.dev/?appid=" style="flex:1">
+        <button class="btn" onclick="saveProxyUrl()" style="white-space:nowrap">Save</button>
+        <span class="muted" style="font-size:11px">Deploy <code style="font-family:var(--mono);font-size:10px">steam-proxy.js</code> as a Cloudflare Worker.</span>
+      </div>
+    </div>
+
+    <div class="card" style="overflow-x:auto">
+      <table id="comp-table">
+        <thead>
+          <tr>
+            <th style="width:14%">Game Title</th>
+            <th style="width:12%">Steam ID</th>
+            <th style="width:4%"></th>
+            <th style="width:9%">Launch Price <span class="tooltip-icon" title="Steam API does not expose historical launch prices. Use SteamDB manually.">?</span></th>
+            <th style="width:9%">Current Price</th>
+            <th style="width:10%">Release</th>
+            <th style="width:9%">Quality</th>
+            <th style="width:11%">Reception</th>
+            <th style="width:8%">Hours</th>
+            <th style="width:5%"></th>
+          </tr>
+        </thead>
+        <tbody id="comp-tbody"></tbody>
+      </table>
+      <div style="display:flex;gap:10px;margin-top:12px">
+        <button class="btn" id="add-comp-row">+ Add Game</button>
+        <button class="btn" id="fetch-all-rows">Fetch All</button>
+        <button class="btn" id="export-csv">Download CSV</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB 2 — FOUR VARIABLES -->
+  <section class="tab" id="tab-variables">
+    <h2>Four Pricing Variables</h2>
+    <p class="subtitle">
+      Score each of the four variables below from 1 (lowest) to 5 (highest). Your total score maps to a recommended price tier.
+    </p>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="slider-group">
+          <div class="slider-header"><label>1. Genre Norms</label><span class="score" id="v1-score">3</span></div>
+          <div class="slider-desc">What does your genre typically charge?</div>
+          <input type="range" min="1" max="5" value="3" step="1" id="v1-slider" oninput="updateVariables()">
+          <div class="slider-weight">Weight: 25% &nbsp; Weighted: <span id="v1-weighted">0.75</span></div>
+        </div>
+        <div class="slider-group">
+          <div class="slider-header"><label>2. Perceived Scope &amp; Polish</label><span class="score" id="v2-score">3</span></div>
+          <div class="slider-desc">Does the game look and feel like a $10, $20 or $30 product?</div>
+          <input type="range" min="1" max="5" value="3" step="1" id="v2-slider" oninput="updateVariables()">
+          <div class="slider-weight">Weight: 30% &nbsp; Weighted: <span id="v2-weighted">0.90</span></div>
+        </div>
+        <div class="slider-group">
+          <div class="slider-header"><label>3. Audience Price Sensitivity</label><span class="score" id="v3-score">2</span></div>
+          <div class="slider-desc">How price-sensitive is your target player?</div>
+          <input type="range" min="1" max="5" value="2" step="1" id="v3-slider" oninput="updateVariables()">
+          <div class="slider-weight">Weight: 25% &nbsp; Weighted: <span id="v3-weighted">0.50</span></div>
+        </div>
+        <div class="slider-group">
+          <div class="slider-header"><label>4. Positioning Intent</label><span class="score" id="v4-score">4</span></div>
+          <div class="slider-desc">Accessible entry point or premium indie?</div>
+          <input type="range" min="1" max="5" value="4" step="1" id="v4-slider" oninput="updateVariables()">
+          <div class="slider-weight">Weight: 20% &nbsp; Weighted: <span id="v4-weighted">0.80</span></div>
+        </div>
+      </div>
+      <div>
+        <div class="card score-display">
+          <div class="stat-label">Total Weighted Score (max 5.00)</div>
+          <div class="big-score" id="total-score" style="color:var(--purple)">2.95</div>
+          <div class="tier-result" id="tier-result">Recommended: <span>$9.99—$14.99</span></div>
+        </div>
+        <div class="card" style="overflow-x:auto">
+          <h3>Score-to-Tier Mapping</h3>
+          <table>
+            <thead><tr><th>Score Range</th><th>Price Tier (USD)</th><th>Context</th></tr></thead>
+            <tbody id="tier-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Content-Depth Cross-Check</h3>
+      <p class="muted" style="margin-bottom:12px">Use expected content hours as a sanity check. Benchmarks from GameDiscoverCo and Chris Zukowski's How To Market A Game.</p>
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:14px;flex-wrap:wrap">
+        <div style="flex:1;min-width:180px">
+          <label class="stat-label">Content Hours</label>
+          <input type="number" id="content-hours-input" value="10" min="0.5" step="0.5" oninput="updateContentCheck()" style="max-width:160px">
+        </div>
+        <div style="flex-shrink:0">
+          <span class="output-value" id="content-check-result">—</span>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>Content Length</th><th>Typical Price Band (USD)</th></tr></thead>
+        <tbody id="content-band-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- TAB 3 — PRICE & DISCOUNT -->
+  <section class="tab" id="tab-pricing">
+    <h2>Price Setting &amp; Discount Buffer</h2>
+    <p class="subtitle">
+      Steam's algorithm is built around discounting. A 20%+ discount triggers wishlist notification emails. Build the buffer in from day one.
+    </p>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>Your Inputs</h3>
+        <div style="margin-bottom:14px">
+          <label class="stat-label">Target Sale Price (USD)</label>
+          <input type="number" id="target-sale-price" value="14.99" step="0.01" min="0.99" oninput="validatePricingInputs(); updateAllLinked()">
+          <div class="input-warning" id="warn-target-price">Price cannot be negative.</div>
+        </div>
+        <div style="margin-bottom:14px">
+          <label class="stat-label">Desired Minimum Discount Depth (%)</label>
+          <input type="number" id="discount-depth" value="30" step="1" min="0" max="100" oninput="validatePricingInputs(); updateAllLinked()">
+          <div class="input-warning" id="warn-discount">Must be between 0% and 100%.</div>
+        </div>
+        <div style="margin-bottom:14px">
+          <label class="stat-label">Steam Revenue Share Tier</label>
+          <select id="revenue-tier" onchange="updateAllLinked()">
+            <option value="0.70">70% to dev (under $10M — default)</option>
+            <option value="0.75">75% to dev ($10M–$50M)</option>
+            <option value="0.80">80% to dev (above $50M)</option>
+          </select>
+          <div class="output-note">Valve tiered structure. Defaults to 70% for most indies.</div>
+        </div>
+        <div style="margin-bottom:14px">
+          <label class="stat-label">Lifetime Revenue to Date (USD) <span class="output-note">Optional</span></label>
+          <input type="number" id="lifetime-revenue" value="0" min="0" step="100000" oninput="autoSelectTier(); updateAllLinked()">
+        </div>
+      </div>
+      <div class="card">
+        <h3>Calculated Outputs</h3>
+        <div id="pricing-outputs"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Launch Discount Strategy Comparison</h3>
+      <div class="grid-2" id="discount-compare"></div>
+    </div>
+
+    <div class="card" style="overflow-x:auto">
+      <h3>Discount Staircase</h3>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap">
+        <div>
+          <label class="stat-label">Price Floor (% off max)</label>
+          <input type="number" id="price-floor" value="50" min="0" max="95" step="1" oninput="updatePricing()" style="width:72px">
+        </div>
+        <span class="muted">Won't discount below this long-term</span>
+      </div>
+      <div class="floor-warning" id="floor-warning" style="display:none"></div>
+      <table>
+        <thead><tr><th>Stage</th><th>When</th><th>Discount</th><th>Price</th><th>Purpose</th></tr></thead>
+        <tbody id="staircase-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- PHASE 1 CONFIRMATION SCREEN -->
+  <div class="confirm-screen" id="phase1-confirm">
+    <h2>Your Price Is Set</h2>
+    <p class="subtitle" style="margin-left:auto;margin-right:auto">Final locked-in launch price based on your comps, four variables, discount buffer, and regional adjustments.</p>
+    <div class="big-price" id="confirm-price">—</div>
+    <div class="tier-badge" id="confirm-tier">—</div>
+    <div class="card" style="text-align:left;max-width:420px;margin:0 auto">
+      <div class="output-row"><span class="output-label">Recommended Tier</span><span class="output-value" id="confirm-tier-val">—</span></div>
+      <div class="output-row"><span class="output-label">Launch Price</span><span class="output-value" id="confirm-lp">—</span></div>
+      <div class="output-row"><span class="output-label">Target Sale Price</span><span class="output-value" id="confirm-sp">—</span></div>
+      <div class="output-row"><span class="output-label">Discount Buffer</span><span class="output-value" id="confirm-db">—</span></div>
+      <div class="output-row"><span class="output-label">Est. MENA Price</span><span class="output-value" id="confirm-mena">—</span></div>
+    </div>
+    <div class="launch-date-field">
+      <label for="launch-date-input">Launch Date (optional):</label>
+      <input type="date" id="launch-date-input" onchange="checkLaunchDate()">
+      <span class="muted" style="font-size:11px">Auto-unlocks Phase 3 when date passes</span>
+    </div>
+    <div class="confirm-actions">
+      <button class="btn-ghost" onclick="switchPhaseStep(3)">← Edit Pricing</button>
+      <button class="btn-green" onclick="switchPhase(2)">Track Launch Readiness →</button>
+    </div>
+  </div>
+
+  <!-- PHASE 2 — TRACK LAUNCH READINESS -->
+  <div id="phase2-wrapper" style="display:none">
+  <h2 style="margin-bottom:8px">Track Launch Readiness</h2>
+  <p class="subtitle">These three signals shift as your wishlist grows, your Discord community builds, and demo results come in. Revisit them any time — there's no fixed order.</p>
+  <div class="phase2-grid">
+
+  <details class="phase2-card" id="p2-wishlist" open>
+    <summary>
+      Wishlist Estimator
+      <span class="card-status neutral" id="wishlist-status">No data</span>
+    </summary>
+    <div class="card-body">
+
+  <!-- TAB 4 — WISHLIST -->
+  <section class="tab" id="tab-wishlist">
+    <h2>Wishlist Conversion Estimator</h2>
+    <p class="subtitle">
+      Estimate first-week sales from your projected wishlist count at launch. Based on aggregate Steam data analyzed by GameDiscoverCo. These are rough benchmarks, not guarantees.
+    </p>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>Your Inputs</h3>
+        <div style="margin-bottom:14px">
+          <label class="stat-label">Projected Wishlist Count at Launch</label>
+          <input type="number" id="wishlist-count" value="5000" min="0" step="500" oninput="updateWishlist()">
+          <p class="output-note" style="margin-top:4px">Use organic wishlist count only — exclude botted, fabricated, or incentivised wishlists. Steam's algorithm detects artificial activity and may penalise your Visibility Rounds.</p>
+        </div>
+        <div style="margin-bottom:14px">
+          <p class="muted">Conversion rate tiers (GameDiscoverCo aggregate data):</p>
+          <table style="margin-top:8px">
+            <thead><tr><th>Wishlist Count</th><th>Baseline Conv.</th></tr></thead>
+            <tbody>
+              <tr><td>Under 5,000</td><td>~15%</td></tr>
+              <tr><td>5,000—25,000</td><td>~18%</td></tr>
+              <tr><td>25,000—100,000</td><td>~20—22%</td></tr>
+              <tr><td>100,000+</td><td>~25%</td></tr>
+            </tbody>
+          </table>
+          <p class="muted" style="margin-top:8px">Conversion drops ~30% if launch price is above $10.</p>
+        </div>
+
+        <details class="summary-bar" style="margin-top:12px">
+          <summary>Community Signals (optional)</summary>
+          <p class="muted" style="margin-bottom:12px;font-size:12px">Why this matters: GameDiscoverCo research shows wishlist count alone predicts launch success only ~17% of the time for games under 10,000 wishlists — community engagement and wishlist source quality are stronger secondary signals. Use these optional fields to sanity-check whether your wishlist count reflects real purchase intent.</p>
+          <div style="margin-bottom:12px">
+            <label class="stat-label">Discord Member Count</label>
+            <input type="number" id="discord-count" value="" min="0" step="10" placeholder="e.g. 500" oninput="updateWishlist()">
+          </div>
+          <div style="margin-bottom:12px">
+            <label class="stat-label">Discord Activity Level</label>
+            <select id="discord-activity" onchange="updateWishlist()">
+              <option value="">—</option>
+              <option value="low">Low — mostly inactive/lurkers</option>
+              <option value="moderate">Moderate — regular posts, some engagement</option>
+              <option value="high">High — daily active discussion, events, playtesting</option>
+            </select>
+          </div>
+          <div style="margin-bottom:12px">
+            <label class="stat-label">Steam / Social Follower Count</label>
+            <input type="number" id="follower-count" value="" min="0" step="10" placeholder="e.g. 1200" oninput="updateWishlist()">
+          </div>
+          <div style="margin-bottom:4px">
+            <label class="stat-label">Primary Wishlist Source</label>
+            <select id="wishlist-source" onchange="updateWishlist()">
+              <option value="">—</option>
+              <option value="organic">Mostly organic (Steam discovery, word of mouth)</option>
+              <option value="mixed">Mixed</option>
+              <option value="paid">Mostly paid ads / one-time spike (e.g. Next Fest)</option>
+            </select>
+          </div>
+        </details>
+      </div>
+      <div class="card">
+        <h3>Estimated Results</h3>
+        <div id="wishlist-outputs"></div>
+      </div>
+    </div>
+  </section>
+
+    </div>
+  </details>
+
+  <details class="phase2-card" id="p2-demo">
+    <summary>
+      Demo Performance
+      <span class="card-status neutral" id="demo-status">No data</span>
+    </summary>
+    <div class="card-body">
+
+  <!-- TAB 5 — DEMO PERFORMANCE -->
+  <section class="tab" id="tab-demo">
+    <h2>Demo Performance</h2>
+    <p class="subtitle">
+      Research across multiple Steam Next Fest post-mortems shows demo-driven wishlists convert to purchases at 18–25%, compared to just 8–12% for wishlists added without playing a demo — nearly double. A well-performing demo isn't just a marketing tool, it's a direct predictor of launch revenue quality.
+    </p>
+
+    <div class="card">
+      <h3>Traffic &amp; Reach</h3>
+      <div style="margin-bottom:14px">
+        <label class="stat-label">Total Store Page Visitors During Tracking Period</label>
+        <input type="number" id="demo-visitors" value="" min="0" step="10" placeholder="e.g. 5000" oninput="updateDemoStats()">
+      </div>
+      <div style="margin-bottom:14px">
+        <label class="stat-label">Total Demo Downloads / Plays</label>
+        <input type="number" id="demo-downloads" value="" min="0" step="10" placeholder="e.g. 1500" oninput="updateDemoStats()">
+      </div>
+      <div style="margin-bottom:0">
+        <label class="stat-label">Total Wishlist Additions During Tracking Period</label>
+        <input type="number" id="demo-wishlists" value="" min="0" step="10" placeholder="e.g. 300" oninput="updateDemoStats()">
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Engagement Depth</h3>
+      <div style="margin-bottom:14px">
+        <label class="stat-label">Average Session Length (minutes)</label>
+        <input type="number" id="demo-avg-session" value="" min="0" step="0.5" placeholder="e.g. 18" oninput="updateDemoStats()">
+      </div>
+      <div style="margin-bottom:14px">
+        <label class="stat-label">Target / Intended Session Length (minutes)</label>
+        <input type="number" id="demo-target-session" value="" min="0" step="0.5" placeholder="e.g. 20" oninput="updateDemoStats()">
+      </div>
+      <div style="margin-bottom:0">
+        <label class="stat-label">Demo Completion Rate (%)</label>
+        <input type="number" id="demo-completion" value="" min="0" max="100" step="1" placeholder="e.g. 35" oninput="updateDemoStats()">
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Conversion Events</h3>
+      <div style="margin-bottom:14px">
+        <label class="stat-label">Players Who Played the Demo AND Wishlisted</label>
+        <input type="number" id="demo-played-wishlisted" value="" min="0" step="1" placeholder="e.g. 75" oninput="updateDemoStats()">
+      </div>
+      <div>
+        <label class="stat-label">Wishlist Additions From Non-Demo Players (auto-calc)</label>
+        <input type="text" id="demo-non-demo-wishlists" value="—" readonly>
+      </div>
+    </div>
+
+    <!-- Demo Stat Cards -->
+    <div class="stat-grid">
+      <div class="stat-cell">
+        <div class="stat-value" id="demo-store-rate" style="color:var(--gold)">—</div>
+        <div class="stat-label">Store Page → Wishlist Rate</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-value" id="demo-conv-rate" style="color:var(--teal)">—</div>
+        <div class="stat-label">Demo Conversion Rate</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-value" id="demo-session-ratio" style="color:var(--purple)">—</div>
+        <div class="stat-label">Session Completion Ratio</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-value" id="demo-health-score" style="color:var(--coral)">—</div>
+        <div class="stat-label">Demo Health Score / 100</div>
+      </div>
+    </div>
+    <div id="demo-health-label" class="muted" style="text-align:center;margin-bottom:16px"></div>
+
+    <div class="card" style="overflow-x:auto">
+      <h3>Diagnostic Guidance</h3>
+      <table>
+        <thead><tr><th>Signal</th><th>Likely Issue</th><th>Suggested Fix</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Store page → wishlist under 12%</td>
+            <td>Capsule art or trailer isn't hooking visitors</td>
+            <td>Revise capsule art, tighten trailer to first 10 seconds</td>
+          </tr>
+          <tr>
+            <td>Demo conversion under 15%</td>
+            <td>Demo doesn't represent the game's appeal, is buggy, or lacks a clear wishlist CTA at the end</td>
+            <td>Add an explicit end-of-demo wishlist prompt, cut weak opening sections</td>
+          </tr>
+          <tr>
+            <td>Session length far below target</td>
+            <td>Weak opening, onboarding friction, or early bug/crash</td>
+            <td>Rework first 5 minutes, playtest onboarding specifically</td>
+          </tr>
+          <tr>
+            <td>Completion rate under 30%</td>
+            <td>Pacing or difficulty drop-off before intended ending</td>
+            <td>Identify exact drop-off point via analytics, address that specific milestone</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+    </div>
+  </details>
+
+  <details class="phase2-card" id="p2-ea">
+    <summary>
+      Early Access Pricing
+      <span class="card-status neutral" id="ea-status">—</span>
+    </summary>
+    <div class="card-body">
+
+  <!-- TAB 6 — EARLY ACCESS -->
+  <section class="tab" id="tab-ea">
+    <h2>Early Access Pricing Decisions</h2>
+    <p class="subtitle">
+      Early Access pricing is a separate decision with clear trade-offs. GameDiscoverCo data (2025): only 20% of EA games generate more revenue in their first 30 days post-1.0 than they did in their first month of EA.
+    </p>
+
+    <div class="card">
+      <div class="output-row">
+        <span class="output-label">Target 1.0 Launch Price <span class="output-note">Calculated from Step 3</span></span>
+        <span class="output-value" id="ea-launch-price-ref">—</span>
+      </div>
+    </div>
+
+    <div id="ea-framework"></div>
+
+    <div class="card">
+      <h3>EA Price Calculator</h3>
+      <div style="margin-bottom:14px">
+        <label class="stat-label">EA Discount vs. 1.0 Price (%)</label>
+        <div style="display:flex;align-items:center;gap:12px">
+          <input type="range" id="ea-discount-slider" min="0" max="50" value="20" step="1" oninput="document.getElementById('ea-discount-input').value=this.value; updateEaCalc()" style="flex:1">
+          <input type="number" id="ea-discount-input" value="20" min="0" max="50" step="1" oninput="validateEaDiscount(); document.getElementById('ea-discount-slider').value=this.value; updateEaCalc()" style="width:72px;text-align:center">
+          <span class="muted">%</span>
+        </div>
+        <div class="input-warning" id="warn-ea-discount">Must be between 0% and 50%.</div>
+      </div>
+      <div id="ea-calc-outputs"></div>
+    </div>
+  </section>
+
+    </div>
+  </details>
+  </div><!-- .phase2-grid -->
+  </div><!-- #phase2-wrapper -->
+
+  <!-- TAB 7 — REGIONAL + DLC -->
+  <section class="tab" id="tab-regional">
+    <h2>Regional Pricing &amp; DLC Guide</h2>
+
+    <h3 style="margin-bottom:12px">Global Regions</h3>
+    <p class="subtitle" style="margin-bottom:16px">Estimated prices derived from Step 3 launch price. Accept Steam defaults for most regions.</p>
+    <div class="card" style="overflow-x:auto">
+      <table>
+        <thead><tr><th>Region</th><th>Recommendation</th><th>Mult.</th><th>Est. Price (USD)</th><th>Action</th><th>Notes</th></tr></thead>
+        <tbody id="regional-body"></tbody>
+      </table>
+    </div>
+
+    <h3 style="margin-bottom:12px;margin-top:28px">MENA-USD Bloc</h3>
+    <p class="subtitle" style="margin-bottom:8px">Steam groups these 14 countries into a single USD-denominated region. Turkey and Argentina were moved to USD-denominated pricing in Nov 2023. Valve lacks reliable local pricing data for most of these markets, so they use discounted USD rather than local currency.</p>
+    <p class="muted" style="font-size:12px;margin-bottom:12px">
+      Countries: Bahrain, Egypt, Iraq, Jordan, Lebanon, Oman, Palestine, Turkey, Yemen, Algeria, Libya, Morocco, Tunisia, Sudan.
+      <strong>Not included</strong> (priced separately): Saudi Arabia (SAR), UAE (AED), Kuwait (KWD), Qatar (QAR).
+    </p>
+    <div class="card" style="margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+        <label class="stat-label" style="flex-shrink:0">Conversion Method:</label>
+        <select id="mena-method" onchange="updateRegionalTable()" style="max-width:240px">
+          <option value="fx">Exchange Rate (FX) — 100% of US price</option>
+          <option value="ppp">Purchasing Power Parity (PPP) — ~24% of US price</option>
+          <option value="multivariable" selected>Multi-variable / Nuanced — ~47% of US price (recommended)</option>
+        </select>
+      </div>
+      <div class="output-row">
+        <span class="output-label">USD_MENA Estimated Price <span class="output-note">14 countries, discounted USD</span></span>
+        <span class="output-value" id="mena-price">—</span>
+      </div>
+      <div class="floor-warning" id="mena-floor-warn" style="display:none"></div>
+    </div>
+
+    <div class="card" style="overflow-x:auto;margin-bottom:16px">
+      <h3>Gulf States (Local Currency)</h3>
+      <p class="muted" style="font-size:12px;margin-bottom:10px">These countries have their own local Steam currencies and are priced independently — not folded into USD_MENA. <a href="https://partner.steamgames.com/pricing/explorer" target="_blank" class="source-link">Verify with Steam's Pricing Explorer.</a></p>
+      <table>
+        <thead><tr><th>Country</th><th>Currency</th><th>Recommended Pricing</th><th>Est. Price (USD)</th><th>Notes</th></tr></thead>
+        <tbody id="gulf-body"></tbody>
+      </table>
+    </div>
+
+    <h3 style="margin-bottom:12px;margin-top:28px">DLC Pricing Guide</h3>
+    <p class="subtitle" style="margin-bottom:16px">Suggested DLC price ranges. Benchmarks from Steamworks data and Chris Zukowski.</p>
+    <div class="card" style="overflow-x:auto">
+      <table>
+        <thead><tr><th>DLC Type</th><th>Pricing Rule</th><th>Suggested Range</th><th>Notes</th></tr></thead>
+        <tbody id="dlc-body"></tbody>
+      </table>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h3>Steam April 2026 Update</h3>
+      <p class="muted">
+        Valve now offers three regional price conversion methods in Steamworks: (1) exchange rate, (2) purchasing power parity, (3) combined/blended. For indie studios, the "combined" option is the safe default. Pricing method choice does not affect store visibility systems.
+      </p>
+    </div>
+  </section>
+
+  <!-- PHASE 3 — AFTER YOU SHIP -->
+  <div id="phase3-wrapper" style="display:none" class="phase3-locked">
+  <div class="lock-overlay" id="phase3-overlay">
+    <div class="lock-icon">🔒</div>
+    <div class="lock-text">After You Ship</div>
+    <div class="lock-sub">Post-Launch Monitoring &amp; Sources — unlocks after your game launches.</div>
+    <button class="lock-btn" id="phase3-unlock-btn" onclick="unlockPhase3()">I've already launched — show me anyway</button>
+  </div>
+
+  <!-- TAB 8 — POST-LAUNCH -->
+  <section class="tab" id="tab-monitoring">
+    <h2>Post-Launch Monitoring Checklist</h2>
+    <p class="subtitle">
+      Key indicators to track after launch. Data benchmarks from Steamworks Documentation, GameDiscoverCo, and Chris Zukowski.
+    </p>
+
+    <div class="card">
+      <h3>Refund Rate Thresholds</h3>
+      <div class="checklist-item">
+        <h4>Healthy: Under 10%</h4>
+        <p>Within normal Steam ranges. Game meets player expectations. Monitor for spikes.</p>
+      </div>
+      <div class="checklist-item">
+        <h4>Watch: 10—15%</h4>
+        <p>Above typical indie average. Review store page for misleading screenshots. Check for performance complaints.</p>
+      </div>
+      <div class="checklist-item">
+        <h4>Concerning: Over 15%</h4>
+        <p>Risk of negative algorithmic signals on Steam. Investigate: are you overpromising on the store page? Does the game crash on common hardware? Is content too short for the price?</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Signs of Price-Related Negative Reviews</h3>
+      <div class="checklist-item">
+        <h4>"Not worth the price" / "Wait for a sale"</h4>
+        <p>Price-to-value mismatch. If in 10%+ of reviews, your base price is likely too high. Compare against Step 1 comp analysis.</p>
+      </div>
+      <div class="checklist-item">
+        <h4>"Great game, but too short"</h4>
+        <p>Content vs. price imbalance. Cross-check against Content-Depth Cross-Check in Step 2.</p>
+      </div>
+      <div class="checklist-item">
+        <h4>Regional pricing complaints</h4>
+        <p>Your regional pricing may be out of step with purchasing power. Review Step 6 guidance.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Revenue Decay Patterns</h3>
+      <div class="checklist-item">
+        <h4>Week 1 to Week 2 Drop</h4>
+        <p>Typical drop is 60—80%. Slower decline suggests strong word-of-mouth and organic discovery.</p>
+      </div>
+      <div class="checklist-item">
+        <h4>First Month Revenue Share</h4>
+        <p>For most indies, 50—70% of first-year revenue comes in the first 30 days. A higher proportion means heavy launch-dependency.</p>
+      </div>
+      <div class="checklist-item">
+        <h4>Discount Spike Patterns</h4>
+        <p>Expect 3—5x revenue spikes during first seasonal sales. If weaker than expected, revisit Step 3's staircase.</p>
+      </div>
+      <div class="checklist-item">
+        <h4>Long-Tail Revenue (Year 2+)</h4>
+        <p>Most indie titles see 10—20% of year-1 revenue in year 2, primarily from deep discounts and bundles.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB 9 — SOURCES -->
+  <section class="tab" id="tab-sources">
+    <h2>Sources &amp; Methodology Notes</h2>
+    <p class="subtitle">All data referenced in this workbook. Verify live data before finalizing pricing decisions.</p>
+    <div id="sources-body"></div>
+  </section>
+
+  <section class="tab" id="tab-summary">
+    <h2>Pricing Summary</h2>
+    <p class="subtitle">Your complete pricing decision recap. All data derived from your inputs across Steps 1–7.</p>
+    <div id="summary-content"></div>
+  </section>
+
+  </div><!-- #phase3-wrapper -->
+
+</main>
+
+<footer>
+  <div class="container">
+    Based on the <a href="https://gamestudiounlocked.substack.com/">GameStudioUnlocked</a> pricing methodology. Contact: seb@gamestudiounlocked.com. &nbsp; | &nbsp; Design: <a href="https://llamagriffin.com/brand-guide/">LlamaGriffin</a>.
+  </div>
+</footer>
+
+<script>
+function switchTab(tabName) {
+  document.querySelectorAll('nav button').forEach(function(b){b.classList.remove('active');});
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
+  var navBtn = document.querySelector('nav button[data-tab="' + tabName + '"]');
+  if (navBtn) navBtn.classList.add('active');
+  var tabEl = document.getElementById('tab-' + tabName);
+  if (tabEl) tabEl.classList.add('active');
+  var sel = document.querySelector('.nav-select');
+  if (sel) sel.value = tabName;
+  if (tabName === 'wishlist') updateWishlist();
+}
+document.querySelectorAll('nav button').forEach(function(btn){
+  btn.addEventListener('click', function(){switchTab(btn.dataset.tab);});
+});
+
+function getLaunchPrice() {
+  var target = parseFloat(document.getElementById('target-sale-price').value);
+  var discPct = parseFloat(document.getElementById('discount-depth').value);
+  if (isNaN(target) || isNaN(discPct) || target <= 0 || discPct <= 0 || discPct >= 100) return 0;
+  return target / (1 - discPct / 100);
+}
+function getValidatedLaunchPrice() {
+  var lp = getLaunchPrice();
+  return (!isNaN(lp) && isFinite(lp) && lp > 0) ? lp : 0;
+}
+function getDevShare() {
+  var el = document.getElementById('revenue-tier');
+  return el ? parseFloat(el.value) || 0.70 : 0.70;
+}
+function autoSelectTier() {
+  var rev = parseFloat(document.getElementById('lifetime-revenue').value) || 0;
+  var tier = document.getElementById('revenue-tier');
+  if (rev >= 50000000) tier.value = '0.80';
+  else if (rev >= 10000000) tier.value = '0.75';
+  else tier.value = '0.70';
+}
+function clampInput(el, min, max) {
+  var warnEl;
+  if (el.id === 'target-sale-price') warnEl = document.getElementById('warn-target-price');
+  else if (el.id === 'discount-depth') warnEl = document.getElementById('warn-discount');
+  else if (el.id === 'ea-discount-input') warnEl = document.getElementById('warn-ea-discount');
+  var v = parseFloat(el.value);
+  if (isNaN(v)) return;
+  var clamped = false;
+  if (v < min) { v = min; clamped = true; }
+  if (v > max) { v = max; clamped = true; }
+  if (clamped) el.value = v;
+  if (warnEl) warnEl.style.display = clamped ? 'block' : 'none';
+}
+function validatePricingInputs() {
+  clampInput(document.getElementById('target-sale-price'), 0.01, 999.99);
+  clampInput(document.getElementById('discount-depth'), 0, 100);
+  updatePricing();
+  updateRegionalTable();
+  updateDlcTable();
+  updateEaCalc();
+  updateWishlist();
+}
+function validateEaDiscount() {
+  clampInput(document.getElementById('ea-discount-input'), 0, 50);
+  updateEaCalc();
+}
+function updateAllLinked() { validatePricingInputs(); }
+
+// === COMP ANALYSIS ===
+var compTbody = document.getElementById('comp-tbody');
+var compRowCount = 0;
+var steamProxyUrl = localStorage.getItem('steamProxyUrl') || '';
+
+function saveProxyUrl() {
+  steamProxyUrl = document.getElementById('steam-proxy-url').value.trim();
+  localStorage.setItem('steamProxyUrl', steamProxyUrl);
+  var btn = document.querySelector('.proxy-config .btn-ghost');
+  btn.textContent = 'Saved!';
+  btn.style.borderColor = '#2a8f76';
+  btn.style.color = '#2a8f76';
+  setTimeout(function(){ btn.textContent = 'Save'; btn.style.borderColor = ''; btn.style.color = ''; }, 1500);
+}
+document.getElementById('steam-proxy-url').value = steamProxyUrl;
+
+function extractAppId(val) {
+  if (!val || !val.trim()) return null;
+  var trimmed = val.trim();
+  var numMatch = trimmed.match(/^(\d+)$/);
+  if (numMatch) return numMatch[1];
+  var urlMatch = trimmed.match(/\/app\/(\d+)/i);
+  if (urlMatch) return urlMatch[1];
+  var idMatch = trimmed.match(/(\d{4,})/);
+  if (idMatch) return idMatch[1];
+  return null;
+}
+function mapReception(desc, positive, negative) {
+  if (desc) {
+    var s = desc.toLowerCase();
+    if (s.indexOf('overwhelmingly positive') !== -1 || s.indexOf('very positive') !== -1) return { value: 'Positive', label: desc };
+    if (s.indexOf('mostly positive') !== -1 || s.indexOf('positive') !== -1) return { value: 'Positive', label: desc };
+    if (s.indexOf('mixed') !== -1) return { value: 'Mixed', label: desc };
+    if (s.indexOf('overwhelmingly negative') !== -1 || s.indexOf('very negative') !== -1) return { value: 'Negative', label: desc };
+    if (s.indexOf('mostly negative') !== -1 || s.indexOf('negative') !== -1) return { value: 'Negative', label: desc };
+  }
+  if (positive !== undefined && negative !== undefined && (positive + negative) > 0) {
+    var ratio = positive / (positive + negative);
+    if (ratio >= 0.70) return { value: 'Positive', label: Math.round(ratio * 100) + '% positive' };
+    if (ratio >= 0.40) return { value: 'Mixed', label: Math.round(ratio * 100) + '% positive' };
+    return { value: 'Negative', label: Math.round(ratio * 100) + '% positive' };
+  }
+  return null;
+}
+async function fetchSteamData(appId, row) {
+  if (!steamProxyUrl) { showRowStatus(row, 'Configure proxy URL first', 'error'); return; }
+  var fetchBtn = row.querySelector('.fetch-btn');
+  var statusEl = row.querySelector('.fetch-status');
+  fetchBtn.disabled = true;
+  fetchBtn.classList.add('fetching');
+  fetchBtn.textContent = '...';
+  if (statusEl) { statusEl.textContent = ''; statusEl.classList.remove('error', 'ok'); }
+  try {
+    // Build clean base URL (strip any trailing path/params from the saved proxy URL)
+    var base = steamProxyUrl.replace(/\/+$/, '').replace(/\?.*$/, '');
+    var detailsUrl = base + '?appid=' + appId;
+    var reviewsUrl = base + '?appid=' + appId + '&type=reviews';
+
+    var resp = await fetch(detailsUrl);
+    if (!resp.ok) throw new Error('Proxy returned ' + resp.status);
+    var data = await resp.json();
+    var gameData = data[appId];
+    if (!gameData || !gameData.success) throw new Error('App ID not found');
+    var d = gameData.data;
+    var titleInput = row.querySelector('.comp-title');
+    titleInput.value = d.name || '';
+    titleInput.dataset.fetched = 'true';
+    if (d.price_overview) {
+      row.querySelector('.comp-current').value = (d.price_overview.final / 100).toFixed(2);
+      if (d.price_overview.discount_percent > 0) {
+        row.querySelector('.comp-launch').placeholder = 'On sale (-' + d.price_overview.discount_percent + '%)';
+      }
+    } else {
+      row.querySelector('.comp-current').placeholder = 'Free / no price data';
+    }
+    var dateEl = row.querySelector('.comp-release-date');
+    if (d.release_date && d.release_date.date) {
+      dateEl.value = d.release_date.date;
+      dateEl.dataset.fetched = 'true';
+    }
+    if (d.genres && d.genres.length > 0) {
+      row.querySelector('.genres-tags').textContent = d.genres.map(function(g){return g.description;}).join(', ');
+    }
+
+    // Fetch reviews endpoint for accurate Reception data
+    var receptionSet = false;
+    try {
+      var revResp = await fetch(reviewsUrl);
+      if (revResp.ok) {
+        var revData = await revResp.json();
+        if (revData && revData.query_summary) {
+          var qs = revData.query_summary;
+          var result = mapReception(qs.review_score_desc, qs.total_positive, qs.total_negative);
+          if (result) {
+            row.querySelector('.comp-reception').value = result.value;
+            row.querySelector('.reception-auto-note').textContent = 'Auto from Steam (' + result.label + '). Override if needed.';
+            row.querySelector('.comp-reception').dataset.autoSuggested = 'true';
+            receptionSet = true;
+          }
+        }
+      }
+    } catch (e) { /* reviews lookup failed, fall through */ }
+    if (!receptionSet) {
+      row.querySelector('.reception-auto-note').textContent = 'Review data unavailable — set manually.';
+    }
+
+    row.querySelector('.steam-badge').style.display = 'inline-block';
+    row.dataset.fetched = 'true';
+    showRowStatus(row, 'Fetched from Steam', 'ok');
+    updateCompStats();
+  } catch (err) {
+    showRowStatus(row, 'Could not fetch — check App ID or enter manually', 'error');
+  } finally {
+    fetchBtn.disabled = false;
+    fetchBtn.classList.remove('fetching');
+    fetchBtn.textContent = 'Fetch';
+  }
+}
+function showRowStatus(row, msg, type) {
+  var statusEl = row.querySelector('.fetch-status');
+  statusEl.textContent = msg;
+  statusEl.classList.remove('error', 'ok');
+  if (type) statusEl.classList.add(type);
+}
+function addCompRow(title, launch, current, quality, reception, hours) {
+  title = title || ''; launch = launch || ''; current = current || ''; quality = quality || 'Equal'; reception = reception || 'Mixed'; hours = hours || '';
+  compRowCount++;
+  var tr = document.createElement('tr');
+  tr.innerHTML =
+    '<td><input type="text" value="' + escapeHtml(title) + '" placeholder="Game title" class="comp-title"><span class="steam-badge" style="display:none">Steam</span></td>' +
+    '<td><div class="steam-row"><input type="text" placeholder="URL or App ID" class="comp-appid"><button class="fetch-btn" type="button">Fetch</button></div><div class="fetch-status"></div></td>' +
+    '<td></td>' +
+    '<td><input type="number" value="' + launch + '" step="0.01" min="0" placeholder="0.00" class="comp-launch" oninput="updateCompStats()"></td>' +
+    '<td><input type="number" value="' + current + '" step="0.01" min="0" placeholder="0.00" class="comp-current"></td>' +
+    '<td><input type="text" value="" placeholder="e.g. 15 Mar 2024" class="comp-release-date" readonly><div class="genres-tags"></div></td>' +
+    '<td><select class="comp-quality"><option' + (quality==='Better'?' selected':'') + '>Better</option><option' + (quality==='Equal'?' selected':'') + '>Equal</option><option' + (quality==='Worse'?' selected':'') + '>Worse</option></select></td>' +
+    '<td><select class="comp-reception"><option' + (reception==='Positive'?' selected':'') + '>Positive</option><option' + (reception==='Mixed'?' selected':'') + '>Mixed</option><option' + (reception==='Negative'?' selected':'') + '>Negative</option></select><span class="reception-auto-note"></span></td>' +
+    '<td><input type="number" value="' + hours + '" step="0.5" min="0" placeholder="0" class="comp-hours"></td>' +
+    '<td><button class="btn-ghost row-del" onclick="this.closest(\'tr\').remove(); compRowCount--; updateCompStats();">' + '✕' + '</button></td>';
+  tr.querySelector('.fetch-btn').addEventListener('click', function() {
+    var appId = extractAppId(tr.querySelector('.comp-appid').value);
+    if (!appId) { showRowStatus(tr, 'Enter a valid Steam App ID or URL', 'error'); return; }
+    fetchSteamData(appId, tr);
+  });
+  compTbody.appendChild(tr);
+}
+document.getElementById('add-comp-row').addEventListener('click', function(){addCompRow();});
+document.getElementById('fetch-all-rows').addEventListener('click', async function(){
+  var rows = document.querySelectorAll('#comp-tbody tr');
+  for (var i = 0; i < rows.length; i++) {
+    var appId = extractAppId(rows[i].querySelector('.comp-appid').value);
+    if (appId) await fetchSteamData(appId, rows[i]);
+  }
+});
+function getCompData() {
+  var rows = [];
+  document.querySelectorAll('#comp-tbody tr').forEach(function(tr){
+    var inputs = tr.querySelectorAll('input.comp-title, input.comp-appid, input.comp-launch, input.comp-current, input.comp-release-date, input.comp-hours');
+    var selects = tr.querySelectorAll('select');
+    if (inputs.length >= 6) {
+      rows.push({
+        title: inputs[0].value.trim(),
+        appId: inputs[1].value.trim(),
+        launchPrice: parseFloat(inputs[2].value) || null,
+        currentPrice: parseFloat(inputs[3].value) || null,
+        releaseDate: inputs[4].value.trim(),
+        quality: selects[0] ? selects[0].value : '',
+        reception: selects[1] ? selects[1].value : '',
+        hours: parseFloat(inputs[5].value) || null
+      });
+    }
+  });
+  return rows;
+}
+document.getElementById('export-csv').addEventListener('click', function(){
+  var rows = getCompData();
+  var headers = ['Game Title','Steam URL/App ID','Launch Price (USD)','Current Price (USD)','Release Date','Quality vs. Mine','Community Reception','Content (hrs)'];
+  var csvRows = [headers];
+  rows.forEach(function(r){
+    csvRows.push([
+      r.title ? '"' + r.title.replace(/"/g,'""') + '"' : '',
+      r.appId ? '"' + r.appId.replace(/"/g,'""') + '"' : '',
+      r.launchPrice !== null ? r.launchPrice.toFixed(2) : '',
+      r.currentPrice !== null ? r.currentPrice.toFixed(2) : '',
+      r.releaseDate ? '"' + r.releaseDate.replace(/"/g,'""') + '"' : '',
+      r.quality, r.reception,
+      r.hours !== null ? r.hours.toFixed(1) : ''
+    ]);
+  });
+  var csv = csvRows.map(function(r){return r.join(',');}).join('\n');
+  var blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a'); a.href = url; a.download = 'comp-analysis.csv'; a.click();
+  URL.revokeObjectURL(url);
+});
+function updateCompStats() {
+  var prices = [];
+  document.querySelectorAll('#comp-tbody tr').forEach(function(tr){
+    var launchInp = tr.querySelector('.comp-launch');
+    var currentInp = tr.querySelector('.comp-current');
+    var raw = String((launchInp && launchInp.value) ? launchInp.value : (currentInp ? currentInp.value : ''));
+    var v = parseFloat(raw.replace(/[^0-9.]/g, ''));
+    if (!isNaN(v) && v > 0) prices.push(v);
+  });
+  var els = {
+    median: document.getElementById('stat-median'),
+    avg: document.getElementById('stat-avg'),
+    min: document.getElementById('stat-min'),
+    max: document.getElementById('stat-max')
+  };
+  if (!els.median) return;
+  if (prices.length === 0) {
+    els.median.textContent = '\u2014';
+    els.avg.textContent = '\u2014';
+    els.min.textContent = '\u2014';
+    els.max.textContent = '\u2014';
+    return;
+  }
+  prices.sort(function(a,b){return a-b;});
+  var median = prices.length % 2 === 0 ? (prices[prices.length/2-1] + prices[prices.length/2]) / 2 : prices[Math.floor(prices.length/2)];
+  var avg = prices.reduce(function(s,v){return s+v;}, 0) / prices.length;
+  els.median.textContent = '$' + median.toFixed(2);
+  els.avg.textContent = '$' + avg.toFixed(2);
+  els.min.textContent = '$' + Math.min.apply(null, prices).toFixed(2);
+  els.max.textContent = '$' + Math.max.apply(null, prices).toFixed(2);
+}
+for (var i = 0; i < 3; i++) addCompRow();
+
+// === FOUR VARIABLES ===
+var tierData = [
+  { range: '1.00—2.00', price: '$4.99—$9.99', context: 'Budget / experimental. High volume play.' },
+  { range: '2.01—3.00', price: '$9.99—$14.99', context: 'Lower mid-tier. Solid indie. Genre median for casual-adjacent.' },
+  { range: '3.01—3.75', price: '$14.99—$19.99', context: 'Mid-tier sweet spot. GameDiscoverCo median for top-performing indies (2023—25).' },
+  { range: '3.76—4.25', price: '$19.99—$24.99', context: 'Upper mid. Requires clear scope and polish signal.' },
+  { range: '4.26—5.00', price: '$24.99—$34.99', context: 'Premium indie. Above $25 trickier for unknown studios.' },
+];
+var tierBody = document.getElementById('tier-body');
+tierData.forEach(function(t){
+  var tr = document.createElement('tr');
+  tr.className = 'tier-row';
+  tr.innerHTML = '<td>' + t.range + '</td><td>' + t.price + '</td><td>' + t.context + '</td>';
+  tierBody.appendChild(tr);
+});
+function getTier(score) {
+  if (score <= 2) return { price: '$4.99—$9.99', idx: 0 };
+  if (score <= 3) return { price: '$9.99—$14.99', idx: 1 };
+  if (score <= 3.75) return { price: '$14.99—$19.99', idx: 2 };
+  if (score <= 4.25) return { price: '$19.99—$24.99', idx: 3 };
+  return { price: '$24.99—$34.99', idx: 4 };
+}
+function updateVariables() {
+  var weights = [0.25, 0.30, 0.25, 0.20];
+  var total = 0;
+  for (var i = 1; i <= 4; i++) {
+    var val = parseInt(document.getElementById('v'+i+'-slider').value);
+    document.getElementById('v'+i+'-score').textContent = val;
+    var weighted = val * weights[i-1];
+    document.getElementById('v'+i+'-weighted').textContent = weighted.toFixed(2);
+    total += weighted;
+  }
+  document.getElementById('total-score').textContent = total.toFixed(2);
+  var tier = getTier(total);
+  document.getElementById('tier-result').innerHTML = 'Recommended: <span>' + tier.price + '</span>';
+  document.querySelectorAll('.tier-row').forEach(function(tr, i){ tr.classList.toggle('active', i === tier.idx); });
+}
+
+var contentBands = [
+  { label: 'Under 5 hrs', min: 0, max: 4.99, price: '$10—$12' },
+  { label: '5—15 hrs', min: 5, max: 14.99, price: '~$15' },
+  { label: '15—30 hrs', min: 15, max: 29.99, price: '$18—$20' },
+  { label: '30—50 hrs', min: 30, max: 49.99, price: '$20—$25' },
+  { label: '50+ hrs (w/ replay)', min: 50, max: Infinity, price: '$25—$30' },
+];
+(function(){
+  var tbody = document.getElementById('content-band-body');
+  contentBands.forEach(function(cb){
+    var tr = document.createElement('tr');
+    tr.className = 'content-band-row';
+    tr.setAttribute('data-min', cb.min);
+    tr.setAttribute('data-max', String(cb.max));
+    tr.innerHTML = '<td>' + cb.label + '</td><td>' + cb.price + '</td>';
+    tbody.appendChild(tr);
+  });
+})();
+function updateContentCheck() {
+  var hrs = parseFloat(document.getElementById('content-hours-input').value) || 0;
+  document.querySelectorAll('.content-band-row').forEach(function(tr){
+    var min = parseFloat(tr.getAttribute('data-min'));
+    var max = tr.getAttribute('data-max') === 'Infinity' ? Infinity : parseFloat(tr.getAttribute('data-max'));
+    tr.classList.toggle('band-highlight', hrs >= min && hrs <= max);
+  });
+  var result = '—';
+  for (var i = 0; i < contentBands.length; i++) {
+    if (hrs >= contentBands[i].min && hrs <= contentBands[i].max) { result = 'Sanity check: ' + contentBands[i].price; break; }
+  }
+  document.getElementById('content-check-result').textContent = result;
+}
+updateVariables();
+updateContentCheck();
+
+// === PRICE & DISCOUNT MODEL ===
+function updatePricing() {
+  var target = parseFloat(document.getElementById('target-sale-price').value);
+  var discPct = parseFloat(document.getElementById('discount-depth').value);
+  if (isNaN(target) || isNaN(discPct) || target <= 0 || discPct <= 0 || discPct >= 100) {
+    document.getElementById('pricing-outputs').innerHTML = '<p class="muted">Enter a valid target sale price and discount depth above.</p>';
+    document.getElementById('staircase-body').innerHTML = '';
+    document.getElementById('discount-compare').innerHTML = '';
+    document.getElementById('floor-warning').style.display = 'none';
+    return;
+  }
+  var devShare = getDevShare();
+  var discountFactor = discPct / 100;
+  var launchPrice = target / (1 - discountFactor);
+  var actualDiscount = launchPrice > 0 ? (launchPrice - target) / launchPrice : 0;
+  var netFull = launchPrice * devShare;
+  var netSale = target * devShare;
+  var unitsNeeded = netSale > 0 ? Math.round((netFull * 1000) / netSale) : 0;
+  var deepDiscountPrice = launchPrice * 0.5;
+  var netDeepDiscount = deepDiscountPrice * devShare;
+
+  document.getElementById('pricing-outputs').innerHTML =
+    '<div class="output-row"><span class="output-label">Required Launch Price <span class="output-note">Sustains target sale price at chosen discount</span></span><span class="output-value">$' + launchPrice.toFixed(2) + '</span></div>' +
+    '<div class="output-row"><span class="output-label">Actual Discount at Target Sale Price <span class="output-note">Should be ≥20% for wishlist emails</span></span><span class="output-value">' + (actualDiscount * 100).toFixed(1) + '% ' + (actualDiscount >= 0.2 ? '<span class="badge badge-teal">Meets 20%</span>' : '<span class="badge badge-coral">Below 20%</span>') + '</span></div>' +
+    '<div class="output-row"><span class="output-label">Net Revenue per Unit (Full Price) <span class="output-note">After Steam cut (' + (devShare*100).toFixed(0) + '% to dev)</span></span><span class="output-value">$' + netFull.toFixed(2) + '</span></div>' +
+    '<div class="output-row"><span class="output-label">Net Revenue per Unit (Sale Price)</span><span class="output-value">$' + netSale.toFixed(2) + '</span></div>' +
+    '<div class="output-row"><span class="output-label">Units at Sale Price to Match 1,000 Full-Price Units</span><span class="output-value">' + unitsNeeded.toLocaleString() + '</span></div>' +
+    '<div class="output-row"><span class="output-label">50% Deep-Discount Price <span class="output-note">2nd-year seasonal sale floor</span></span><span class="output-value">$' + deepDiscountPrice.toFixed(2) + '</span></div>' +
+    '<div class="output-row"><span class="output-label">Net Revenue at 50% Discount <span class="output-note">Post Steam cut</span></span><span class="output-value">$' + netDeepDiscount.toFixed(2) + '</span></div>';
+
+  var launchDiscPrice = launchPrice * 0.875;
+  var fullNetComp = launchPrice * devShare;
+  var discLaunchNet = launchDiscPrice * devShare;
+  document.getElementById('discount-compare').innerHTML =
+    '<div class="compare-card"><h4>(A) Full Price Launch, Discount Later</h4>' +
+    '<div class="output-row"><span class="output-label">Launch Price</span><span class="output-value">$' + launchPrice.toFixed(2) + '</span></div>' +
+    '<div class="output-row"><span class="output-label">Net Revenue per Unit</span><span class="output-value">$' + fullNetComp.toFixed(2) + '</span></div>' +
+    '<div class="tradeoff">Higher per-unit margin. Signals confidence. Less conversion lift from launch discount hype.</div></div>' +
+    '<div class="compare-card"><h4>(B) Launch With 10—15% Discount</h4>' +
+    '<div class="output-row"><span class="output-label">Launch Price</span><span class="output-value">$' + launchDiscPrice.toFixed(2) + '</span></div>' +
+    '<div class="output-row"><span class="output-label">Net Revenue per Unit</span><span class="output-value">$' + discLaunchNet.toFixed(2) + '</span></div>' +
+    '<div class="tradeoff">Triggers wishlist notification on day one if ≥20%. Lower margin but can drive higher volume.</div></div>';
+
+  var floorPct = parseFloat(document.getElementById('price-floor').value) || 50;
+  var staircase = [
+    { stage: 'Launch Week', when: 'Optional: 10—15%', pct: 0.15, purpose: 'Conversion momentum (below 20% = no wishlist email)' },
+    { stage: 'First Seasonal Sale', when: '60—90 days post-launch', pct: 0.20, purpose: 'First wishlist email trigger' },
+    { stage: 'Second Seasonal Sale', when: '~6 months', pct: 0.30, purpose: 'Deepening reach. Wait for sale segment.' },
+    { stage: 'One Year Post-Launch', when: '12 months', pct: 0.45, purpose: 'Catalog monetization. Standard for mature titles.' },
+    { stage: '2+ Years / Bundles', when: '24+ months', pct: 0.60, purpose: 'Long-tail revenue.' },
+  ];
+  var violations = staircase.filter(function(s){return (s.pct * 100) > floorPct;});
+  var floorWarn = document.getElementById('floor-warning');
+  if (violations.length > 0) {
+    floorWarn.style.display = 'block';
+    floorWarn.textContent = violations.map(function(v){return v.stage + ' (' + (v.pct*100).toFixed(0) + '%)';}).join(', ') + ' exceed floor of ' + floorPct + '%.';
+  } else { floorWarn.style.display = 'none'; }
+  document.getElementById('staircase-body').innerHTML =
+    staircase.map(function(s){
+      return '<tr><td><strong>' + s.stage + '</strong></td><td>' + s.when + '</td><td>' + (s.pct*100).toFixed(0) + '%</td><td style="color:var(--teal);font-weight:500">$' + (launchPrice * (1 - s.pct)).toFixed(2) + '</td><td>' + s.purpose + '</td></tr>';
+    }).join('') +
+    '<tr class="floor-row"><td><strong>Price Floor</strong></td><td>Long-term minimum</td><td>' + floorPct + '%</td><td>$' + (launchPrice * (1 - floorPct/100)).toFixed(2) + '</td><td>Permanent price floor threshold</td></tr>';
+  updateRegionalTable();
+}
+
+// === DEMO PERFORMANCE ===
+function getDemoHealthScore() {
+  var visitors = parseInt(document.getElementById('demo-visitors').value) || 0;
+  var downloads = parseInt(document.getElementById('demo-downloads').value) || 0;
+  var wishlists = parseInt(document.getElementById('demo-wishlists').value) || 0;
+  var avgSession = parseFloat(document.getElementById('demo-avg-session').value) || 0;
+  var targetSession = parseFloat(document.getElementById('demo-target-session').value) || 0;
+  var completion = parseFloat(document.getElementById('demo-completion').value) || 0;
+  var playedWishlisted = parseInt(document.getElementById('demo-played-wishlisted').value) || 0;
+
+  // Auto-calc non-demo wishlists
+  var nonDemoWishlists = Math.max(0, wishlists - playedWishlisted);
+  document.getElementById('demo-non-demo-wishlists').value = wishlists > 0 ? nonDemoWishlists : '—';
+
+  // Store page → wishlist rate
+  var storeRate = visitors > 0 ? (wishlists / visitors) * 100 : 0;
+  var storeRateEl = document.getElementById('demo-store-rate');
+  storeRateEl.textContent = visitors > 0 ? storeRate.toFixed(1) + '%' : '—';
+  storeRateEl.style.color = storeRate > 25 ? 'var(--teal)' : (storeRate >= 12 ? 'var(--gold)' : 'var(--coral)');
+
+  // Demo conversion rate
+  var demoConvRate = downloads > 0 ? (playedWishlisted / downloads) * 100 : 0;
+  var demoConvEl = document.getElementById('demo-conv-rate');
+  demoConvEl.textContent = downloads > 0 ? demoConvRate.toFixed(1) + '%' : '—';
+  demoConvEl.style.color = demoConvRate >= 25 ? 'var(--teal)' : (demoConvRate >= 15 ? 'var(--gold)' : 'var(--coral)');
+
+  // Session completion ratio
+  var sessionRatio = targetSession > 0 ? (avgSession / targetSession) * 100 : 0;
+  var sessionEl = document.getElementById('demo-session-ratio');
+  sessionEl.textContent = targetSession > 0 ? sessionRatio.toFixed(0) + '%' : '—';
+  sessionEl.style.color = sessionRatio >= 100 ? 'var(--teal)' : (sessionRatio >= 60 ? 'var(--gold)' : 'var(--coral)');
+
+  // Demo Health Score (0-100 composite)
+  // Sub-scores: each capped at 100, weighted
+  if (visitors === 0 && downloads === 0) {
+    document.getElementById('demo-health-score').textContent = '—';
+    document.getElementById('demo-health-label').textContent = '';
+    return { score: 0, multiplier: 1.0 };
+  }
+  var convSub = Math.min(100, (demoConvRate / 20) * 100); // 20% = 100 points
+  var storeSub = Math.min(100, (storeRate / 20) * 100);   // 20% = 100 points
+  var compSub = Math.min(100, completion);                // 100% completion = 100 points
+  var healthScore = Math.round(convSub * 0.45 + storeSub * 0.25 + compSub * 0.30);
+  var healthEl = document.getElementById('demo-health-score');
+  healthEl.textContent = healthScore;
+  var label;
+  if (healthScore >= 80) { label = 'Excellent — demo is a strong sales asset'; healthEl.style.color = 'var(--teal)'; }
+  else if (healthScore >= 60) { label = 'Good — solid predictor of launch performance'; healthEl.style.color = 'var(--teal)'; }
+  else if (healthScore >= 40) { label = 'Needs improvement — investigate drop-off points'; healthEl.style.color = 'var(--gold)'; }
+  else { label = 'Weak — demo may be hurting conversion quality'; healthEl.style.color = 'var(--coral)'; }
+  document.getElementById('demo-health-label').textContent = label;
+
+  var mult = healthScore >= 80 ? 1.20 : (healthScore >= 60 ? 1.10 : (healthScore >= 40 ? 1.00 : 0.85));
+  return { score: healthScore, multiplier: mult, label: label };
+}
+
+function updateDemoStats() {
+  var result = getDemoHealthScore();
+  updateWishlist(); // push to wishlist estimator
+}
+
+// === WISHLIST ===
+function getWishlistConversion(wishlistCount, launchPrice) {
+  var rate;
+  if (wishlistCount < 5000) rate = 0.15;
+  else if (wishlistCount <= 25000) rate = 0.18;
+  else if (wishlistCount <= 100000) rate = 0.21;
+  else rate = 0.25;
+  if (launchPrice > 10) rate *= 0.70;
+  return rate;
+}
+function getCommunityScore() {
+  var wishlistCount = parseInt(document.getElementById('wishlist-count').value) || 0;
+  var followerCount = parseInt(document.getElementById('follower-count').value) || 0;
+  var discordActivity = document.getElementById('discord-activity').value;
+  var wishlistSource = document.getElementById('wishlist-source').value;
+
+  var factors = [];
+  var breakdown = [];
+
+  if (followerCount > 0 && wishlistCount > 0) {
+    var ratio = wishlistCount / followerCount;
+    var fv;
+    if (ratio >= 7 && ratio <= 20) { fv = 1.10; breakdown.push('Follower ratio: ' + ratio.toFixed(1) + 'x — healthy range (+10%)'); }
+    else if (ratio > 35) { fv = 0.75; breakdown.push('Follower ratio: ' + ratio.toFixed(1) + 'x — wishlists may include low-intent adds (−25%)'); }
+    else if ((ratio >= 3 && ratio < 7) || (ratio > 20 && ratio <= 35)) { fv = 1.00; breakdown.push('Follower ratio: ' + ratio.toFixed(1) + 'x — neutral (0%)'); }
+    else { fv = 1.00; breakdown.push('Follower ratio: ' + ratio.toFixed(1) + 'x — under-converted (0%)'); }
+    factors.push(fv);
+  }
+
+  if (discordActivity === 'high') { factors.push(1.15); breakdown.push('Discord: High (+15%)'); }
+  else if (discordActivity === 'moderate') { factors.push(1.00); breakdown.push('Discord: Moderate (0%)'); }
+  else if (discordActivity === 'low') { factors.push(0.85); breakdown.push('Discord: Low (−15%)'); }
+
+  if (wishlistSource === 'organic') { factors.push(1.15); breakdown.push('Source: Mostly organic (+15%)'); }
+  else if (wishlistSource === 'mixed') { factors.push(1.00); breakdown.push('Source: Mixed (0%)'); }
+  else if (wishlistSource === 'paid') { factors.push(0.75); breakdown.push('Source: Mostly paid/spike (−25%)'); }
+
+  var multiplier = factors.length > 0 ? factors.reduce(function(s,f){return s+f;}, 0) / factors.length : 1.0;
+  return { multiplier: multiplier, breakdown: breakdown };
+}
+
+function updateWishlist() {
+  var count = parseInt(document.getElementById('wishlist-count').value) || 0;
+  var lp = getValidatedLaunchPrice();
+  var devShare = getDevShare();
+  if (count <= 0 || lp <= 0) {
+    document.getElementById('wishlist-outputs').innerHTML = '<p class="muted">Enter your projected wishlist count and set your Step 3 inputs.</p>';
+    return;
+  }
+  var baseRate = getWishlistConversion(count, 0); // base rate without price penalty
+  var pricePenalty = lp > 10 ? 0.70 : 1.0;
+  var community = getCommunityScore();
+  var demo = getDemoHealthScore();
+  var finalRate = baseRate * pricePenalty * community.multiplier * demo.multiplier;
+  finalRate = Math.max(0.05, Math.min(0.35, finalRate));
+  var sales = Math.round(count * finalRate);
+  var netRevenue = sales * lp * devShare;
+  var adjNote = lp > 10 ? ' (30% reduction for price above $10)' : '';
+
+  var comLabel = community.multiplier > 1.05 ? 'Community signals suggest better-than-average conversion' :
+    community.multiplier >= 0.95 ? 'Community signals in neutral range' : 'Community signals warrant caution';
+  var comColor = community.multiplier > 1.05 ? 'var(--teal)' : (community.multiplier >= 0.95 ? 'var(--gold)' : 'var(--coral)');
+  var comRow = community.multiplier !== 1.0 ?
+    '<div class="output-row"><span class="output-label">Community Multiplier <span style="color:' + comColor + '">' + community.multiplier.toFixed(2) + 'x</span></span><span class="output-value" style="font-size:11px;color:' + comColor + '">' + comLabel + '</span></div>' +
+    '<div class="output-row"><span class="output-label" style="font-size:11px"></span><span class="output-value" style="font-size:10px;color:var(--mid)">' + community.breakdown.join(' · ') + '</span></div>' : '';
+  var demoRow = demo.score > 0 ?
+    '<div class="output-row"><span class="output-label">Demo Quality Multiplier <span style="color:' + (demo.multiplier > 1.0 ? 'var(--teal)' : (demo.multiplier < 1.0 ? 'var(--coral)' : 'var(--gold)')) + '">' + demo.multiplier.toFixed(2) + 'x</span></span><span class="output-value" style="font-size:11px;color:var(--mid)">Health Score: ' + demo.score + '/100 (' + demo.label + ')</span></div>' : '';
+
+  document.getElementById('wishlist-outputs').innerHTML =
+    '<div class="output-row"><span class="output-label">Base Conversion Rate</span><span class="output-value">' + (baseRate * 100).toFixed(1) + '%</span></div>' +
+    '<div class="output-row"><span class="output-label">Effective Conversion Rate' + adjNote + '</span><span class="output-value">' + (finalRate * 100).toFixed(1) + '%</span></div>' +
+    comRow +
+    demoRow +
+    '<div class="output-row"><span class="output-label">Est. First-Week Unit Sales</span><span class="output-value">' + sales.toLocaleString() + '</span></div>' +
+    '<div class="output-row"><span class="output-label">Est. First-Week Net Revenue <span class="output-note">After Steam cut (' + (devShare*100).toFixed(0) + '% to dev)</span></span><span class="output-value">$' + netRevenue.toLocaleString(undefined, {minimumFractionDigits:2,maximumFractionDigits:2}) + '</span></div>' +
+    '<p class="muted" style="margin-top:10px;font-style:italic">Base conversion rates from GameDiscoverCo aggregate Steam data. Community multiplier is a directional estimate based on published correlations between community engagement and wishlist quality — not a guaranteed formula. A large wishlist count with a small, inactive community is a known risk pattern; a smaller wishlist backed by an active Discord and organic growth often converts better than the raw number suggests.</p>';
+}
+
+// === EARLY ACCESS ===
+var eaData = [
+  { q: 'Is your game substantially complete at EA launch (>60% of final content)?', yes: 'Price closer to your target 1.0 price. Modest discount (10—15%), not steep.', no: 'Price lower (discount 20—30% vs. 1.0 target). Signal "work in progress".' },
+  { q: 'Is EA your primary community-building and feedback phase?', yes: 'Prioritize access over margin. Lower price = larger tester base.', no: 'Treat EA as early monetization. Price accordingly.' },
+  { q: 'Do you plan to raise price at 1.0?', yes: 'Set EA price 15—25% below planned 1.0 price. Communicate on store page.', no: 'Set EA price = 1.0 price. No price change at full release.' },
+  { q: 'Do you have a strong wishlist/community pre-EA?', yes: 'More pricing power. Price toward higher end of EA range.', no: 'Prioritize building community. Price accessibly.' },
+];
+document.getElementById('ea-framework').innerHTML = eaData.map(function(d){
+  return '<div class="framework-card"><h4>' + d.q + '</h4><div class="framework-yes"><strong>Yes →</strong> ' + d.yes + '</div><div class="framework-no"><strong>No →</strong> ' + d.no + '</div></div>';
+}).join('');
+
+function updateEaCalc() {
+  var lp = getValidatedLaunchPrice();
+  var devShare = getDevShare();
+  document.getElementById('ea-launch-price-ref').textContent = lp > 0 ? '$' + lp.toFixed(2) : '—';
+  var eaDiscPct = parseInt(document.getElementById('ea-discount-input').value) || 20;
+  var eaPrice = lp > 0 ? lp * (1 - eaDiscPct / 100) : 0;
+  var eaNet = eaPrice * devShare;
+  var fullNet = lp * devShare;
+  var ratio = eaNet > 0 ? Math.round(fullNet / eaNet * 100) / 100 : 0;
+  document.getElementById('ea-calc-outputs').innerHTML = lp > 0 ?
+    '<div class="output-row"><span class="output-label">Recommended EA Launch Price</span><span class="output-value">$' + eaPrice.toFixed(2) + '</span></div>' +
+    '<div class="output-row"><span class="output-label">Net Revenue per EA Unit <span class="output-note">After Steam cut (' + (devShare*100).toFixed(0) + '% to dev)</span></span><span class="output-value">$' + eaNet.toFixed(2) + '</span></div>' +
+    '<div class="output-row"><span class="output-label">EA Units Needed per 1.0 Unit Revenue</span><span class="output-value">' + ratio.toFixed(2) + 'x</span></div>'
+    : '<p class="muted">Set your Step 3 inputs first to see EA price calculations.</p>';
+}
+
+// === REGIONAL + MENA ===
+var menaMultipliers = { fx: 1.00, ppp: 0.24, multivariable: 0.47 };
+
+var regionalData = [
+  { flag: '🇺🇸', region: 'United States', rec: 'Your base USD price', multiplier: 1.0, action: 'No', notes: 'Primary revenue market (50—60% of indie revenue)', badge: '' },
+  { flag: '🇪🇺', region: 'Western Europe', rec: '~1:1 with USD', multiplier: 1.0, action: 'Accept Steam default', notes: 'EUR 1:1 USD is convention.', badge: '' },
+  { flag: '🇵🇱', region: 'Poland (PLN)', rec: 'Steam suggestion ~20—30% high', multiplier: 0.775, action: 'Reduce 20—25%', notes: 'Currency shift since 2022.', badge: '<span class="badge badge-gold">Manual</span>' },
+  { flag: '🇧🇷', region: 'Brazil (BRL)', rec: 'Steam suggests ~50—70% below USD', multiplier: 0.45, action: 'Accept Steam default', notes: 'Huge player base. Price-sensitive.', badge: '' },
+  { flag: '🇦🇷', region: 'Argentina (ARS)', rec: 'Highly volatile.', multiplier: 0.25, action: 'Accept Steam default', notes: 'Hyperinflation market. Moved to USD billing Nov 2023.', badge: '' },
+  { flag: '🇷🇺', region: 'Russia/CIS', rec: 'Post-sanctions recommendations', multiplier: 0.35, action: 'Accept Steam default', notes: 'Low per-unit revenue.', badge: '' },
+  { flag: '🇮🇳', region: 'India', rec: 'Significantly below USD', multiplier: 0.35, action: 'Accept Steam default', notes: '10M+ Steam users.', badge: '' },
+  { flag: '🇨🇳', region: 'China', rec: '35—63% of USD price', multiplier: 0.50, action: 'Accept Steam default', notes: 'Follow Steam suggestion for indie.', badge: '' },
+];
+
+var gulfData = [
+  { flag: '🇸🇦', country: 'Saudi Arabia', currency: 'SAR', multiplier: 0.90, notes: 'Higher-GDP market; generally close to US equivalent.' },
+  { flag: '🇦🇪', country: 'UAE', currency: 'AED', multiplier: 0.90, notes: 'Higher-GDP market; priced independently from USD_MENA bloc.' },
+  { flag: '🇰🇼', country: 'Kuwait', currency: 'KWD', multiplier: 0.90, notes: 'Check against Steam Pricing Explorer for live rates.' },
+  { flag: '🇶🇦', country: 'Qatar', currency: 'QAR', multiplier: 0.90, notes: 'Priced independently; verify with live Steam data.' },
+];
+
+function updateRegionalTable() {
+  var lp = getValidatedLaunchPrice();
+  var method = document.getElementById('mena-method').value;
+  var menaMult = menaMultipliers[method];
+  var menaPrice = lp > 0 ? '$' + (lp * menaMult).toFixed(2) : '—';
+  document.getElementById('mena-price').textContent = menaPrice;
+
+  var floorPct = parseFloat(document.getElementById('price-floor').value) || 50;
+  var floorPrice = lp > 0 ? lp * (1 - floorPct / 100) : 0;
+  var floorWarn = document.getElementById('mena-floor-warn');
+  if (lp > 0 && (menaMult < (1 - floorPct / 100))) {
+    floorWarn.style.display = 'block';
+    floorWarn.textContent = 'USD_MENA price ($' + (lp * menaMult).toFixed(2) + ') falls below your Price Floor (' + floorPct + '% off = $' + floorPrice.toFixed(2) + '). Consider using a less aggressive method (FX or Multi-variable).';
+  } else { floorWarn.style.display = 'none'; }
+
+  document.getElementById('regional-body').innerHTML = regionalData.map(function(r){
+    var estPrice = lp > 0 ? '$' + (lp * r.multiplier).toFixed(2) : '—';
+    return '<tr><td><strong>' + r.flag + ' ' + r.region + '</strong></td><td>' + r.rec + '</td><td style="text-align:center">' + r.multiplier.toFixed(2) + 'x</td><td style="color:var(--teal);font-weight:500">' + estPrice + '</td><td>' + r.action + ' ' + r.badge + '</td><td>' + r.notes + '</td></tr>';
+  }).join('');
+
+  document.getElementById('gulf-body').innerHTML = gulfData.map(function(g){
+    var estPrice = lp > 0 ? '$' + (lp * g.multiplier).toFixed(2) : '—';
+    return '<tr><td><strong>' + g.flag + ' ' + g.country + '</strong></td><td>' + g.currency + '</td><td>~' + (g.multiplier*100).toFixed(0) + '% of US price</td><td style="color:var(--teal);font-weight:500">' + estPrice + '</td><td>' + g.notes + '</td></tr>';
+  }).join('');
+}
+function updateDlcTable() {
+  var lp = getValidatedLaunchPrice();
+  var dlcTypes = [
+    { type: 'Large Expansion DLC', rule: '25—50% of base price', calc: lp > 0 ? '$' + (lp*0.25).toFixed(2) + ' — $' + (lp*0.50).toFixed(2) : '—', notes: 'Substantial new content: areas, mechanics, story chapters.' },
+    { type: 'Small Content Pack', rule: 'Flat $3—$5', calc: '$3.00—$5.00', notes: 'Cosmetics, small mission packs, single features.' },
+    { type: '5—10 Hour Expansion', rule: 'Flat $8—$12', calc: '$8.00—$12.00', notes: 'Mid-length content drop. Story episodes, game modes.' },
+  ];
+  document.getElementById('dlc-body').innerHTML = dlcTypes.map(function(d, idx){
+    var color = idx === 0 ? 'var(--purple)' : (idx === 1 ? 'var(--teal)' : 'var(--gold)');
+    return '<tr><td><strong>' + d.type + '</strong></td><td>' + d.rule + '</td><td style="color:' + color + ';font-weight:500">' + d.calc + '</td><td>' + d.notes + '</td></tr>';
+  }).join('');
+}
+
+// === SOURCES ===
+var sources = [
+  { name: 'GameDiscoverCo (Simon Carless)', finding: 'Median Steam top-50 launch price fell from $23.70 (Feb 2023) to $20.35 (Oct 2025). >$25 pricing increasingly difficult for new IP. Wishlist conversion benchmarks and EA revenue data.', url: 'https://newsletter.gamediscover.co/p/are-steam-game-prices-dropping-and' },
+  { name: 'Chris Zukowski — How To Market A Game', finding: 'Content-length pricing benchmarks, DLC pricing norms, and post-launch monitoring best practices for indie developers.', url: 'https://howtomarketagame.com/' },
+  { name: 'GamesRadar / GameDiscoverCo', finding: 'Secondary coverage of pricing trends. Includes Carless quote on >$25 difficulty.', url: 'https://www.gamesradar.com/games/the-median-price-of-best-selling-new-games-on-steam-has-dropped-in-the-past-2-years-research-finds-charging-usd25-is-getting-trickier-as-players-compare-value-to-the-usd10-usd15-indie-titles/' },
+  { name: 'GameDiscoverCo EA Research (2025)', finding: 'Only 20% of EA games generate more revenue in their first 30 days post-1.0 than in their first EA month.', url: 'https://wnhub.io/news/stores-and-publishing/item-49527' },
+  { name: 'GameDiscoverCo Wishlist Conversion', finding: 'Median wishlist-to-first-week-sales ratio: 0.15x (25k+ wishlist games). Games under $10 convert at higher rates.', url: 'https://automaton-media.com/en/news/steam-wishlist-to-sales-study-shows-how-genre-release-timing-and-reviews-affect-success-nsfw-games-show-unusually-high-conversion-rate/' },
+  { name: 'Steamworks Documentation', finding: 'Regional pricing tools, 2026 conversion method update, supported currencies. Revenue share tiering: 70% under $10M, 75% $10M—$50M, 80% above $50M. Refund rate guidelines.', url: 'https://partner.steamgames.com/doc/store/pricing' },
+  { name: 'Steamworks — Supported Currencies', finding: 'Full list of Steam-supported currencies and regional pricing buckets. USD_MENA bloc details, Gulf state local currency handling (SAR, AED, KWD, QAR priced independently).', url: 'https://partner.steamgames.com/doc/store/pricing/currencies' },
+  { name: 'SteamDB — March 2026 Pricing Matrix Update', finding: 'Valve\'s March 2026 pricing matrix revision — first update since 2022. Conversion methods: FX, PPP, Multi-variable. MENA-USD at ~47% of US price under multi-variable method at $59.99 tier.', url: 'https://steamdb.info/blog/valve-price-matrix-2026/' },
+  { name: 'Steam Storefront API', finding: 'Comp data can be auto-populated via the official Steam Storefront API. Launch price and content-hour figures require manual research (SteamDB, HowLongToBeat) as Steam does not expose historical pricing or playtime data publicly. See included steam-proxy.js.', url: 'https://wiki.teamfortress.com/wiki/User:RJackson/StorefrontAPI' },
+  { name: 'GameStudioUnlocked', finding: 'Full pricing methodology and context.', url: 'https://gamestudiounlocked.substack.com/' },
+];
+document.getElementById('sources-body').innerHTML = sources.map(function(s){
+  return '<div class="card"><h3>' + s.name + '</h3><p style="font-family:var(--sans);font-size:14px;margin-bottom:6px">' + s.finding + '</p><a href="' + s.url + '" target="_blank" class="source-link">' + s.url + '</a></div>';
+}).join('');
+
+// === INIT ===
+updateCompStats();
+updatePricing();
+updateRegionalTable();
+updateDlcTable();
+updateEaCalc();
+updateWishlist();
+
+// === PHASE SYSTEM ===
+var currentPhase = 1;
+var currentPhaseStep = 0;
+var phase1Steps = ['comp','variables','pricing','regional'];
+var phase1Labels = {'comp':'Comp Analysis','variables':'Four Variables','pricing':'Price & Discount','regional':'Regional & DLC'};
+var phase3Unlocked = false;
+var launchDate = localStorage.getItem('launchDate') || '';
+
+if (launchDate) {
+  var ldEl = document.getElementById('launch-date-input');
+  if (ldEl) ldEl.value = launchDate;
+  checkLaunchDate();
+}
+if (localStorage.getItem('phase3Unlocked') === 'true') {
+  unlockPhase3(true);
+}
+
+function checkLaunchDate() {
+  var val = document.getElementById('launch-date-input').value;
+  localStorage.setItem('launchDate', val);
+  launchDate = val;
+  if (val) {
+    var d = new Date(val + 'T00:00:00');
+    var now = new Date(); now.setHours(0,0,0,0);
+    if (d <= now) unlockPhase3(true);
+  }
+}
+
+function unlockPhase3(silent) {
+  phase3Unlocked = true;
+  localStorage.setItem('phase3Unlocked', 'true');
+  var wrapper = document.getElementById('phase3-wrapper');
+  if (wrapper) wrapper.classList.add('phase3-unlocked');
+  var btn = document.getElementById('phase3-btn');
+  if (btn) btn.classList.remove('locked');
+  var overlay = document.getElementById('phase3-overlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
+function switchPhase(phaseNum) {
+  if (phaseNum === 3 && !phase3Unlocked) return;
+  currentPhase = phaseNum;
+  if (phaseNum === 1) {
+    switchPhaseStep(currentPhaseStep);
+  } else {
+    showPhase(phaseNum);
+  }
+}
+
+function switchPhaseStep(idx) {
+  currentPhase = 1;
+  currentPhaseStep = Math.max(0, Math.min(idx, phase1Steps.length - 1));
+  showPhaseStep(currentPhaseStep);
+}
+
+function goNext() {
+  if (currentPhase !== 1) return;
+  if (currentPhaseStep >= phase1Steps.length - 1) {
+    showPhase1Confirm();
+  } else {
+    switchPhaseStep(currentPhaseStep + 1);
+  }
+  window.scrollTo(0,0);
+}
+
+function goPrev() {
+  if (currentPhase !== 1) return;
+  switchPhaseStep(Math.max(0, currentPhaseStep - 1));
+  window.scrollTo(0,0);
+}
+
+function showPhaseStep(idx) {
+  currentPhaseStep = idx;
+  showPhase(1);
+}
+
+function showPhase(phaseNum) {
+  document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
+  document.getElementById('phase2-wrapper').style.display = 'none';
+  document.getElementById('phase3-wrapper').style.display = 'none';
+  document.getElementById('phase1-confirm').classList.remove('show');
+  var stepper = document.getElementById('stepper-desktop');
+  var stepperMobile = document.getElementById('stepper-mobile');
+
+  if (phaseNum === 1) {
+    var tabId = 'tab-' + phase1Steps[currentPhaseStep];
+    var tabEl = document.getElementById(tabId);
+    if (tabEl) tabEl.classList.add('active');
+    if (stepper) stepper.style.display = 'flex';
+    if (stepperMobile) stepperMobile.style.display = 'block';
+    updatePhase1Stepper();
+  } else if (phaseNum === 2) {
+    document.getElementById('phase2-wrapper').style.display = 'block';
+    if (stepper) stepper.style.display = 'none';
+    if (stepperMobile) stepperMobile.style.display = 'none';
+    updatePhase2Statuses();
+    updateWishlist();
+    updateDemoStats();
+    updateEaCalc();
+  } else if (phaseNum === 3) {
+    document.getElementById('phase3-wrapper').style.display = 'block';
+    if (stepper) stepper.style.display = 'none';
+    if (stepperMobile) stepperMobile.style.display = 'none';
+  }
+
+  updatePhaseSwitcher();
+  updateWizardButtons();
+  if (phaseNum === 1) populateSummaryBar();
+}
+
+function showPhase1Confirm() {
+  document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
+  document.getElementById('phase2-wrapper').style.display = 'none';
+  document.getElementById('phase3-wrapper').style.display = 'none';
+  document.getElementById('stepper-desktop').style.display = 'flex';
+  document.getElementById('stepper-mobile').style.display = 'block';
+
+  var lp = getValidatedLaunchPrice();
+  var target = parseFloat(document.getElementById('target-sale-price').value) || 0;
+  var discPct = parseFloat(document.getElementById('discount-depth').value) || 0;
+  var tierText = document.getElementById('tier-result').textContent.replace('Recommended: ','');
+  var menaMethod = document.getElementById('mena-method');
+  var menaMult = menaMethod ? menaMultipliers[menaMethod.value] : 0.47;
+  var menaPrice = lp * menaMult;
+
+  document.getElementById('confirm-price').textContent = lp > 0 ? '$' + lp.toFixed(2) : '\u2014';
+  document.getElementById('confirm-tier').textContent = tierText || '\u2014';
+  document.getElementById('confirm-tier-val').textContent = tierText || '\u2014';
+  document.getElementById('confirm-lp').textContent = lp > 0 ? '$' + lp.toFixed(2) : '\u2014';
+  document.getElementById('confirm-sp').textContent = target > 0 ? '$' + target.toFixed(2) : '\u2014';
+  document.getElementById('confirm-db').textContent = discPct > 0 ? discPct + '%' : '\u2014';
+  document.getElementById('confirm-mena').textContent = lp > 0 ? '$' + menaPrice.toFixed(2) : '\u2014';
+
+  document.getElementById('phase1-confirm').classList.add('show');
+  currentPhaseStep = 4;
+  updatePhase1Stepper();
+  updatePhaseSwitcher();
+  updateWizardButtons();
+}
+
+function updatePhase1Stepper() {
+  var dots = document.querySelectorAll('#stepper-desktop .stepper-step');
+  var maxStep = currentPhaseStep >= phase1Steps.length ? phase1Steps.length : currentPhaseStep;
+  for (var i = 0; i < dots.length; i++) {
+    dots[i].classList.remove('active','done');
+    if (i < maxStep) dots[i].classList.add('done');
+    else if (i === maxStep && maxStep < phase1Steps.length) dots[i].classList.add('active');
+    var dotSpan = dots[i].querySelector('.dot');
+    if (i < maxStep) dotSpan.innerHTML = '&#10003;';
+    else dotSpan.textContent = (i + 1);
+  }
+  var curNum = currentPhaseStep >= phase1Steps.length ? 4 : currentPhaseStep + 1;
+  document.getElementById('stepper-current').textContent = curNum;
+  document.getElementById('stepper-fill').style.width = ((currentPhaseStep + 1) / 4 * 100) + '%';
+}
+
+function updatePhaseSwitcher() {
+  var btns = document.querySelectorAll('#phase-switcher button');
+  btns.forEach(function(b){
+    b.classList.remove('active','done');
+    var p = parseInt(b.dataset.phase);
+    if (p === currentPhase) b.classList.add('active');
+    if (p === 1 && currentPhaseStep >= phase1Steps.length) b.classList.add('done');
+    if (p === 3 && !phase3Unlocked) b.classList.add('locked');
+  });
+}
+
+function updateWizardButtons() {
+  var allWizard = document.querySelectorAll('.wizard-nav');
+  allWizard.forEach(function(wn){ wn.style.display = 'flex'; });
+  var prevBtns = document.querySelectorAll('.wizard-prev');
+  var nextBtns = document.querySelectorAll('.wizard-next');
+  var isConfirm = document.getElementById('phase1-confirm').classList.contains('show');
+
+  if (currentPhase !== 1) {
+    allWizard.forEach(function(wn){ wn.style.display = 'none'; });
+    return;
+  }
+  if (isConfirm) {
+    prevBtns.forEach(function(b){ b.style.visibility = 'hidden'; });
+    nextBtns.forEach(function(b){ b.style.display = 'none'; });
+    return;
+  }
+  var atStart = currentPhaseStep === 0;
+  var atEnd = currentPhaseStep === phase1Steps.length - 1;
+
+  prevBtns.forEach(function(b){ b.style.visibility = atStart ? 'hidden' : 'visible'; });
+  nextBtns.forEach(function(b){
+    b.style.display = 'inline-flex';
+    b.textContent = atEnd ? 'Set My Price \u2192' : 'Continue \u2192';
+  });
+}
+
+function updatePhase2Statuses() {
+  var wc = parseInt(document.getElementById('wishlist-count').value) || 0;
+  var ws = document.getElementById('wishlist-status');
+  if (wc > 0) {
+    var rate = getWishlistConversion(wc, 0);
+    var sales = Math.round(wc * rate);
+    ws.textContent = wc.toLocaleString() + ' wishlists \u00b7 ~' + sales + ' est. sales';
+    ws.className = 'card-status active';
+  } else { ws.textContent = 'No data'; ws.className = 'card-status neutral'; }
+
+  var ds = document.getElementById('demo-status');
+  var visitors = parseInt(document.getElementById('demo-visitors').value) || 0;
+  var downloads = parseInt(document.getElementById('demo-downloads').value) || 0;
+  if (visitors > 0 || downloads > 0) {
+    var demoRes = getDemoHealthScore();
+    ds.textContent = 'Health Score: ' + demoRes.score + '/100 \u00b7 ' + demoRes.label;
+    ds.className = demoRes.score >= 60 ? 'card-status active' : 'card-status warning';
+  } else { ds.textContent = 'No data'; ds.className = 'card-status neutral'; }
+
+  var es = document.getElementById('ea-status');
+  var lp = getValidatedLaunchPrice();
+  var eaDiscPct = parseInt(document.getElementById('ea-discount-input').value) || 20;
+  var eaPrice = lp > 0 ? lp * (1 - eaDiscPct / 100) : 0;
+  if (lp > 0) {
+    es.textContent = '$' + eaPrice.toFixed(2) + ' (' + eaDiscPct + '% off 1.0)';
+    es.className = 'card-status active';
+  } else { es.textContent = '\u2014'; es.className = 'card-status neutral'; }
+}
+
+function populateSummaryBar() {
+  if (currentPhase !== 1) return;
+  var lp = getValidatedLaunchPrice();
+  var devShare = getDevShare();
+  var tierText = document.getElementById('tier-result').textContent.replace('Recommended: ','');
+  var tab = phase1Steps[currentPhaseStep];
+  var chips = [];
+  if (currentPhaseStep >= 1) chips.push('Comps: ' + document.querySelectorAll('.comp-launch').length + ' games analyzed');
+  if (currentPhaseStep >= 2 && tierText) chips.push('Step 2 tier: ' + tierText);
+  if (currentPhaseStep >= 3 && lp > 0) chips.push('Launch price: $' + lp.toFixed(2) + ' (' + (devShare*100).toFixed(0) + '% to dev)');
+  if (chips.length === 0) chips.push('No prior data yet');
+  var sb = document.querySelector('#tab-' + tab + ' .summary-bar .summary-chips');
+  if (!sb) return;
+  sb.innerHTML = chips.map(function(c){ return '<span class="summary-chip">' + c + '</span>'; }).join('');
+}
+
+function buildSummary() {
+  var lp = getValidatedLaunchPrice();
+  var devShare = getDevShare();
+  var tierText = document.getElementById('tier-result').textContent.replace('Recommended: ','');
+  var target = parseFloat(document.getElementById('target-sale-price').value) || 0;
+  var discPct = parseFloat(document.getElementById('discount-depth').value) || 0;
+  var discountFactor = discPct / 100;
+  var netFull = lp * devShare;
+  var compCount = document.querySelectorAll('.comp-launch').length;
+  var wishlistCount = parseInt(document.getElementById('wishlist-count').value) || 0;
+  var eaDiscPct = parseInt(document.getElementById('ea-discount-input').value) || 20;
+  var eaPrice = lp > 0 ? lp * (1 - eaDiscPct / 100) : 0;
+  var floorPct = parseFloat(document.getElementById('price-floor').value) || 50;
+  var menaMethod = document.getElementById('mena-method');
+  var menaMult = menaMethod ? menaMultipliers[menaMethod.value] : 0.47;
+  var menaPrice = lp * menaMult;
+  var demoRes = getDemoHealthScore();
+
+  document.getElementById('summary-content').innerHTML =
+    '<div class="card"><h3>Recommended Tier</h3><div style="font-family:var(--serif);font-size:28px;font-weight:700">' + (tierText || '\u2014') + '</div><p class="muted">From Step 2: Four Variables weighted scoring.</p></div>' +
+    '<div class="card"><h3>Launch Price & Revenue</h3>' +
+    '<div class="output-row"><span class="output-label">Required Launch Price</span><span class="output-value">' + (lp > 0 ? '$' + lp.toFixed(2) : '\u2014') + '</span></div>' +
+    '<div class="output-row"><span class="output-label">Actual Discount at Target Sale</span><span class="output-value">' + (lp > 0 ? (discountFactor * 100).toFixed(1) + '%' : '\u2014') + '</span></div>' +
+    '<div class="output-row"><span class="output-label">Net Revenue per Unit (Full)</span><span class="output-value">' + (lp > 0 ? '$' + netFull.toFixed(2) : '\u2014') + '</span></div>' +
+    '<div class="output-row"><span class="output-label">Steam Share Tier</span><span class="output-value">' + (devShare*100).toFixed(0) + '% to dev</span></div>' +
+    '<div class="output-row"><span class="output-label">Price Floor</span><span class="output-value">' + floorPct + '% off max</span></div></div>' +
+    '<div class="card"><h3>Comps & Wishlist</h3>' +
+    '<div class="output-row"><span class="output-label">Comp Games Analyzed</span><span class="output-value">' + compCount + '</span></div>' +
+    '<div class="output-row"><span class="output-label">Projected Wishlist Count</span><span class="output-value">' + (wishlistCount > 0 ? wishlistCount.toLocaleString() : '\u2014') + '</span></div></div>' +
+    (demoRes.score > 0 ? '<div class="card"><h3>Demo Performance</h3><div class="output-row"><span class="output-label">Demo Health Score</span><span class="output-value">' + demoRes.score + '/100 (' + demoRes.label + ')</span></div><div class="output-row"><span class="output-label">Demo Quality Multiplier</span><span class="output-value">' + demoRes.multiplier.toFixed(2) + 'x</span></div></div>' : '') +
+    '<div class="card"><h3>Early Access</h3>' +
+    '<div class="output-row"><span class="output-label">EA Discount vs 1.0 Price</span><span class="output-value">' + eaDiscPct + '%</span></div>' +
+    '<div class="output-row"><span class="output-label">Recommended EA Launch Price</span><span class="output-value">' + (lp > 0 ? '$' + eaPrice.toFixed(2) : '\u2014') + '</span></div></div>' +
+    '<div class="card"><h3>Regional: USD_MENA</h3>' +
+    '<div class="output-row"><span class="output-label">Conversion Method</span><span class="output-value">' + (menaMethod ? menaMethod.options[menaMethod.selectedIndex].text.split(' \u2014')[0] : '\u2014') + '</span></div>' +
+    '<div class="output-row"><span class="output-label">Estimated MENA Price</span><span class="output-value">' + (lp > 0 ? '$' + menaPrice.toFixed(2) : '\u2014') + '</span></div></div>';
+
+  var allWizard = document.querySelectorAll('.wizard-nav');
+  allWizard.forEach(function(wn){ wn.style.display = 'none'; });
+}
+
+document.querySelectorAll('#stepper-desktop .stepper-step').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    var idx = parseInt(btn.dataset.idx);
+    if (!isNaN(idx)) switchPhaseStep(idx);
+  });
+});
+
+function injectWizardUI() {
+  phase1Steps.forEach(function(tab){
+    var el = document.getElementById('tab-' + tab);
+    if (!el) return;
+    if (!el.querySelector('.summary-bar')) {
+      var sb = document.createElement('details'); sb.className = 'summary-bar';
+      sb.innerHTML = '<summary>Your inputs so far</summary><div class="summary-chips"><span class="summary-chip">Waiting on earlier steps</span></div>';
+      el.insertBefore(sb, el.firstChild);
+    }
+    if (!el.querySelector('.wizard-nav')) {
+      var wn = document.createElement('div'); wn.className = 'wizard-nav';
+      wn.innerHTML = '<button class="wizard-prev" onclick="goPrev()">\u2190 Back</button><button class="wizard-next" onclick="goNext()">Continue \u2192</button>';
+      el.appendChild(wn);
+    }
+  });
+  var sumEl = document.getElementById('tab-summary');
+  if (sumEl && !sumEl.querySelector('.summary-bar')) {
+    var sb = document.createElement('details'); sb.className = 'summary-bar';
+    sb.innerHTML = '<summary>Your inputs so far</summary><div class="summary-chips"><span class="summary-chip">All steps complete</span></div>';
+    sumEl.insertBefore(sb, sumEl.firstChild);
+  }
+}
+
+function switchTab(tabName) {
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
+  var tabEl = document.getElementById('tab-' + tabName);
+  if (tabEl) tabEl.classList.add('active');
+  if (tabName === 'wishlist') updateWishlist();
+}
+
+injectWizardUI();
+showPhase(1);
+updatePhase1Stepper();
+updateWizardButtons();
+populateSummaryBar();
+
+function escapeHtml(str) {
+  var div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+</script>
+</body>
+</html>
