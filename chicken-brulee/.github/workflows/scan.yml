@@ -1,0 +1,63 @@
+name: Scan Discord & Deploy Dashboard
+
+on:
+  schedule:
+    # Daily at 08:00 UTC
+    - cron: "0 8 * * *"
+  workflow_dispatch:
+    inputs:
+      since:
+        description: "Scan messages since (YYYY-MM-DD, leave empty for since last scan)"
+        required: false
+        default: ""
+
+jobs:
+  scan-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Scan Discord
+        env:
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_GUILD_ID: ${{ secrets.DISCORD_GUILD_ID }}
+          DISCORD_CHANNEL_IDS: ${{ secrets.DISCORD_CHANNEL_IDS }}
+          DISCORD_CHANNEL_NAMES: ${{ secrets.DISCORD_CHANNEL_NAMES }}
+          DISCORD_STAFF_ROLES: ${{ secrets.DISCORD_STAFF_ROLES }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: |
+          if [ -n "${{ github.event.inputs.since }}" ]; then
+            node scripts/scan.js --since="${{ github.event.inputs.since }}"
+          else
+            node scripts/scan.js
+          fi
+
+      - name: Commit and push updated data.js
+        run: |
+          git config user.name "FarHaven Scanner Bot"
+          git config user.email "scanner@farhaven-playtest.local"
+          git add assets/data.js index.html
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Auto: scan $(date +%Y-%m-%d) — updated observations"
+            git push
+          fi
+
+      - name: Deploy to FTP
+        env:
+          FTP_USER: ${{ secrets.FTP_USER }}
+          FTP_PASS: ${{ secrets.FTP_PASS }}
+        run: node scripts/deploy.js

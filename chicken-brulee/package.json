@@ -1,0 +1,22 @@
+{
+  "name": "farhaven-playtest-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "FarHaven Discord Playtest Feedback Dashboard — scanner, classifier, and static dashboard",
+  "scripts": {
+    "scan": "node scripts/scan.js",
+    "scan:dry": "node scripts/scan.js --dry-run",
+    "deploy": "node scripts/deploy.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.110.8",
+    "basic-ftp": "^5.0.5",
+    "pg": "^8.22.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "supabase": "^2.109.1"
+  }
+}
