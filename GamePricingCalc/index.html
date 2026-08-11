@@ -185,6 +185,8 @@
   }
   input:focus, select:focus { outline: none; border-color: var(--gold); }
   input[type="range"] { padding: 0; accent-color: var(--gold); height: auto; }
+  input[type="radio"], input[type="checkbox"] { width: auto; height: auto; margin: 0; accent-color: var(--gold); }
+  input[type="radio"] + label, input[type="checkbox"] + label { font-family: var(--sans); font-size: 13px; cursor: pointer; }
   input:invalid { border-color: var(--coral); }
   input[readonly] { background: var(--cream-dark); }
   .input-warning { font-family: var(--mono); font-size: 9px; color: var(--coral); margin-top: 2px; display: none; }
@@ -342,98 +344,13 @@
   .wizard-next:hover { background: #1a6e5a; }
 
   /* ===== SUMMARY BAR ===== */
-  .summary-bar { background: var(--cream-dark); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 14px; margin-bottom: 16px; }
-  .summary-bar summary { font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); cursor: pointer; list-style: none; }
+  .summary-bar { background: var(--cream-dark); border: 1px solid var(--border); border-left: 3px solid var(--gold); border-radius: var(--radius); padding: 10px 14px; margin-bottom: 16px; }
+  .summary-bar summary { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dark); cursor: pointer; list-style: none; font-weight: 600; }
   .summary-bar summary::-webkit-details-marker { display: none; }
   .summary-bar summary::before { content: '+ '; margin-right: 4px; }
   .summary-bar[open] summary::before { content: '− '; }
   .summary-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
   .summary-chip { font-family: var(--mono); font-size: 10px; padding: 4px 8px; border-radius: 4px; background: var(--white); border: 1px solid var(--border); color: var(--dark); }
-
-  /* ===== PHASE SWITCHER ===== */
-  .phase-switcher { display: flex; gap: 0; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin: 0 auto 12px; max-width: 780px; }
-  .phase-switcher button {
-    flex: 1; background: var(--white); border: none; border-right: 1px solid var(--border); padding: 14px 16px; cursor: pointer; text-align: left;
-    font-family: var(--sans); transition: background 0.2s; min-width: 0;
-  }
-  .phase-switcher button:last-child { border-right: none; }
-  .phase-switcher button:hover:not(.locked) { background: var(--cream-dark); }
-  .phase-switcher button.active { background: rgba(42,143,118,0.06); }
-  .phase-switcher button.active .phase-num { background: var(--teal); color: #fff; }
-  .phase-num { display: inline-block; width: 22px; height: 22px; border-radius: 50%; background: var(--cream-dark); color: var(--mid); font-family: var(--mono); font-size: 10px; font-weight: 500; text-align: center; line-height: 22px; margin-bottom: 6px; transition: background 0.2s, color 0.2s; }
-  .phase-title { font-family: var(--serif); font-size: 15px; font-weight: 700; color: var(--dark); margin-bottom: 2px; display: block; }
-  .phase-desc { font-family: var(--sans); font-size: 10.5px; color: var(--mid); line-height: 1.3; display: block; }
-  .phase-switcher button.active .phase-title { color: var(--teal); }
-  .phase-switcher button.done .phase-num { background: var(--teal); color: #fff; }
-  .phase-switcher button.done .phase-num::after { content: '✓'; }
-  .phase-switcher button.locked { opacity: 0.45; cursor: not-allowed; }
-  .phase-switcher button.locked .phase-num { background: var(--border); }
-  .phase-lock-icon { font-size: 12px; margin-right: 3px; }
-  .phase-unlock-link { display: block; font-family: var(--mono); font-size: 9px; color: var(--teal); margin-top: 4px; cursor: pointer; text-decoration: underline; letter-spacing: 0.04em; }
-  .phase-unlock-link:hover { color: var(--gold); }
-  @media (max-width: 640px) {
-    .phase-switcher { flex-direction: column; border-radius: var(--radius); }
-    .phase-switcher button { border-right: none; border-bottom: 1px solid var(--border); padding: 12px 14px; }
-    .phase-switcher button:last-child { border-bottom: none; }
-  }
-
-  /* Stepper: Phase 1 only (4 dots) */
-  .stepper.p1-only {
-    display: flex; gap: 0; align-items: center; justify-content: center; padding: 10px 0 6px;
-    border-bottom: 1px solid var(--border); background: var(--cream);
-  }
-
-  /* ===== PHASE 2 CARD GRID ===== */
-  .phase2-grid { display: flex; flex-direction: column; gap: 16px; margin-bottom: 20px; }
-  .phase2-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-  .phase2-card summary {
-    font-family: var(--serif); font-size: 16px; font-weight: 700; padding: 14px 16px; cursor: pointer;
-    list-style: none; display: flex; justify-content: space-between; align-items: center;
-    user-select: none; background: var(--white);
-  }
-  .phase2-card summary::-webkit-details-marker { display: none; }
-  .phase2-card summary::after {
-    content: '+'; font-family: var(--mono); font-size: 16px; color: var(--mid);
-    transition: transform 0.2s; width: 20px; text-align: center; flex-shrink: 0;
-  }
-  .phase2-card[open] summary::after { content: '−'; }
-  .phase2-card .card-body { padding: 0 16px 16px; }
-  .phase2-card .card-body .tab { display: block; } /* override .tab display:none inside cards */
-  .phase2-card .card-status {
-    font-family: var(--mono); font-size: 9px; letter-spacing: 0.06em; text-transform: uppercase;
-    padding: 2px 8px; border-radius: 3px; flex-shrink: 0; margin-left: 8px;
-  }
-  .phase2-card .card-status.active { background: rgba(42,143,118,0.12); color: var(--teal); }
-  .phase2-card .card-status.neutral { background: rgba(107,102,96,0.1); color: var(--mid); }
-  .phase2-card .card-status.warning { background: rgba(195,165,95,0.12); color: var(--gold-dark); }
-
-  /* ===== PHASE 3 LOCK ===== */
-  .phase3-locked { position: relative; }
-  .phase3-locked .lock-overlay {
-    position: absolute; inset: 0; background: rgba(247,244,238,0.7); z-index: 2;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    border-radius: var(--radius); backdrop-filter: blur(2px);
-  }
-  .phase3-locked .lock-overlay .lock-icon { font-size: 32px; margin-bottom: 8px; opacity: 0.5; }
-  .phase3-locked .lock-overlay .lock-text { font-family: var(--serif); font-size: 18px; color: var(--mid); font-weight: 700; margin-bottom: 4px; }
-  .phase3-locked .lock-overlay .lock-sub { font-family: var(--sans); font-size: 13px; color: var(--faint); margin-bottom: 10px; }
-  .phase3-locked .lock-overlay .lock-btn {
-    font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em; background: var(--teal); color: #fdfcf9;
-    border: none; padding: 6px 14px; border-radius: var(--radius); cursor: pointer; text-transform: uppercase;
-  }
-  .phase3-locked .lock-overlay .lock-btn:hover { background: #1a6e5a; }
-  .phase3-unlocked .lock-overlay { display: none; }
-
-  /* ===== CONFIRMATION SCREEN (Phase 1 end) ===== */
-  .confirm-screen { display: none; background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 32px; text-align: center; }
-  .confirm-screen.show { display: block; }
-  .confirm-screen .big-price { font-family: var(--serif); font-size: 48px; font-weight: 700; color: var(--teal); margin: 12px 0 4px; }
-  .confirm-screen .tier-badge { display: inline-block; font-family: var(--mono); font-size: 10px; padding: 4px 10px; border-radius: 4px; background: rgba(195,165,95,0.15); color: var(--gold-dark); letter-spacing: 0.06em; margin-bottom: 20px; }
-  .confirm-screen .confirm-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 20px; }
-  .launch-date-field { display: flex; align-items: center; gap: 8px; margin-top: 12px; justify-content: center; flex-wrap: wrap; }
-  .launch-date-field label { font-family: var(--mono); font-size: 10px; color: var(--mid); letter-spacing: 0.06em; }
-  .launch-date-field input { font-family: var(--mono); font-size: 11px; padding: 4px 8px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--cream); color: var(--dark); width: auto; height: 32px; }
-  @media (max-width: 768px) { .confirm-screen .big-price { font-size: 36px; } }
 </style>
 </head>
 <body>
@@ -441,45 +358,216 @@
 <header>
   <div class="container">
     <h1>Indie Game Pricing Dashboard</h1>
-    <p>Based on GameStudioUnlocked's pricing methodology</p>
-    <div class="phase-switcher" id="phase-switcher">
-      <button data-phase="1" onclick="switchPhase(1)">
-        <span class="phase-num">1</span>
-        <span class="phase-title">Set Your Price</span>
-        <span class="phase-desc">Comp Analysis, Four Variables, Price &amp; Discount, Regional &amp; DLC</span>
-      </button>
-      <button data-phase="2" onclick="switchPhase(2)">
-        <span class="phase-num">2</span>
-        <span class="phase-title">Track Launch Readiness</span>
-        <span class="phase-desc">Wishlist Estimator, Demo Performance, Early Access</span>
-      </button>
-      <button data-phase="3" onclick="switchPhase(3)" class="locked" id="phase3-btn">
-        <span class="phase-num">3</span>
-        <span class="phase-title">After You Ship</span>
-        <span class="phase-desc">Post-Launch Monitoring, Sources &amp; Summary</span>
-      </button>
+    <br>
+    <div class="nav-wrapper">
+      <select class="nav-select" onchange="switchTab(this.value)">
+        <option value="profile">00 — Game Profile</option>
+        <option value="comp">01 — Comp Analysis</option>
+        <option value="variables">02 — Four Variables</option>
+        <option value="pricing">03 — Price &amp; Discount</option>
+        <option value="wishlist">04 — Wishlist Estimator</option>
+        <option value="demo">05 — Demo Performance</option>
+        <option value="ea">06 — Early Access</option>
+        <option value="regional">07 — Regional &amp; DLC</option>
+        <option value="monitoring">08 — Post-Launch</option>
+        <option value="sources">Sources &amp; Notes</option>
+        <option value="summary">Pricing Summary</option>
+      </select>
     </div>
+    <nav id="tab-nav">
+      <button class="active" data-tab="profile">Profile</button>
+      <button data-tab="comp">Comp</button>
+      <button data-tab="variables">Variables</button>
+      <button data-tab="pricing">Pricing</button>
+      <button data-tab="wishlist">Wishlist</button>
+      <button data-tab="demo">Demo</button>
+      <button data-tab="ea">EA</button>
+      <button data-tab="regional">Regional</button>
+      <button data-tab="monitoring">Monitor</button>
+      <button data-tab="sources">Sources</button>
+      <button data-tab="summary">Summary</button>
+    </nav>
   </div>
 </header>
 
-<div class="stepper p1-only" id="stepper-desktop" aria-label="Phase 1 progress" style="display:flex">
-  <button class="stepper-step active" data-step="1" data-idx="0"><span class="dot">1</span>Comp</button>
+<div class="stepper" id="stepper-desktop" aria-label="Progress">
+  <button class="stepper-step active" data-step="0" data-tab="profile"><span class="dot">0</span>Profile</button>
   <span class="stepper-divider"></span>
-  <button class="stepper-step" data-step="2" data-idx="1"><span class="dot">2</span>Variables</button>
+  <button class="stepper-step" data-step="1" data-tab="comp"><span class="dot">1</span>Comp</button>
   <span class="stepper-divider"></span>
-  <button class="stepper-step" data-step="3" data-idx="2"><span class="dot">3</span>Pricing</button>
+  <button class="stepper-step" data-step="2" data-tab="variables"><span class="dot">2</span>Variables</button>
   <span class="stepper-divider"></span>
-  <button class="stepper-step" data-step="4" data-idx="3"><span class="dot">4</span>Regional</button>
+  <button class="stepper-step" data-step="3" data-tab="pricing"><span class="dot">3</span>Pricing</button>
+  <span class="stepper-divider"></span>
+  <button class="stepper-step" data-step="4" data-tab="wishlist"><span class="dot">4</span>Wishlist</button>
+  <span class="stepper-divider"></span>
+  <button class="stepper-step" data-step="5" data-tab="demo"><span class="dot">5</span>Demo</button>
+  <span class="stepper-divider"></span>
+  <button class="stepper-step" data-step="6" data-tab="ea"><span class="dot">6</span>EA</button>
+  <span class="stepper-divider"></span>
+  <button class="stepper-step" data-step="7" data-tab="regional"><span class="dot">7</span>Regional</button>
+  <span class="stepper-divider"></span>
+  <button class="stepper-step" data-step="8" data-tab="monitoring"><span class="dot">8</span>Monitor</button>
+  <span class="stepper-divider"></span>
+  <button class="stepper-step" data-step="9" data-tab="sources"><span class="dot">9</span>Sources</button>
 </div>
 <div class="stepper-mobile" id="stepper-mobile">
-  Phase 1 — Step <span id="stepper-current">1</span> of 4
-  <div class="progress-bar"><div class="progress-bar-fill" id="stepper-fill" style="width:25%"></div></div>
+  Step <span id="stepper-current">0</span> of 10 · Game Profile
+  <div class="progress-bar"><div class="progress-bar-fill" id="stepper-fill" style="width:12.5%"></div></div>
 </div>
 
 <main class="container">
 
+  <!-- TAB 0 — GAME PROFILE -->
+  <section class="tab active" id="tab-profile">
+    <h2>Game Profile</h2>
+    <p class="subtitle">Set up your game's core attributes. These feed into pricing calculations and conditionally show or hide downstream sections.</p>
+
+    <div class="card">
+      <h3>Game Profile</h3>
+      <div style="margin-bottom:14px">
+        <label class="stat-label">Game Name</label>
+        <input type="text" id="profile-name" placeholder="e.g. Fields of Mistria" oninput="updateGameProfile()">
+      </div>
+      <div style="margin-bottom:14px">
+        <label class="stat-label">Genre / Tags (multi-select)</label>
+        <select id="profile-genre" multiple style="height:auto;min-height:100px" onchange="updateGameProfile()">
+          <option value="action">Action</option><option value="adventure">Adventure</option><option value="rpg">RPG</option>
+          <option value="simulation">Simulation</option><option value="strategy">Strategy</option><option value="sports">Sports</option>
+          <option value="puzzle">Puzzle</option><option value="platformer">Platformer</option><option value="metroidvania">Metroidvania</option>
+          <option value="roguelike">Roguelike/Roguelite</option><option value="survival">Survival</option><option value="horror">Horror</option>
+          <option value="visual-novel">Visual Novel</option><option value="fps">FPS</option><option value="tps">TPS</option>
+          <option value="sandbox">Sandbox</option><option value="management">Management/Tycoon</option><option value="deckbuilder">Deckbuilder</option>
+          <option value="auto-battler">Auto Battler</option><option value="bullet-hell">Bullet Hell</option><option value="twin-stick">Twin-Stick</option>
+          <option value="rhythm">Rhythm</option><option value="walking-sim">Walking Sim</option><option value="cozy">Cozy</option>
+          <option value="farming">Farming</option><option value="crafting">Crafting</option><option value="building">Building</option>
+          <option value="multiplayer">Multiplayer</option><option value="coop">Co-op</option><option value="pvp">PvP</option>
+          <option value="mmo">MMO</option><option value="open-world">Open World</option>
+        </select>
+      </div>
+      <div class="grid-2">
+        <div style="margin-bottom:14px">
+          <label class="stat-label">Engine</label>
+          <select id="profile-engine" onchange="updateGameProfile()">
+            <option value="">—</option><option value="unity">Unity</option><option value="unreal">Unreal Engine</option>
+            <option value="godot">Godot</option><option value="gamemaker">GameMaker</option><option value="custom">Custom</option><option value="other">Other</option>
+          </select>
+        </div>
+        <div style="margin-bottom:14px">
+          <label class="stat-label">Target Playtime (hours)</label>
+          <input type="number" id="profile-playtime" value="" min="0.5" step="0.5" placeholder="e.g. 15" oninput="updateGameProfile()">
+        </div>
+      </div>
+      <div style="margin-bottom:14px">
+        <label class="stat-label">Platforms at Launch</label>
+        <div style="display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:4px">
+          <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="checkbox" id="profile-plat-windows" onchange="updateGameProfile()"> Windows</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="checkbox" id="profile-plat-mac" onchange="updateGameProfile()"> macOS</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="checkbox" id="profile-plat-linux" onchange="updateGameProfile()"> Linux / Steam Deck</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="checkbox" id="profile-plat-switch" onchange="updateGameProfile()"> Switch</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="checkbox" id="profile-plat-ps" onchange="updateGameProfile()"> PlayStation</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="checkbox" id="profile-plat-xbox" onchange="updateGameProfile()"> Xbox</label>
+        </div>
+      </div>
+      <div style="margin-bottom:14px">
+        <label class="stat-label">Player Mode</label>
+        <div style="display:flex;gap:20px;margin-top:4px">
+          <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="radio" name="profile-playermode" value="single" checked onchange="updateGameProfile()"> Single-player</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="radio" name="profile-playermode" value="multi" onchange="updateGameProfile()"> Multiplayer</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="radio" name="profile-playermode" value="both" onchange="updateGameProfile()"> Both</label>
+        </div>
+      </div>
+      <div style="margin-bottom:14px">
+        <label class="stat-label">Monetization Model</label>
+        <div style="display:flex;flex-wrap:wrap;gap:8px 20px;margin-top:4px">
+          <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="radio" name="profile-monetization" value="premium" checked onchange="updateGameProfile()"> Premium (paid upfront)</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="radio" name="profile-monetization" value="f2p" onchange="updateGameProfile()"> Free-to-Play</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="radio" name="profile-monetization" value="premium_dlc" onchange="updateGameProfile()"> Premium + DLC</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="radio" name="profile-monetization" value="subscription" onchange="updateGameProfile()"> Subscription</label>
+        </div>
+      </div>
+      <div style="margin-bottom:0">
+        <label class="stat-label">Price Tier Instinct (what you think it should cost)</label>
+        <input type="number" id="profile-instinct-price" value="" min="0.99" step="0.01" placeholder="e.g. 19.99" oninput="updateGameProfile()">
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Project Context</h3>
+      <div class="grid-2">
+        <div style="margin-bottom:14px">
+          <label class="stat-label">Team Size</label>
+          <input type="number" id="profile-team-size" value="" min="1" step="1" placeholder="e.g. 3" oninput="updateGameProfile()">
+        </div>
+        <div style="margin-bottom:14px">
+          <label class="stat-label">Budget Band</label>
+          <select id="profile-budget" onchange="updateGameProfile()">
+            <option value="">—</option><option value="under50k">Under $50K</option><option value="50to250k">$50K–$250K</option>
+            <option value="250to1m">$250K–$1M</option><option value="1to5m">$1M–$5M</option><option value="over5m">$5M+</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div style="margin-bottom:14px">
+          <label class="stat-label">Launch Window</label>
+          <select id="profile-launch-window" onchange="updateGameProfile()">
+            <option value="">—</option><option value="q4_2026">Q4 2026</option>
+            <option value="q1_2027">Q1 2027</option><option value="q2_2027">Q2 2027</option>
+            <option value="q3_2027">Q3 2027</option><option value="q4_2027">Q4 2027</option>
+            <option value="q1_2028">Q1 2028</option><option value="q2_2028">Q2 2028</option>
+            <option value="q3_2028">Q3 2028</option><option value="q4_2028">Q4 2028</option>
+            <option value="later">Later / TBD</option>
+          </select>
+        </div>
+        <div style="margin-bottom:14px">
+          <label class="stat-label">Publisher Status</label>
+          <select id="profile-publisher" onchange="updateGameProfile()">
+            <option value="self">Self-published</option><option value="signed">Signed</option><option value="seeking">Seeking</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Steam Readiness</h3>
+      <div style="margin-bottom:14px">
+        <label class="stat-label">Next Fest Participation Planned?</label>
+        <div style="display:flex;gap:20px;margin-top:4px">
+          <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="radio" name="profile-nextfest" value="yes" onchange="updateGameProfile()"> Yes</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="radio" name="profile-nextfest" value="unsure" checked onchange="updateGameProfile()"> Unsure</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="radio" name="profile-nextfest" value="no" onchange="updateGameProfile()"> No</label>
+        </div>
+      </div>
+      <div style="margin-bottom:14px">
+        <label class="stat-label">DLC Roadmap Planned?</label>
+        <div style="display:flex;gap:20px;margin-top:4px">
+          <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="radio" name="profile-dlc-plan" value="yes" onchange="updateGameProfile()"> Yes</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="radio" name="profile-dlc-plan" value="no" checked onchange="updateGameProfile()"> No</label>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div style="margin-bottom:14px">
+          <label class="stat-label">Workshop / Achievements Planned?</label>
+          <div style="display:flex;gap:20px;margin-top:4px">
+            <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="radio" name="profile-workshop" value="yes" onchange="updateGameProfile()"> Yes</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="radio" name="profile-workshop" value="no" checked onchange="updateGameProfile()"> No</label>
+          </div>
+        </div>
+        <div style="margin-bottom:14px">
+          <label class="stat-label">Steam Deck Verification Target?</label>
+          <div style="display:flex;gap:20px;margin-top:4px">
+            <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="radio" name="profile-deck" value="yes" onchange="updateGameProfile()"> Yes</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="radio" name="profile-deck" value="unsure" checked onchange="updateGameProfile()"> Unsure</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="radio" name="profile-deck" value="no" onchange="updateGameProfile()"> No</label>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="wizard-nav"><button class="wizard-prev" onclick="goPrev()" style="visibility:hidden">← Back</button><button class="wizard-next" onclick="goNext()">Continue →</button></div>
+    <div class="wizard-nav"><button class="wizard-prev" onclick="goPrev()">← Back</button><button class="wizard-next" onclick="goNext()">Continue →</button></div>
+  </section>
   <!-- TAB 1 — COMP ANALYSIS -->
-  <section class="tab active" id="tab-comp">
+  <section class="tab" id="tab-comp">
     <h2>Comp Analysis</h2>
     <p class="subtitle">
       Find and capture 8 to 12 games released in the last 3 years with similar genre, content length, polish level and target audience. Use SteamDB tag search and "More Like This" on Steam.
@@ -509,7 +597,7 @@
       <h3>Steam API Proxy</h3>
       <div class="proxy-config">
         <span class="output-note" style="flex-shrink:0">Proxy URL:</span>
-        <input type="text" id="steam-proxy-url" value="" placeholder="https://your-worker.workers.dev/?appid=" style="flex:1">
+        <input type="text" id="steam-proxy-url" value="" placeholder="Default proxy pre-configured" style="flex:1">
         <button class="btn" onclick="saveProxyUrl()" style="white-space:nowrap">Save</button>
         <span class="muted" style="font-size:11px">Deploy <code style="font-family:var(--mono);font-size:10px">steam-proxy.js</code> as a Cloudflare Worker.</span>
       </div>
@@ -539,8 +627,8 @@
         <button class="btn" id="export-csv">Download CSV</button>
       </div>
     </div>
+    <div class="wizard-nav"><button class="wizard-prev" onclick="goPrev()">← Back</button><button class="wizard-next" onclick="goNext()">Continue →</button></div>
   </section>
-
   <!-- TAB 2 — FOUR VARIABLES -->
   <section class="tab" id="tab-variables">
     <h2>Four Pricing Variables</h2>
@@ -584,7 +672,7 @@
         <div class="card" style="overflow-x:auto">
           <h3>Score-to-Tier Mapping</h3>
           <table>
-            <thead><tr><th>Score Range</th><th>Price Tier (USD)</th><th>Context</th></tr></thead>
+            <thead><tr><th>Score Range</th><th>Price Tier (USD)</th><th></th></tr></thead>
             <tbody id="tier-body"></tbody>
           </table>
         </div>
@@ -608,8 +696,8 @@
         <tbody id="content-band-body"></tbody>
       </table>
     </div>
+    <div class="wizard-nav"><button class="wizard-prev" onclick="goPrev()">← Back</button><button class="wizard-next" onclick="goNext()">Continue →</button></div>
   </section>
-
   <!-- TAB 3 — PRICE & DISCOUNT -->
   <section class="tab" id="tab-pricing">
     <h2>Price Setting &amp; Discount Buffer</h2>
@@ -670,45 +758,8 @@
         <tbody id="staircase-body"></tbody>
       </table>
     </div>
+    <div class="wizard-nav"><button class="wizard-prev" onclick="goPrev()">← Back</button><button class="wizard-next" onclick="goNext()">Continue →</button></div>
   </section>
-
-  <!-- PHASE 1 CONFIRMATION SCREEN -->
-  <div class="confirm-screen" id="phase1-confirm">
-    <h2>Your Price Is Set</h2>
-    <p class="subtitle" style="margin-left:auto;margin-right:auto">Final locked-in launch price based on your comps, four variables, discount buffer, and regional adjustments.</p>
-    <div class="big-price" id="confirm-price">—</div>
-    <div class="tier-badge" id="confirm-tier">—</div>
-    <div class="card" style="text-align:left;max-width:420px;margin:0 auto">
-      <div class="output-row"><span class="output-label">Recommended Tier</span><span class="output-value" id="confirm-tier-val">—</span></div>
-      <div class="output-row"><span class="output-label">Launch Price</span><span class="output-value" id="confirm-lp">—</span></div>
-      <div class="output-row"><span class="output-label">Target Sale Price</span><span class="output-value" id="confirm-sp">—</span></div>
-      <div class="output-row"><span class="output-label">Discount Buffer</span><span class="output-value" id="confirm-db">—</span></div>
-      <div class="output-row"><span class="output-label">Est. MENA Price</span><span class="output-value" id="confirm-mena">—</span></div>
-    </div>
-    <div class="launch-date-field">
-      <label for="launch-date-input">Launch Date (optional):</label>
-      <input type="date" id="launch-date-input" onchange="checkLaunchDate()">
-      <span class="muted" style="font-size:11px">Auto-unlocks Phase 3 when date passes</span>
-    </div>
-    <div class="confirm-actions">
-      <button class="btn-ghost" onclick="switchPhaseStep(3)">← Edit Pricing</button>
-      <button class="btn-green" onclick="switchPhase(2)">Track Launch Readiness →</button>
-    </div>
-  </div>
-
-  <!-- PHASE 2 — TRACK LAUNCH READINESS -->
-  <div id="phase2-wrapper" style="display:none">
-  <h2 style="margin-bottom:8px">Track Launch Readiness</h2>
-  <p class="subtitle">These three signals shift as your wishlist grows, your Discord community builds, and demo results come in. Revisit them any time — there's no fixed order.</p>
-  <div class="phase2-grid">
-
-  <details class="phase2-card" id="p2-wishlist" open>
-    <summary>
-      Wishlist Estimator
-      <span class="card-status neutral" id="wishlist-status">No data</span>
-    </summary>
-    <div class="card-body">
-
   <!-- TAB 4 — WISHLIST -->
   <section class="tab" id="tab-wishlist">
     <h2>Wishlist Conversion Estimator</h2>
@@ -738,8 +789,8 @@
           <p class="muted" style="margin-top:8px">Conversion drops ~30% if launch price is above $10.</p>
         </div>
 
-        <details class="summary-bar" style="margin-top:12px">
-          <summary>Community Signals (optional)</summary>
+        <details class="summary-bar" style="margin-top:12px;border-left:3px solid var(--gold);background:rgba(195,165,95,0.06)">
+          <summary style="color:var(--dark);font-weight:600;font-size:11px">Community Signals (optional) — click to expand</summary>
           <p class="muted" style="margin-bottom:12px;font-size:12px">Why this matters: GameDiscoverCo research shows wishlist count alone predicts launch success only ~17% of the time for games under 10,000 wishlists — community engagement and wishlist source quality are stronger secondary signals. Use these optional fields to sanity-check whether your wishlist count reflects real purchase intent.</p>
           <div style="margin-bottom:12px">
             <label class="stat-label">Discord Member Count</label>
@@ -774,18 +825,8 @@
         <div id="wishlist-outputs"></div>
       </div>
     </div>
+    <div class="wizard-nav"><button class="wizard-prev" onclick="goPrev()">← Back</button><button class="wizard-next" onclick="goNext()">Continue →</button></div>
   </section>
-
-    </div>
-  </details>
-
-  <details class="phase2-card" id="p2-demo">
-    <summary>
-      Demo Performance
-      <span class="card-status neutral" id="demo-status">No data</span>
-    </summary>
-    <div class="card-body">
-
   <!-- TAB 5 — DEMO PERFORMANCE -->
   <section class="tab" id="tab-demo">
     <h2>Demo Performance</h2>
@@ -886,18 +927,8 @@
         </tbody>
       </table>
     </div>
+    <div class="wizard-nav"><button class="wizard-prev" onclick="goPrev()">← Back</button><button class="wizard-next" onclick="goNext()">Continue →</button></div>
   </section>
-
-    </div>
-  </details>
-
-  <details class="phase2-card" id="p2-ea">
-    <summary>
-      Early Access Pricing
-      <span class="card-status neutral" id="ea-status">—</span>
-    </summary>
-    <div class="card-body">
-
   <!-- TAB 6 — EARLY ACCESS -->
   <section class="tab" id="tab-ea">
     <h2>Early Access Pricing Decisions</h2>
@@ -927,13 +958,8 @@
       </div>
       <div id="ea-calc-outputs"></div>
     </div>
+    <div class="wizard-nav"><button class="wizard-prev" onclick="goPrev()">← Back</button><button class="wizard-next" onclick="goNext()">Continue →</button></div>
   </section>
-
-    </div>
-  </details>
-  </div><!-- .phase2-grid -->
-  </div><!-- #phase2-wrapper -->
-
   <!-- TAB 7 — REGIONAL + DLC -->
   <section class="tab" id="tab-regional">
     <h2>Regional Pricing &amp; DLC Guide</h2>
@@ -993,17 +1019,8 @@
         Valve now offers three regional price conversion methods in Steamworks: (1) exchange rate, (2) purchasing power parity, (3) combined/blended. For indie studios, the "combined" option is the safe default. Pricing method choice does not affect store visibility systems.
       </p>
     </div>
+    <div class="wizard-nav"><button class="wizard-prev" onclick="goPrev()">← Back</button><button class="wizard-next" onclick="goNext()">Continue →</button></div>
   </section>
-
-  <!-- PHASE 3 — AFTER YOU SHIP -->
-  <div id="phase3-wrapper" style="display:none" class="phase3-locked">
-  <div class="lock-overlay" id="phase3-overlay">
-    <div class="lock-icon">🔒</div>
-    <div class="lock-text">After You Ship</div>
-    <div class="lock-sub">Post-Launch Monitoring &amp; Sources — unlocks after your game launches.</div>
-    <button class="lock-btn" id="phase3-unlock-btn" onclick="unlockPhase3()">I've already launched — show me anyway</button>
-  </div>
-
   <!-- TAB 8 — POST-LAUNCH -->
   <section class="tab" id="tab-monitoring">
     <h2>Post-Launch Monitoring Checklist</h2>
@@ -1062,8 +1079,8 @@
         <p>Most indie titles see 10—20% of year-1 revenue in year 2, primarily from deep discounts and bundles.</p>
       </div>
     </div>
+    <div class="wizard-nav"><button class="wizard-prev" onclick="goPrev()">← Back</button><button class="wizard-next" onclick="goNext()">Continue →</button></div>
   </section>
-
   <!-- TAB 9 — SOURCES -->
   <section class="tab" id="tab-sources">
     <h2>Sources &amp; Methodology Notes</h2>
@@ -1073,13 +1090,25 @@
 
   <section class="tab" id="tab-summary">
     <h2>Pricing Summary</h2>
-    <p class="subtitle">Your complete pricing decision recap. All data derived from your inputs across Steps 1–7.</p>
+    <p class="subtitle">Your complete pricing decision recap. All data derived from your inputs across Steps 0–8.</p>
+    <div style="display:flex;gap:10px;margin-bottom:16px">
+      <button class="btn" onclick="try{buildSummary();}catch(e){};setTimeout(function(){window.print()},400)" id="pdf-btn">Download PDF</button>
+    </div>
     <div id="summary-content"></div>
   </section>
-
-  </div><!-- #phase3-wrapper -->
-
 </main>
+
+<style>
+  @media print {
+    header, .stepper, .stepper-mobile, .wizard-nav, .summary-bar, #pdf-btn, nav, .nav-wrapper, .nav-select, footer { display: none !important; }
+    body { background: #fff; color: #000; font-size: 12px; }
+    .card { border: 1px solid #ccc; box-shadow: none; break-inside: avoid; }
+    .tab { display: block !important; }
+    .tab:not(#tab-summary) { display: none !important; }
+    .container { max-width: 100%; padding: 0; }
+    main { padding: 20px 0; }
+  }
+</style>
 
 <footer>
   <div class="container">
@@ -1155,7 +1184,7 @@ function updateAllLinked() { validatePricingInputs(); }
 // === COMP ANALYSIS ===
 var compTbody = document.getElementById('comp-tbody');
 var compRowCount = 0;
-var steamProxyUrl = localStorage.getItem('steamProxyUrl') || '';
+var steamProxyUrl = localStorage.getItem('steamProxyUrl') || 'https://httpsllamagriffincomsebsteam-proxyjs.abbas-saleem-khan-work.workers.dev/';
 
 function saveProxyUrl() {
   steamProxyUrl = document.getElementById('steam-proxy-url').value.trim();
@@ -1306,6 +1335,11 @@ document.getElementById('fetch-all-rows').addEventListener('click', async functi
     if (appId) await fetchSteamData(appId, rows[i]);
   }
 });
+
+// Delegated listener: ensure updateCompStats fires on every launch price change
+compTbody.addEventListener('input', function(e) {
+  if (e.target && e.target.classList.contains('comp-launch')) updateCompStats();
+});
 function getCompData() {
   var rows = [];
   document.querySelectorAll('#comp-tbody tr').forEach(function(tr){
@@ -1349,13 +1383,20 @@ document.getElementById('export-csv').addEventListener('click', function(){
 });
 function updateCompStats() {
   var prices = [];
-  document.querySelectorAll('#comp-tbody tr').forEach(function(tr){
-    var launchInp = tr.querySelector('.comp-launch');
-    var currentInp = tr.querySelector('.comp-current');
-    var raw = String((launchInp && launchInp.value) ? launchInp.value : (currentInp ? currentInp.value : ''));
+  document.querySelectorAll('.comp-launch').forEach(function(inp){
+    var raw = String(inp.value || '');
     var v = parseFloat(raw.replace(/[^0-9.]/g, ''));
     if (!isNaN(v) && v > 0) prices.push(v);
   });
+  // Fallback: if no launch prices exist, use current prices (from Steam API fetches)
+  var useFallback = prices.length === 0;
+  if (useFallback) {
+    document.querySelectorAll('.comp-current').forEach(function(inp){
+      var raw = String(inp.value || '');
+      var v = parseFloat(raw.replace(/[^0-9.]/g, ''));
+      if (!isNaN(v) && v > 0) prices.push(v);
+    });
+  }
   var els = {
     median: document.getElementById('stat-median'),
     avg: document.getElementById('stat-avg'),
@@ -1373,10 +1414,11 @@ function updateCompStats() {
   prices.sort(function(a,b){return a-b;});
   var median = prices.length % 2 === 0 ? (prices[prices.length/2-1] + prices[prices.length/2]) / 2 : prices[Math.floor(prices.length/2)];
   var avg = prices.reduce(function(s,v){return s+v;}, 0) / prices.length;
-  els.median.textContent = '$' + median.toFixed(2);
-  els.avg.textContent = '$' + avg.toFixed(2);
-  els.min.textContent = '$' + Math.min.apply(null, prices).toFixed(2);
-  els.max.textContent = '$' + Math.max.apply(null, prices).toFixed(2);
+  var sourceLabel = useFallback ? ' (current)' : '';
+  els.median.textContent = '$' + median.toFixed(2) + sourceLabel;
+  els.avg.textContent = '$' + avg.toFixed(2) + sourceLabel;
+  els.min.textContent = '$' + Math.min.apply(null, prices).toFixed(2) + sourceLabel;
+  els.max.textContent = '$' + Math.max.apply(null, prices).toFixed(2) + sourceLabel;
 }
 for (var i = 0; i < 3; i++) addCompRow();
 
@@ -1392,7 +1434,21 @@ var tierBody = document.getElementById('tier-body');
 tierData.forEach(function(t){
   var tr = document.createElement('tr');
   tr.className = 'tier-row';
-  tr.innerHTML = '<td>' + t.range + '</td><td>' + t.price + '</td><td>' + t.context + '</td>';
+  tr.style.cursor = 'pointer';
+  tr.innerHTML = '<td>' + t.range + '</td><td>' + t.price + '</td><td style="font-family:var(--mono);font-size:10px;color:var(--faint)">+</td>';
+  tr.addEventListener('click', function(){
+    var next = tr.nextElementSibling;
+    if (next && next.classList.contains('tier-context')) {
+      next.remove();
+      tr.querySelector('td:last-child').textContent = '+';
+    } else {
+      var ctx = document.createElement('tr');
+      ctx.className = 'tier-context';
+      ctx.innerHTML = '<td colspan="3" style="font-family:var(--sans);font-size:12px;color:var(--mid);padding:6px 12px 10px 12px;background:rgba(195,165,95,0.04);border-bottom:1px solid var(--border)">' + t.context + '</td>';
+      tr.parentNode.insertBefore(ctx, tr.nextSibling);
+      tr.querySelector('td:last-child').textContent = '\u2212';
+    }
+  });
   tierBody.appendChild(tr);
 });
 function getTier(score) {
@@ -1767,245 +1823,148 @@ updateDlcTable();
 updateEaCalc();
 updateWishlist();
 
-// === PHASE SYSTEM ===
-var currentPhase = 1;
-var currentPhaseStep = 0;
-var phase1Steps = ['comp','variables','pricing','regional'];
-var phase1Labels = {'comp':'Comp Analysis','variables':'Four Variables','pricing':'Price & Discount','regional':'Regional & DLC'};
-var phase3Unlocked = false;
-var launchDate = localStorage.getItem('launchDate') || '';
+// === GAME PROFILE STATE ===
+window.gameProfile = {};
+function updateGameProfile() {
+  var p = {};
+  p.name = document.getElementById('profile-name').value.trim();
+  p.genre = [];
+  var genreSel = document.getElementById('profile-genre');
+  for (var i = 0; i < genreSel.options.length; i++) { if (genreSel.options[i].selected) p.genre.push(genreSel.options[i].value); }
+  p.engine = document.getElementById('profile-engine').value;
+  p.playtime = parseFloat(document.getElementById('profile-playtime').value) || 0;
+  p.platforms = [];
+  ['windows','mac','linux','switch','ps','xbox'].forEach(function(pf){
+    var cb = document.getElementById('profile-plat-' + pf); if (cb && cb.checked) p.platforms.push(pf);
+  });
+  var pm = document.querySelector('input[name="profile-playermode"]:checked');
+  p.playermode = pm ? pm.value : 'single';
+  var mon = document.querySelector('input[name="profile-monetization"]:checked');
+  p.monetization = mon ? mon.value : 'premium';
+  p.instinctPrice = parseFloat(document.getElementById('profile-instinct-price').value) || 0;
+  p.teamSize = parseInt(document.getElementById('profile-team-size').value) || 0;
+  p.budget = document.getElementById('profile-budget').value;
+  p.launchWindow = document.getElementById('profile-launch-window').value;
+  p.publisher = document.getElementById('profile-publisher').value;
+  var nf = document.querySelector('input[name="profile-nextfest"]:checked');
+  p.nextfest = nf ? nf.value : 'unsure';
+  var dlc = document.querySelector('input[name="profile-dlc-plan"]:checked');
+  p.dlcPlan = dlc ? dlc.value : 'no';
+  var ws = document.querySelector('input[name="profile-workshop"]:checked');
+  p.workshop = ws ? ws.value : 'no';
+  var dk = document.querySelector('input[name="profile-deck"]:checked');
+  p.deck = dk ? dk.value : 'unsure';
+  window.gameProfile = p;
 
-if (launchDate) {
-  var ldEl = document.getElementById('launch-date-input');
-  if (ldEl) ldEl.value = launchDate;
-  checkLaunchDate();
-}
-if (localStorage.getItem('phase3Unlocked') === 'true') {
-  unlockPhase3(true);
+  // Sync playtime to content-hours in Step 2
+  if (p.playtime > 0) document.getElementById('content-hours-input').value = p.playtime;
+
+  // Visibility gating
+  var showDlc = (p.monetization === 'premium_dlc' || p.monetization === 'subscription') && p.dlcPlan !== 'no';
+  var dlcSection = document.querySelector('#tab-regional .card:nth-of-type(2)');
+  if (dlcSection) dlcSection.style.display = showDlc ? '' : 'none';
+  var dlcH3 = document.querySelector('#tab-regional h3:nth-of-type(2)');
+  var dlcSubtitle = document.querySelectorAll('#tab-regional .subtitle')[1]; if (dlcSubtitle) dlcSubtitle.style.display = showDlc ? '' : 'none';
+  if (dlcH3) dlcH3.style.display = showDlc ? '' : 'none';
+
+  // Hide EA section if monetization doesn't support it
+  var showEa = p.monetization === 'premium' || p.monetization === 'premium_dlc';
+  var eaTabNav = document.querySelector('nav button[data-tab="ea"]');
+  if (eaTabNav) eaTabNav.style.display = showEa ? '' : 'none';
 }
 
-function checkLaunchDate() {
-  var val = document.getElementById('launch-date-input').value;
-  localStorage.setItem('launchDate', val);
-  launchDate = val;
-  if (val) {
-    var d = new Date(val + 'T00:00:00');
-    var now = new Date(); now.setHours(0,0,0,0);
-    if (d <= now) unlockPhase3(true);
+var stepOrder = ['profile','comp','variables','pricing','wishlist','demo','ea','regional','monitoring','sources'];
+var stepLabels = {'profile':'Game Profile','comp':'Comp Analysis','variables':'Four Variables','pricing':'Price & Discount','wishlist':'Wishlist','demo':'Demo Performance','ea':'Early Access','regional':'Regional & DLC','monitoring':'Post-Launch','sources':'Sources'};
+var visitedSteps = {};
+var completedSteps = {};
+
+function getCurrentStepIndex() {
+  for (var i = 0; i < stepOrder.length; i++) {
+    if (document.getElementById('tab-' + stepOrder[i]).classList.contains('active')) return i;
+  }
+  return 0;
+}
+function switchStep(idx) {
+  if (idx >= 0 && idx < stepOrder.length) {
+    switchTab(stepOrder[idx]);
+    visitedSteps[stepOrder[idx]] = true;
+    updateStepper();
+    updateWizardButtons();
+    populateSummaryBar();
+    if (stepOrder[idx] === 'sources') document.getElementById('tab-summary').classList.add('active');
   }
 }
-
-function unlockPhase3(silent) {
-  phase3Unlocked = true;
-  localStorage.setItem('phase3Unlocked', 'true');
-  var wrapper = document.getElementById('phase3-wrapper');
-  if (wrapper) wrapper.classList.add('phase3-unlocked');
-  var btn = document.getElementById('phase3-btn');
-  if (btn) btn.classList.remove('locked');
-  var overlay = document.getElementById('phase3-overlay');
-  if (overlay) overlay.style.display = 'none';
-}
-
-function switchPhase(phaseNum) {
-  if (phaseNum === 3 && !phase3Unlocked) return;
-  currentPhase = phaseNum;
-  if (phaseNum === 1) {
-    switchPhaseStep(currentPhaseStep);
-  } else {
-    showPhase(phaseNum);
-  }
-}
-
-function switchPhaseStep(idx) {
-  currentPhase = 1;
-  currentPhaseStep = Math.max(0, Math.min(idx, phase1Steps.length - 1));
-  showPhaseStep(currentPhaseStep);
-}
-
-function goNext() {
-  if (currentPhase !== 1) return;
-  if (currentPhaseStep >= phase1Steps.length - 1) {
-    showPhase1Confirm();
-  } else {
-    switchPhaseStep(currentPhaseStep + 1);
-  }
+function goNext() { var cur = getCurrentStepIndex(); if (cur >= 9) showSummary(); else switchStep(cur + 1); window.scrollTo(0,0); }
+function goPrev() { var cur = getCurrentStepIndex(); switchStep(Math.max(0, cur - 1)); window.scrollTo(0,0); }
+function showSummary() {
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
+  document.getElementById('tab-summary').classList.add('active');
+  visitedSteps.sources = true;
+  updateStepper();
+  updateWizardButtons();
+  buildSummary();
   window.scrollTo(0,0);
 }
 
-function goPrev() {
-  if (currentPhase !== 1) return;
-  switchPhaseStep(Math.max(0, currentPhaseStep - 1));
-  window.scrollTo(0,0);
-}
-
-function showPhaseStep(idx) {
-  currentPhaseStep = idx;
-  showPhase(1);
-}
-
-function showPhase(phaseNum) {
-  document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
-  document.getElementById('phase2-wrapper').style.display = 'none';
-  document.getElementById('phase3-wrapper').style.display = 'none';
-  document.getElementById('phase1-confirm').classList.remove('show');
-  var stepper = document.getElementById('stepper-desktop');
-  var stepperMobile = document.getElementById('stepper-mobile');
-
-  if (phaseNum === 1) {
-    var tabId = 'tab-' + phase1Steps[currentPhaseStep];
-    var tabEl = document.getElementById(tabId);
-    if (tabEl) tabEl.classList.add('active');
-    if (stepper) stepper.style.display = 'flex';
-    if (stepperMobile) stepperMobile.style.display = 'block';
-    updatePhase1Stepper();
-  } else if (phaseNum === 2) {
-    document.getElementById('phase2-wrapper').style.display = 'block';
-    if (stepper) stepper.style.display = 'none';
-    if (stepperMobile) stepperMobile.style.display = 'none';
-    updatePhase2Statuses();
-    updateWishlist();
-    updateDemoStats();
-    updateEaCalc();
-  } else if (phaseNum === 3) {
-    document.getElementById('phase3-wrapper').style.display = 'block';
-    if (stepper) stepper.style.display = 'none';
-    if (stepperMobile) stepperMobile.style.display = 'none';
-  }
-
-  updatePhaseSwitcher();
-  updateWizardButtons();
-  if (phaseNum === 1) populateSummaryBar();
-}
-
-function showPhase1Confirm() {
-  document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
-  document.getElementById('phase2-wrapper').style.display = 'none';
-  document.getElementById('phase3-wrapper').style.display = 'none';
-  document.getElementById('stepper-desktop').style.display = 'flex';
-  document.getElementById('stepper-mobile').style.display = 'block';
-
-  var lp = getValidatedLaunchPrice();
-  var target = parseFloat(document.getElementById('target-sale-price').value) || 0;
-  var discPct = parseFloat(document.getElementById('discount-depth').value) || 0;
-  var tierText = document.getElementById('tier-result').textContent.replace('Recommended: ','');
-  var menaMethod = document.getElementById('mena-method');
-  var menaMult = menaMethod ? menaMultipliers[menaMethod.value] : 0.47;
-  var menaPrice = lp * menaMult;
-
-  document.getElementById('confirm-price').textContent = lp > 0 ? '$' + lp.toFixed(2) : '\u2014';
-  document.getElementById('confirm-tier').textContent = tierText || '\u2014';
-  document.getElementById('confirm-tier-val').textContent = tierText || '\u2014';
-  document.getElementById('confirm-lp').textContent = lp > 0 ? '$' + lp.toFixed(2) : '\u2014';
-  document.getElementById('confirm-sp').textContent = target > 0 ? '$' + target.toFixed(2) : '\u2014';
-  document.getElementById('confirm-db').textContent = discPct > 0 ? discPct + '%' : '\u2014';
-  document.getElementById('confirm-mena').textContent = lp > 0 ? '$' + menaPrice.toFixed(2) : '\u2014';
-
-  document.getElementById('phase1-confirm').classList.add('show');
-  currentPhaseStep = 4;
-  updatePhase1Stepper();
-  updatePhaseSwitcher();
-  updateWizardButtons();
-}
-
-function updatePhase1Stepper() {
-  var dots = document.querySelectorAll('#stepper-desktop .stepper-step');
-  var maxStep = currentPhaseStep >= phase1Steps.length ? phase1Steps.length : currentPhaseStep;
+function updateStepper() {
+  var cur = getCurrentStepIndex();
+  var dots = document.querySelectorAll('.stepper-step');
   for (var i = 0; i < dots.length; i++) {
     dots[i].classList.remove('active','done');
-    if (i < maxStep) dots[i].classList.add('done');
-    else if (i === maxStep && maxStep < phase1Steps.length) dots[i].classList.add('active');
+    if (i < cur) dots[i].classList.add('done');
+    else if (i === cur) dots[i].classList.add('active');
     var dotSpan = dots[i].querySelector('.dot');
-    if (i < maxStep) dotSpan.innerHTML = '&#10003;';
+    if (completedSteps[stepOrder[i]]) dotSpan.innerHTML = '&#10003;';
     else dotSpan.textContent = (i + 1);
   }
-  var curNum = currentPhaseStep >= phase1Steps.length ? 4 : currentPhaseStep + 1;
-  document.getElementById('stepper-current').textContent = curNum;
-  document.getElementById('stepper-fill').style.width = ((currentPhaseStep + 1) / 4 * 100) + '%';
-}
-
-function updatePhaseSwitcher() {
-  var btns = document.querySelectorAll('#phase-switcher button');
-  btns.forEach(function(b){
-    b.classList.remove('active','done');
-    var p = parseInt(b.dataset.phase);
-    if (p === currentPhase) b.classList.add('active');
-    if (p === 1 && currentPhaseStep >= phase1Steps.length) b.classList.add('done');
-    if (p === 3 && !phase3Unlocked) b.classList.add('locked');
-  });
+  document.getElementById('stepper-current').textContent = cur + 1;
+  document.getElementById('stepper-fill').style.width = ((cur + 1) / 10 * 100) + '%';
 }
 
 function updateWizardButtons() {
+  var cur = getCurrentStepIndex();
   var allWizard = document.querySelectorAll('.wizard-nav');
   allWizard.forEach(function(wn){ wn.style.display = 'flex'; });
   var prevBtns = document.querySelectorAll('.wizard-prev');
+  prevBtns.forEach(function(b){ b.style.visibility = (cur > 0 && cur < 10) ? 'visible' : 'hidden'; });
   var nextBtns = document.querySelectorAll('.wizard-next');
-  var isConfirm = document.getElementById('phase1-confirm').classList.contains('show');
-
-  if (currentPhase !== 1) {
-    allWizard.forEach(function(wn){ wn.style.display = 'none'; });
-    return;
-  }
-  if (isConfirm) {
-    prevBtns.forEach(function(b){ b.style.visibility = 'hidden'; });
-    nextBtns.forEach(function(b){ b.style.display = 'none'; });
-    return;
-  }
-  var atStart = currentPhaseStep === 0;
-  var atEnd = currentPhaseStep === phase1Steps.length - 1;
-
-  prevBtns.forEach(function(b){ b.style.visibility = atStart ? 'hidden' : 'visible'; });
-  nextBtns.forEach(function(b){
-    b.style.display = 'inline-flex';
-    b.textContent = atEnd ? 'Set My Price \u2192' : 'Continue \u2192';
-  });
+  var nextLabel = cur >= 9 ? 'View Summary →' : 'Continue →';
+  nextBtns.forEach(function(b){ b.textContent = nextLabel; });
 }
 
-function updatePhase2Statuses() {
-  var wc = parseInt(document.getElementById('wishlist-count').value) || 0;
-  var ws = document.getElementById('wishlist-status');
-  if (wc > 0) {
-    var rate = getWishlistConversion(wc, 0);
-    var sales = Math.round(wc * rate);
-    ws.textContent = wc.toLocaleString() + ' wishlists \u00b7 ~' + sales + ' est. sales';
-    ws.className = 'card-status active';
-  } else { ws.textContent = 'No data'; ws.className = 'card-status neutral'; }
-
-  var ds = document.getElementById('demo-status');
-  var visitors = parseInt(document.getElementById('demo-visitors').value) || 0;
-  var downloads = parseInt(document.getElementById('demo-downloads').value) || 0;
-  if (visitors > 0 || downloads > 0) {
-    var demoRes = getDemoHealthScore();
-    ds.textContent = 'Health Score: ' + demoRes.score + '/100 \u00b7 ' + demoRes.label;
-    ds.className = demoRes.score >= 60 ? 'card-status active' : 'card-status warning';
-  } else { ds.textContent = 'No data'; ds.className = 'card-status neutral'; }
-
-  var es = document.getElementById('ea-status');
-  var lp = getValidatedLaunchPrice();
-  var eaDiscPct = parseInt(document.getElementById('ea-discount-input').value) || 20;
-  var eaPrice = lp > 0 ? lp * (1 - eaDiscPct / 100) : 0;
-  if (lp > 0) {
-    es.textContent = '$' + eaPrice.toFixed(2) + ' (' + eaDiscPct + '% off 1.0)';
-    es.className = 'card-status active';
-  } else { es.textContent = '\u2014'; es.className = 'card-status neutral'; }
+function checkCompletion() {
+  var prices = []; document.querySelectorAll('.comp-launch').forEach(function(i){ var v = parseFloat(i.value); if (!isNaN(v) && v > 0) prices.push(v); });
+  completedSteps.comp = prices.length >= 2;
+  completedSteps.variables = true;
+  completedSteps.pricing = !!(parseFloat(document.getElementById('target-sale-price').value) && parseFloat(document.getElementById('discount-depth').value));
+  completedSteps.wishlist = !!(parseInt(document.getElementById('wishlist-count').value) > 0);
+  completedSteps.ea = !!visitedSteps.ea;
+  completedSteps.regional = !!visitedSteps.regional;
+  completedSteps.monitoring = !!visitedSteps.monitoring;
+  completedSteps.sources = !!visitedSteps.sources;
+  updateStepper();
 }
 
 function populateSummaryBar() {
-  if (currentPhase !== 1) return;
   var lp = getValidatedLaunchPrice();
   var devShare = getDevShare();
   var tierText = document.getElementById('tier-result').textContent.replace('Recommended: ','');
-  var tab = phase1Steps[currentPhaseStep];
+  var cur = getCurrentStepIndex();
+  var tab = stepOrder[cur];
   var chips = [];
-  if (currentPhaseStep >= 1) chips.push('Comps: ' + document.querySelectorAll('.comp-launch').length + ' games analyzed');
-  if (currentPhaseStep >= 2 && tierText) chips.push('Step 2 tier: ' + tierText);
-  if (currentPhaseStep >= 3 && lp > 0) chips.push('Launch price: $' + lp.toFixed(2) + ' (' + (devShare*100).toFixed(0) + '% to dev)');
+  if (cur >= 1 && completedSteps.comp) chips.push('Comps: ' + document.querySelectorAll('.comp-launch').length + ' games analyzed');
+  if (cur >= 2 && tierText) chips.push('Step 2 tier: ' + tierText);
+  if (cur >= 3 && lp > 0) chips.push('Launch price: $' + lp.toFixed(2) + ' (' + (devShare*100).toFixed(0) + '% to dev)');
+  if (cur >= 4 && parseInt(document.getElementById('wishlist-count').value) > 0) chips.push('Wishlist: ' + parseInt(document.getElementById('wishlist-count').value).toLocaleString());
   if (chips.length === 0) chips.push('No prior data yet');
   var sb = document.querySelector('#tab-' + tab + ' .summary-bar .summary-chips');
   if (!sb) return;
   sb.innerHTML = chips.map(function(c){ return '<span class="summary-chip">' + c + '</span>'; }).join('');
 }
+}
 
 function buildSummary() {
+  try {
   var lp = getValidatedLaunchPrice();
   var devShare = getDevShare();
   var tierText = document.getElementById('tier-result').textContent.replace('Recommended: ','');
@@ -2021,71 +1980,101 @@ function buildSummary() {
   var menaMethod = document.getElementById('mena-method');
   var menaMult = menaMethod ? menaMultipliers[menaMethod.value] : 0.47;
   var menaPrice = lp * menaMult;
-  var demoRes = getDemoHealthScore();
+  var demoResult = getDemoHealthScore();
 
   document.getElementById('summary-content').innerHTML =
-    '<div class="card"><h3>Recommended Tier</h3><div style="font-family:var(--serif);font-size:28px;font-weight:700">' + (tierText || '\u2014') + '</div><p class="muted">From Step 2: Four Variables weighted scoring.</p></div>' +
+    '<div class="card"><h3>Recommended Tier</h3><div style="font-family:var(--serif);font-size:28px;font-weight:700">' + (tierText || '—') + '</div>' +
+    (gp.instinctPrice > 0 && tierText ? '<p class="muted">Your instinct: $' + gp.instinctPrice.toFixed(2) + ' vs. Calculated: ' + tierText + '</p>' : '') +
+    '<p class="muted">From Step 2: Four Variables weighted scoring.</p></div>' +
+    (gp.name ? ('<div class="card"><h3>Game Profile</h3>' +
+    '<div class="output-row"><span class="output-label">Game</span><span class="output-value">' + escapeHtml(gp.name) + '</span></div>' +
+    '<div class="output-row"><span class="output-label">Genre</span><span class="output-value">' + (gp.genre && gp.genre.length>0 ? gp.genre.join(', ') : '—') + '</span></div>' +
+    '<div class="output-row"><span class="output-label">Engine</span><span class="output-value">' + (gp.engine || '—') + '</span></div>' +
+    '<div class="output-row"><span class="output-label">Monetization</span><span class="output-value">' + (gp.monetization ? gp.monetization.replace(/_/g,' ') : '—') + '</span></div>' +
+    '<div class="output-row"><span class="output-label">Platforms</span><span class="output-value">' + (gp.platforms && gp.platforms.length>0 ? gp.platforms.join(', ') : '—') + '</span></div></div>') : '') +
+    (gp.teamSize > 0 || gp.budget || gp.launchWindow ? ('<div class="card"><h3>Project Context</h3>' +
+    (gp.teamSize > 0 ? '<div class="output-row"><span class="output-label">Team Size</span><span class="output-value">' + gp.teamSize + '</span></div>' : '') +
+    (gp.budget ? '<div class="output-row"><span class="output-label">Budget</span><span class="output-value">' + gp.budget + '</span></div>' : '') +
+    (gp.launchWindow ? '<div class="output-row"><span class="output-label">Launch Window</span><span class="output-value">' + gp.launchWindow + '</span></div>' : '') +
+    '<div class="output-row"><span class="output-label">Publisher</span><span class="output-value">' + (gp.publisher || 'self') + '</span></div></div>') : '') +
     '<div class="card"><h3>Launch Price & Revenue</h3>' +
-    '<div class="output-row"><span class="output-label">Required Launch Price</span><span class="output-value">' + (lp > 0 ? '$' + lp.toFixed(2) : '\u2014') + '</span></div>' +
-    '<div class="output-row"><span class="output-label">Actual Discount at Target Sale</span><span class="output-value">' + (lp > 0 ? (discountFactor * 100).toFixed(1) + '%' : '\u2014') + '</span></div>' +
-    '<div class="output-row"><span class="output-label">Net Revenue per Unit (Full)</span><span class="output-value">' + (lp > 0 ? '$' + netFull.toFixed(2) : '\u2014') + '</span></div>' +
+    '<div class="output-row"><span class="output-label">Required Launch Price</span><span class="output-value">' + (lp > 0 ? '$' + lp.toFixed(2) : '—') + '</span></div>' +
+    '<div class="output-row"><span class="output-label">Actual Discount at Target Sale</span><span class="output-value">' + (lp > 0 ? (discountFactor * 100).toFixed(1) + '%' : '—') + '</span></div>' +
+    '<div class="output-row"><span class="output-label">Net Revenue per Unit (Full)</span><span class="output-value">' + (lp > 0 ? '$' + netFull.toFixed(2) : '—') + '</span></div>' +
     '<div class="output-row"><span class="output-label">Steam Share Tier</span><span class="output-value">' + (devShare*100).toFixed(0) + '% to dev</span></div>' +
     '<div class="output-row"><span class="output-label">Price Floor</span><span class="output-value">' + floorPct + '% off max</span></div></div>' +
     '<div class="card"><h3>Comps & Wishlist</h3>' +
     '<div class="output-row"><span class="output-label">Comp Games Analyzed</span><span class="output-value">' + compCount + '</span></div>' +
-    '<div class="output-row"><span class="output-label">Projected Wishlist Count</span><span class="output-value">' + (wishlistCount > 0 ? wishlistCount.toLocaleString() : '\u2014') + '</span></div></div>' +
-    (demoRes.score > 0 ? '<div class="card"><h3>Demo Performance</h3><div class="output-row"><span class="output-label">Demo Health Score</span><span class="output-value">' + demoRes.score + '/100 (' + demoRes.label + ')</span></div><div class="output-row"><span class="output-label">Demo Quality Multiplier</span><span class="output-value">' + demoRes.multiplier.toFixed(2) + 'x</span></div></div>' : '') +
+    '<div class="output-row"><span class="output-label">Projected Wishlist Count</span><span class="output-value">' + (wishlistCount > 0 ? wishlistCount.toLocaleString() : '—') + '</span></div></div>' +
+    (demoResult.score > 0 ? '<div class="card"><h3>Demo Performance</h3><div class="output-row"><span class="output-label">Demo Health Score</span><span class="output-value">' + demoResult.score + '/100 (' + demoResult.label + ')</span></div><div class="output-row"><span class="output-label">Demo Quality Multiplier</span><span class="output-value">' + demoResult.multiplier.toFixed(2) + 'x</span></div></div>' : '') +
     '<div class="card"><h3>Early Access</h3>' +
     '<div class="output-row"><span class="output-label">EA Discount vs 1.0 Price</span><span class="output-value">' + eaDiscPct + '%</span></div>' +
-    '<div class="output-row"><span class="output-label">Recommended EA Launch Price</span><span class="output-value">' + (lp > 0 ? '$' + eaPrice.toFixed(2) : '\u2014') + '</span></div></div>' +
+    '<div class="output-row"><span class="output-label">Recommended EA Launch Price</span><span class="output-value">' + (lp > 0 ? '$' + eaPrice.toFixed(2) : '—') + '</span></div></div>' +
     '<div class="card"><h3>Regional: USD_MENA</h3>' +
-    '<div class="output-row"><span class="output-label">Conversion Method</span><span class="output-value">' + (menaMethod ? menaMethod.options[menaMethod.selectedIndex].text.split(' \u2014')[0] : '\u2014') + '</span></div>' +
-    '<div class="output-row"><span class="output-label">Estimated MENA Price</span><span class="output-value">' + (lp > 0 ? '$' + menaPrice.toFixed(2) : '\u2014') + '</span></div></div>';
+    '<div class="output-row"><span class="output-label">Conversion Method</span><span class="output-value">' + (menaMethod ? menaMethod.options[menaMethod.selectedIndex].text.split(' —')[0] : '—') + '</span></div>' +
+    '<div class="output-row"><span class="output-label">Estimated MENA Price</span><span class="output-value">' + (lp > 0 ? '$' + menaPrice.toFixed(2) : '—') + '</span></div></div>';
 
   var allWizard = document.querySelectorAll('.wizard-nav');
   allWizard.forEach(function(wn){ wn.style.display = 'none'; });
+  } catch(e) {
+    document.getElementById('summary-content').innerHTML = '<div class="card"><p class="muted">Fill in Steps 0\u20138 first, then the summary will populate automatically.</p></div>';
+  }
 }
 
-document.querySelectorAll('#stepper-desktop .stepper-step').forEach(function(btn){
+// Setup stepper click handlers
+document.querySelectorAll('.stepper-step').forEach(function(btn){
   btn.addEventListener('click', function(){
-    var idx = parseInt(btn.dataset.idx);
-    if (!isNaN(idx)) switchPhaseStep(idx);
+    var tab = btn.dataset.tab;
+    switchStep(stepOrder.indexOf(tab));
   });
 });
 
+// Override switchTab to track visited & complete
+var originalSwitchTab = switchTab;
+switchTab = function(tabName) {
+  originalSwitchTab(tabName);
+  if (tabName === 'summary') { showSummary(); return; }
+  if (stepOrder.indexOf(tabName) !== -1) {
+    visitedSteps[tabName] = true;
+    checkCompletion();
+    updateStepper();
+    updateWizardButtons();
+    populateSummaryBar();
+  }
+};
+
+// Inject summary bars & wizard nav into each step
 function injectWizardUI() {
-  phase1Steps.forEach(function(tab){
+  stepOrder.forEach(function(tab){
     var el = document.getElementById('tab-' + tab);
     if (!el) return;
+    // Summary bar
     if (!el.querySelector('.summary-bar')) {
       var sb = document.createElement('details'); sb.className = 'summary-bar';
       sb.innerHTML = '<summary>Your inputs so far</summary><div class="summary-chips"><span class="summary-chip">Waiting on earlier steps</span></div>';
       el.insertBefore(sb, el.firstChild);
     }
+    // Wizard nav
     if (!el.querySelector('.wizard-nav')) {
       var wn = document.createElement('div'); wn.className = 'wizard-nav';
-      wn.innerHTML = '<button class="wizard-prev" onclick="goPrev()">\u2190 Back</button><button class="wizard-next" onclick="goNext()">Continue \u2192</button>';
+      wn.innerHTML = '<button class="wizard-prev" onclick="goPrev()" aria-label="Previous step">← Back</button><button class="wizard-next" onclick="goNext()" aria-label="Next step">Continue →</button>';
       el.appendChild(wn);
     }
   });
+  // Summary tab gets a back button only
   var sumEl = document.getElementById('tab-summary');
-  if (sumEl && !sumEl.querySelector('.summary-bar')) {
-    var sb = document.createElement('details'); sb.className = 'summary-bar';
-    sb.innerHTML = '<summary>Your inputs so far</summary><div class="summary-chips"><span class="summary-chip">All steps complete</span></div>';
-    sumEl.insertBefore(sb, sumEl.firstChild);
+  if (sumEl && !sumEl.querySelector('.wizard-nav')) {
+    var wn = document.createElement('div'); wn.className = 'wizard-nav';
+    wn.innerHTML = '<button class="wizard-prev" onclick="switchStep(7)" aria-label="Back to Sources">← Back to Sources</button>';
+    sumEl.appendChild(wn);
   }
 }
 
-function switchTab(tabName) {
-  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
-  var tabEl = document.getElementById('tab-' + tabName);
-  if (tabEl) tabEl.classList.add('active');
-  if (tabName === 'wishlist') updateWishlist();
-}
-
 injectWizardUI();
-showPhase(1);
-updatePhase1Stepper();
+visitedSteps.profile = true;
+visitedSteps.comp = true;
+completedSteps.comp = false;
+updateStepper();
 updateWizardButtons();
 populateSummaryBar();
 
@@ -2094,7 +2083,6 @@ function escapeHtml(str) {
   div.textContent = str;
   return div.innerHTML;
 }
-
 </script>
 </body>
 </html>
