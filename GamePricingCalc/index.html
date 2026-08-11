@@ -563,9 +563,8 @@
         </div>
       </div>
     </div>
-    <div class="wizard-nav"><button class="wizard-prev" onclick="goPrev()" style="visibility:hidden">← Back</button><button class="wizard-next" onclick="goNext()">Continue →</button></div>
-    <div class="wizard-nav"><button class="wizard-prev" onclick="goPrev()">← Back</button><button class="wizard-next" onclick="goNext()">Continue →</button></div>
   </section>
+
   <!-- TAB 1 — COMP ANALYSIS -->
   <section class="tab" id="tab-comp">
     <h2>Comp Analysis</h2>
@@ -627,8 +626,8 @@
         <button class="btn" id="export-csv">Download CSV</button>
       </div>
     </div>
-    <div class="wizard-nav"><button class="wizard-prev" onclick="goPrev()">← Back</button><button class="wizard-next" onclick="goNext()">Continue →</button></div>
   </section>
+
   <!-- TAB 2 — FOUR VARIABLES -->
   <section class="tab" id="tab-variables">
     <h2>Four Pricing Variables</h2>
@@ -696,8 +695,8 @@
         <tbody id="content-band-body"></tbody>
       </table>
     </div>
-    <div class="wizard-nav"><button class="wizard-prev" onclick="goPrev()">← Back</button><button class="wizard-next" onclick="goNext()">Continue →</button></div>
   </section>
+
   <!-- TAB 3 — PRICE & DISCOUNT -->
   <section class="tab" id="tab-pricing">
     <h2>Price Setting &amp; Discount Buffer</h2>
@@ -758,8 +757,8 @@
         <tbody id="staircase-body"></tbody>
       </table>
     </div>
-    <div class="wizard-nav"><button class="wizard-prev" onclick="goPrev()">← Back</button><button class="wizard-next" onclick="goNext()">Continue →</button></div>
   </section>
+
   <!-- TAB 4 — WISHLIST -->
   <section class="tab" id="tab-wishlist">
     <h2>Wishlist Conversion Estimator</h2>
@@ -825,8 +824,8 @@
         <div id="wishlist-outputs"></div>
       </div>
     </div>
-    <div class="wizard-nav"><button class="wizard-prev" onclick="goPrev()">← Back</button><button class="wizard-next" onclick="goNext()">Continue →</button></div>
   </section>
+
   <!-- TAB 5 — DEMO PERFORMANCE -->
   <section class="tab" id="tab-demo">
     <h2>Demo Performance</h2>
@@ -927,8 +926,8 @@
         </tbody>
       </table>
     </div>
-    <div class="wizard-nav"><button class="wizard-prev" onclick="goPrev()">← Back</button><button class="wizard-next" onclick="goNext()">Continue →</button></div>
   </section>
+
   <!-- TAB 6 — EARLY ACCESS -->
   <section class="tab" id="tab-ea">
     <h2>Early Access Pricing Decisions</h2>
@@ -958,8 +957,8 @@
       </div>
       <div id="ea-calc-outputs"></div>
     </div>
-    <div class="wizard-nav"><button class="wizard-prev" onclick="goPrev()">← Back</button><button class="wizard-next" onclick="goNext()">Continue →</button></div>
   </section>
+
   <!-- TAB 7 — REGIONAL + DLC -->
   <section class="tab" id="tab-regional">
     <h2>Regional Pricing &amp; DLC Guide</h2>
@@ -1019,8 +1018,8 @@
         Valve now offers three regional price conversion methods in Steamworks: (1) exchange rate, (2) purchasing power parity, (3) combined/blended. For indie studios, the "combined" option is the safe default. Pricing method choice does not affect store visibility systems.
       </p>
     </div>
-    <div class="wizard-nav"><button class="wizard-prev" onclick="goPrev()">← Back</button><button class="wizard-next" onclick="goNext()">Continue →</button></div>
   </section>
+
   <!-- TAB 8 — POST-LAUNCH -->
   <section class="tab" id="tab-monitoring">
     <h2>Post-Launch Monitoring Checklist</h2>
@@ -1079,8 +1078,8 @@
         <p>Most indie titles see 10—20% of year-1 revenue in year 2, primarily from deep discounts and bundles.</p>
       </div>
     </div>
-    <div class="wizard-nav"><button class="wizard-prev" onclick="goPrev()">← Back</button><button class="wizard-next" onclick="goNext()">Continue →</button></div>
   </section>
+
   <!-- TAB 9 — SOURCES -->
   <section class="tab" id="tab-sources">
     <h2>Sources &amp; Methodology Notes</h2>
@@ -2014,8 +2013,8 @@ function buildSummary() {
     '<div class="output-row"><span class="output-label">Conversion Method</span><span class="output-value">' + (menaMethod ? menaMethod.options[menaMethod.selectedIndex].text.split(' —')[0] : '—') + '</span></div>' +
     '<div class="output-row"><span class="output-label">Estimated MENA Price</span><span class="output-value">' + (lp > 0 ? '$' + menaPrice.toFixed(2) : '—') + '</span></div></div>';
 
-  var allWizard = document.querySelectorAll('.wizard-nav');
-  allWizard.forEach(function(wn){ wn.style.display = 'none'; });
+  var sumWiz = document.querySelector('#tab-summary .wizard-nav');
+  if (sumWiz) sumWiz.style.display = 'none';
   } catch(e) {
     document.getElementById('summary-content').innerHTML = '<div class="card"><p class="muted">Fill in Steps 0\u20138 first, then the summary will populate automatically.</p></div>';
   }
