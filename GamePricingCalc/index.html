@@ -1963,6 +1963,7 @@ function populateSummaryBar() {
 
 function buildSummary() {
   try {
+  var gp = window.gameProfile || {};
   var lp = getValidatedLaunchPrice();
   var devShare = getDevShare();
   var tierText = document.getElementById('tier-result').textContent.replace('Recommended: ','');
