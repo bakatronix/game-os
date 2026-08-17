@@ -634,6 +634,7 @@
     <p class="subtitle">
       Score each of the four variables below from 1 (lowest) to 5 (highest). Your total score maps to a recommended price tier.
     </p>
+    <div class="caption-warning" id="variables-comp-warning"></div>
 
     <div class="grid-2">
       <div class="card">
@@ -703,6 +704,7 @@
     <p class="subtitle">
       Steam's algorithm is built around discounting. A 20%+ discount triggers wishlist notification emails. Build the buffer in from day one.
     </p>
+    <div class="reconcile-banner" id="price-tier-conflict-banner"></div>
 
     <div class="grid-2">
       <div class="card">
@@ -763,7 +765,7 @@
   <section class="tab" id="tab-wishlist">
     <h2>Wishlist Conversion Estimator</h2>
     <p class="subtitle">
-      Estimate first-week sales from your projected wishlist count at launch. Based on aggregate Steam data analyzed by GameDiscoverCo. These are rough benchmarks, not guarantees.
+      Estimate first-week sales from your projected wishlist count at launch. Based on aggregate Steam data analyzed by GameDiscoverCo. These are rough benchmarks, not guarantees. Your Demo Performance data (if provided) and Community Signals feed directly into this estimate.
     </p>
 
     <div class="grid-2">
@@ -773,6 +775,7 @@
           <label class="stat-label">Projected Wishlist Count at Launch</label>
           <input type="number" id="wishlist-count" value="5000" min="0" step="500" oninput="updateWishlist()">
           <p class="output-note" style="margin-top:4px">Use organic wishlist count only — exclude botted, fabricated, or incentivised wishlists. Steam's algorithm detects artificial activity and may penalise your Visibility Rounds.</p>
+          <div class="inline-prompt" id="wishlist-community-prompt">Wishlist count alone predicts launch success only ~17% of the time under 10,000 wishlists. <a onclick="document.getElementById('community-signals-details').open=true; document.getElementById('community-signals-details').scrollIntoView({behavior:'smooth'});">Add your community signals below</a> to strengthen this estimate.</div>
         </div>
         <div style="margin-bottom:14px">
           <p class="muted">Conversion rate tiers (GameDiscoverCo aggregate data):</p>
@@ -788,7 +791,7 @@
           <p class="muted" style="margin-top:8px">Conversion drops ~30% if launch price is above $10.</p>
         </div>
 
-        <details class="summary-bar" style="margin-top:12px;border-left:3px solid var(--gold);background:rgba(195,165,95,0.06)">
+        <details class="summary-bar" id="community-signals-details" style="margin-top:12px;border-left:3px solid var(--gold);background:rgba(195,165,95,0.06)">
           <summary style="color:var(--dark);font-weight:600;font-size:11px">Community Signals (optional) — click to expand</summary>
           <p class="muted" style="margin-bottom:12px;font-size:12px">Why this matters: GameDiscoverCo research shows wishlist count alone predicts launch success only ~17% of the time for games under 10,000 wishlists — community engagement and wishlist source quality are stronger secondary signals. Use these optional fields to sanity-check whether your wishlist count reflects real purchase intent.</p>
           <div style="margin-bottom:12px">
@@ -830,8 +833,17 @@
   <section class="tab" id="tab-demo">
     <h2>Demo Performance</h2>
     <p class="subtitle">
-      Research across multiple Steam Next Fest post-mortems shows demo-driven wishlists convert to purchases at 18–25%, compared to just 8–12% for wishlists added without playing a demo — nearly double. A well-performing demo isn't just a marketing tool, it's a direct predictor of launch revenue quality.
+      Research across multiple Steam Next Fest post-mortems shows demo-driven wishlists convert to purchases at 18–25%, compared to just 8–12% for wishlists added without playing a demo — nearly double. A well-performing demo isn't just a marketing tool, it's a direct predictor of launch revenue quality. This data feeds your Wishlist Conversion Estimator and Pricing Summary.
     </p>
+
+    <div class="card">
+      <h3>Do you have a public demo?</h3>
+      <div style="display:flex;gap:20px;margin-top:4px">
+        <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="radio" name="demo-exists" value="yes" onchange="renderDemoGating(); updateWishlist();"> Yes</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="radio" name="demo-exists" value="no" checked onchange="renderDemoGating(); updateWishlist();"> No</label>
+      </div>
+      <div class="demo-note" id="demo-gate-note"></div>
+    </div>
 
     <div class="card">
       <h3>Traffic &amp; Reach</h3>
@@ -1114,6 +1126,31 @@
     Based on the <a href="https://gamestudiounlocked.substack.com/">GameStudioUnlocked</a> pricing methodology. Contact: seb@gamestudiounlocked.com. &nbsp; | &nbsp; Design: <a href="https://llamagriffin.com/brand-guide/">LlamaGriffin</a>.
   </div>
 </footer>
+
+<style>
+  /* === RECONCILIATION / VALIDATION UI === */
+  .reconcile-banner { display:none; border:1px solid var(--coral); border-left:4px solid var(--coral); background:rgba(184,90,58,0.06); border-radius:var(--radius); padding:14px 16px; margin-bottom:16px; }
+  .reconcile-banner h4 { font-family:var(--sans); font-size:14px; font-weight:600; margin-bottom:4px; color:var(--coral); }
+  .reconcile-banner p { font-family:var(--sans); font-size:13px; color:var(--mid); }
+  .reconcile-flag { border-radius:var(--radius); padding:12px 16px; margin-bottom:16px; font-family:var(--sans); font-size:14px; font-weight:600; }
+  .reconcile-flag.flag-blocking { background:rgba(184,90,58,0.12); border:1px solid var(--coral); color:#8b3a22; }
+  .reconcile-flag.flag-clear { background:rgba(42,143,118,0.10); border:1px solid var(--teal); color:#1a6e5a; }
+  .reconcile-issue { padding:10px 0; border-bottom:1px solid var(--border); }
+  .reconcile-issue:last-child { border-bottom:none; }
+  .reconcile-issue .issue-title { font-family:var(--sans); font-size:13px; font-weight:600; }
+  .reconcile-issue .issue-detail { font-family:var(--sans); font-size:12px; color:var(--mid); margin-top:2px; }
+  .reconcile-issue .issue-sev { font-family:var(--mono); font-size:8px; letter-spacing:0.08em; text-transform:uppercase; padding:2px 6px; border-radius:3px; margin-left:6px; }
+  .sev-blocking { background:rgba(184,90,58,0.15); color:#8b3a22; }
+  .sev-warning { background:rgba(195,165,95,0.18); color:#7a5e1a; }
+  .sev-advisory { background:rgba(107,102,96,0.12); color:var(--mid); }
+  .caption-warning { display:none; font-family:var(--mono); font-size:10px; color:var(--gold-dark); background:rgba(195,165,95,0.08); border:1px dashed var(--gold); border-radius:var(--radius); padding:8px 12px; margin-bottom:12px; letter-spacing:0.02em; line-height:1.5; }
+  .inline-prompt { display:none; font-family:var(--sans); font-size:12px; color:#1a6e5a; background:rgba(42,143,118,0.06); border:1px dashed var(--teal-light); border-radius:var(--radius); padding:8px 12px; margin-top:8px; }
+  .inline-prompt a { color:var(--teal); text-decoration:underline; cursor:pointer; font-weight:600; }
+  .demo-note { display:none; font-family:var(--sans); font-size:12px; padding:8px 12px; border-radius:var(--radius); margin-top:10px; }
+  .demo-note.advisory { background:rgba(107,102,96,0.10); color:var(--mid); border-left:3px solid var(--faint); }
+  .demo-note.required { background:rgba(42,143,118,0.08); color:#1a6e5a; border-left:3px solid var(--teal); }
+  .demo-fields.required-on { border:1px dashed var(--teal); border-radius:var(--radius); }
+</style>
 
 <script>
 function switchTab(tabName) {
@@ -1418,16 +1455,17 @@ function updateCompStats() {
   els.avg.textContent = '$' + avg.toFixed(2) + sourceLabel;
   els.min.textContent = '$' + Math.min.apply(null, prices).toFixed(2) + sourceLabel;
   els.max.textContent = '$' + Math.max.apply(null, prices).toFixed(2) + sourceLabel;
+  renderReconciliation();
 }
 for (var i = 0; i < 3; i++) addCompRow();
 
 // === FOUR VARIABLES ===
 var tierData = [
-  { range: '1.00—2.00', price: '$4.99—$9.99', context: 'Budget / experimental. High volume play.' },
-  { range: '2.01—3.00', price: '$9.99—$14.99', context: 'Lower mid-tier. Solid indie. Genre median for casual-adjacent.' },
-  { range: '3.01—3.75', price: '$14.99—$19.99', context: 'Mid-tier sweet spot. GameDiscoverCo median for top-performing indies (2023—25).' },
-  { range: '3.76—4.25', price: '$19.99—$24.99', context: 'Upper mid. Requires clear scope and polish signal.' },
-  { range: '4.26—5.00', price: '$24.99—$34.99', context: 'Premium indie. Above $25 trickier for unknown studios.' },
+  { range: '1.00—2.00', price: '$4.99—$9.99', min: 4.99, max: 9.99, context: 'Budget / experimental. High volume play.' },
+  { range: '2.01—3.00', price: '$9.99—$14.99', min: 9.99, max: 14.99, context: 'Lower mid-tier. Solid indie. Genre median for casual-adjacent.' },
+  { range: '3.01—3.75', price: '$14.99—$19.99', min: 14.99, max: 19.99, context: 'Mid-tier sweet spot. GameDiscoverCo median for top-performing indies (2023—25).' },
+  { range: '3.76—4.25', price: '$19.99—$24.99', min: 19.99, max: 24.99, context: 'Upper mid. Requires clear scope and polish signal.' },
+  { range: '4.26—5.00', price: '$24.99—$34.99', min: 24.99, max: 34.99, context: 'Premium indie. Above $25 trickier for unknown studios.' },
 ];
 var tierBody = document.getElementById('tier-body');
 tierData.forEach(function(t){
@@ -1451,11 +1489,11 @@ tierData.forEach(function(t){
   tierBody.appendChild(tr);
 });
 function getTier(score) {
-  if (score <= 2) return { price: '$4.99—$9.99', idx: 0 };
-  if (score <= 3) return { price: '$9.99—$14.99', idx: 1 };
-  if (score <= 3.75) return { price: '$14.99—$19.99', idx: 2 };
-  if (score <= 4.25) return { price: '$19.99—$24.99', idx: 3 };
-  return { price: '$24.99—$34.99', idx: 4 };
+  if (score <= 2) return { price: tierData[0].price, idx: 0, min: tierData[0].min, max: tierData[0].max };
+  if (score <= 3) return { price: tierData[1].price, idx: 1, min: tierData[1].min, max: tierData[1].max };
+  if (score <= 3.75) return { price: tierData[2].price, idx: 2, min: tierData[2].min, max: tierData[2].max };
+  if (score <= 4.25) return { price: tierData[3].price, idx: 3, min: tierData[3].min, max: tierData[3].max };
+  return { price: tierData[4].price, idx: 4, min: tierData[4].min, max: tierData[4].max };
 }
 function updateVariables() {
   var weights = [0.25, 0.30, 0.25, 0.20];
@@ -1471,6 +1509,9 @@ function updateVariables() {
   var tier = getTier(total);
   document.getElementById('tier-result').innerHTML = 'Recommended: <span>' + tier.price + '</span>';
   document.querySelectorAll('.tier-row').forEach(function(tr, i){ tr.classList.toggle('active', i === tier.idx); });
+  window.currentTier = tier;
+  window.currentTotalScore = total;
+  renderReconciliation();
 }
 
 var contentBands = [
@@ -1503,6 +1544,7 @@ function updateContentCheck() {
     if (hrs >= contentBands[i].min && hrs <= contentBands[i].max) { result = 'Sanity check: ' + contentBands[i].price; break; }
   }
   document.getElementById('content-check-result').textContent = result;
+  renderReconciliation();
 }
 updateVariables();
 updateContentCheck();
@@ -1570,6 +1612,7 @@ function updatePricing() {
     }).join('') +
     '<tr class="floor-row"><td><strong>Price Floor</strong></td><td>Long-term minimum</td><td>' + floorPct + '%</td><td>$' + (launchPrice * (1 - floorPct/100)).toFixed(2) + '</td><td>Permanent price floor threshold</td></tr>';
   updateRegionalTable();
+  renderReconciliation();
 }
 
 // === DEMO PERFORMANCE ===
@@ -1675,6 +1718,7 @@ function getCommunityScore() {
 }
 
 function updateWishlist() {
+  renderReconciliation();
   var count = parseInt(document.getElementById('wishlist-count').value) || 0;
   var lp = getValidatedLaunchPrice();
   var devShare = getDevShare();
@@ -1682,15 +1726,19 @@ function updateWishlist() {
     document.getElementById('wishlist-outputs').innerHTML = '<p class="muted">Enter your projected wishlist count and set your Step 3 inputs.</p>';
     return;
   }
-  var baseRate = getWishlistConversion(count, 0); // base rate without price penalty
+  var demoConvRate = getDemoConversionRate();
+  var hasDemoData = (getDemoExists() === 'yes' && demoConvRate > 0);
+  var baseRate = hasDemoData ? (demoConvRate / 100) : getWishlistConversion(count, 0);
   var pricePenalty = lp > 10 ? 0.70 : 1.0;
   var community = getCommunityScore();
   var demo = getDemoHealthScore();
-  var finalRate = baseRate * pricePenalty * community.multiplier * demo.multiplier;
+  var demoFactor = hasDemoData ? 1.0 : demo.multiplier;
+  var finalRate = baseRate * pricePenalty * community.multiplier * demoFactor;
   finalRate = Math.max(0.05, Math.min(0.35, finalRate));
   var sales = Math.round(count * finalRate);
   var netRevenue = sales * lp * devShare;
   var adjNote = lp > 10 ? ' (30% reduction for price above $10)' : '';
+  var demoRateNote = hasDemoData ? ' (using your demo conversion data)' : '';
 
   var comLabel = community.multiplier > 1.05 ? 'Community signals suggest better-than-average conversion' :
     community.multiplier >= 0.95 ? 'Community signals in neutral range' : 'Community signals warrant caution';
@@ -1698,11 +1746,12 @@ function updateWishlist() {
   var comRow = community.multiplier !== 1.0 ?
     '<div class="output-row"><span class="output-label">Community Multiplier <span style="color:' + comColor + '">' + community.multiplier.toFixed(2) + 'x</span></span><span class="output-value" style="font-size:11px;color:' + comColor + '">' + comLabel + '</span></div>' +
     '<div class="output-row"><span class="output-label" style="font-size:11px"></span><span class="output-value" style="font-size:10px;color:var(--mid)">' + community.breakdown.join(' · ') + '</span></div>' : '';
-  var demoRow = demo.score > 0 ?
-    '<div class="output-row"><span class="output-label">Demo Quality Multiplier <span style="color:' + (demo.multiplier > 1.0 ? 'var(--teal)' : (demo.multiplier < 1.0 ? 'var(--coral)' : 'var(--gold)')) + '">' + demo.multiplier.toFixed(2) + 'x</span></span><span class="output-value" style="font-size:11px;color:var(--mid)">Health Score: ' + demo.score + '/100 (' + demo.label + ')</span></div>' : '';
+  var demoRow = hasDemoData ?
+    '<div class="output-row"><span class="output-label">Demo Conversion Applied <span style="color:var(--teal)">' + demoConvRate.toFixed(1) + '%</span></span><span class="output-value" style="font-size:11px;color:var(--mid)">Your measured demo\u2192wishlist conversion replaces the generic benchmark tier</span></div>' :
+    (demo.score > 0 ? '<div class="output-row"><span class="output-label">Demo Quality Multiplier <span style="color:' + (demo.multiplier > 1.0 ? 'var(--teal)' : (demo.multiplier < 1.0 ? 'var(--coral)' : 'var(--gold)')) + '">' + demo.multiplier.toFixed(2) + 'x</span></span><span class="output-value" style="font-size:11px;color:var(--mid)">Health Score: ' + demo.score + '/100 (' + demo.label + ')</span></div>' : '');
 
   document.getElementById('wishlist-outputs').innerHTML =
-    '<div class="output-row"><span class="output-label">Base Conversion Rate</span><span class="output-value">' + (baseRate * 100).toFixed(1) + '%</span></div>' +
+    '<div class="output-row"><span class="output-label">Base Conversion Rate' + demoRateNote + '</span><span class="output-value">' + (baseRate * 100).toFixed(1) + '%</span></div>' +
     '<div class="output-row"><span class="output-label">Effective Conversion Rate' + adjNote + '</span><span class="output-value">' + (finalRate * 100).toFixed(1) + '%</span></div>' +
     comRow +
     demoRow +
@@ -1821,6 +1870,205 @@ updateRegionalTable();
 updateDlcTable();
 updateEaCalc();
 updateWishlist();
+renderReconciliation();
+renderDemoGating();
+
+// === RECONCILIATION & VALIDATION LAYER ===
+function getCompCount() {
+  var count = 0;
+  document.querySelectorAll('#comp-tbody tr').forEach(function(tr){
+    var lpEl = tr.querySelector('.comp-launch');
+    var lp = lpEl ? parseFloat(lpEl.value) : NaN;
+    if (!isNaN(lp) && lp > 0) { count++; return; }
+    var cpEl = tr.querySelector('.comp-current');
+    var cp = cpEl ? parseFloat(cpEl.value) : NaN;
+    if (!isNaN(cp) && cp > 0) count++;
+  });
+  return count;
+}
+
+function getDemoExists() {
+  var el = document.querySelector('input[name="demo-exists"]:checked');
+  return el ? el.value : 'no';
+}
+
+function isDemoComplete() {
+  return !!(parseInt(document.getElementById('demo-visitors').value) > 0 &&
+            parseInt(document.getElementById('demo-downloads').value) > 0 &&
+            parseInt(document.getElementById('demo-wishlists').value) > 0);
+}
+
+function getDemoConversionRate() {
+  var downloads = parseInt(document.getElementById('demo-downloads').value) || 0;
+  var playedWishlisted = parseInt(document.getElementById('demo-played-wishlisted').value) || 0;
+  return downloads > 0 ? (playedWishlisted / downloads) * 100 : 0;
+}
+
+function isCommunitySignalsFilled() {
+  return !!(document.getElementById('discord-count').value ||
+            document.getElementById('follower-count').value ||
+            document.getElementById('discord-activity').value ||
+            document.getElementById('wishlist-source').value);
+}
+
+function isRoundWishlist(n) {
+  return n > 0 && (n % 1000 === 0 || n % 5000 === 0);
+}
+
+function getContentBand(hrs) {
+  for (var i = 0; i < contentBands.length; i++) {
+    if (hrs >= contentBands[i].min && hrs <= contentBands[i].max) return contentBands[i];
+  }
+  return null;
+}
+
+function parsePriceRange(priceStr) {
+  var nums = String(priceStr).replace(/[^0-9.]/g, ' ').trim().split(/\s+/).map(parseFloat).filter(function(n){ return !isNaN(n); });
+  if (nums.length === 0) return null;
+  return { min: Math.min.apply(null, nums), max: Math.max.apply(null, nums) };
+}
+
+function computeReconciliation() {
+  var issues = [];
+  var lp = getValidatedLaunchPrice();
+  var tier = window.currentTier;
+
+  // #1 — Required Launch Price vs Recommended Tier
+  if (lp > 0 && tier) {
+    var belowGap = tier.min > lp ? (tier.min - lp) / tier.min : 0;
+    var aboveGap = lp > tier.max ? (lp - tier.max) / tier.max : 0;
+    if (belowGap > 0.15 || aboveGap > 0.15) {
+      var dir = lp > tier.max ? 'above' : 'below';
+      issues.push({
+        id: 'price-tier-conflict', severity: 'blocking', title: 'Pricing conflict: Required Launch Price vs Recommended Tier',
+        detail: 'Your Required Launch Price ($' + lp.toFixed(2) + ') is significantly ' + dir + ' your comp-based Recommended Tier (' + tier.price + '). This usually means your budget/revenue target requires more units than your comp set or content scope supports at this price — revisit your comp analysis, budget inputs, or expected content hours before finalizing.'
+      });
+    }
+  }
+
+  // #2 — comp count
+  var compCount = getCompCount();
+  if (compCount < 8) {
+    issues.push({
+      id: 'low-comp-count', severity: 'warning', title: 'Low comp count',
+      detail: 'Recommended tier based on only ' + compCount + ' comps (target: 8\u201412). Confidence is reduced \u2014 treat this range as provisional.'
+    });
+  }
+
+  // #3 — content-depth cross-check
+  var hrs = parseFloat(document.getElementById('content-hours-input').value) || 0;
+  var band = hrs > 0 ? getContentBand(hrs) : null;
+  if (band) {
+    var bandRange = parsePriceRange(band.price);
+    var mismatch = false;
+    if (bandRange && lp > 0 && (lp < bandRange.min * 0.85 || lp > bandRange.max * 1.15)) mismatch = true;
+    if (bandRange && tier && (tier.max < bandRange.min * 0.85 || tier.min > bandRange.max * 1.15)) mismatch = true;
+    if (mismatch) {
+      issues.push({
+        id: 'content-depth-conflict', severity: 'warning', title: 'Content-depth mismatch',
+        detail: 'Expected content (' + hrs + ' hrs) suggests a typical price band of ' + band.price + ', which disagrees with your Required Launch Price or Recommended Tier \u2014 reconcile these three numbers.'
+      });
+    }
+  }
+
+  // #4 — round wishlist number
+  var wl = parseInt(document.getElementById('wishlist-count').value) || 0;
+  if (wl > 0 && isRoundWishlist(wl) && !isCommunitySignalsFilled()) {
+    issues.push({
+      id: 'wishlist-round', severity: 'warning', title: 'Wishlist estimate unverified',
+      detail: 'This looks like an estimate rather than a tracked number. Expand Community Signals to sanity-check wishlist quality, or confirm this is your best current projection.'
+    });
+  }
+
+  // #7 — demo gating
+  var demoExists = getDemoExists();
+  if (demoExists === 'yes') {
+    if (!isDemoComplete()) {
+      issues.push({
+        id: 'demo-required-missing', severity: 'blocking', title: 'Demo fields incomplete',
+        detail: 'You indicated you have a public demo. Complete the Traffic & Reach, Engagement Depth, and Conversion Events fields before finalizing your pricing plan.'
+      });
+    } else {
+      var demoConv = getDemoConversionRate();
+      if (demoConv > 0 && demoConv < 15) {
+        issues.push({
+          id: 'demo-conversion-low', severity: 'warning', title: 'Weak demo conversion',
+          detail: 'Demo conversion is below the 15% diagnostic threshold \u2014 review capsule art, trailer, and end-of-demo CTA, since a weak demo undermines the wishlist-to-sale projection.'
+        });
+      }
+    }
+  } else {
+    issues.push({
+      id: 'no-demo', severity: 'advisory', title: 'No demo data',
+      detail: 'Using non-demo wishlist conversion benchmarks (8\u201312%) instead of demo-driven benchmarks (18\u201325%). A demo is one of the strongest predictors of launch revenue quality; consider Next Fest or a public demo before finalizing your pricing plan.'
+    });
+  }
+
+  return issues;
+}
+
+function renderReconciliation() {
+  var issues = computeReconciliation();
+
+  // #1 banner on pricing step
+  var conflict = issues.filter(function(i){ return i.id === 'price-tier-conflict'; })[0];
+  var banner = document.getElementById('price-tier-conflict-banner');
+  if (banner) {
+    if (conflict) {
+      banner.style.display = 'block';
+      banner.innerHTML = '<h4>\u26A0 Required Launch Price vs Recommended Tier</h4><p>' + conflict.detail + '</p>';
+    } else {
+      banner.style.display = 'none';
+      banner.innerHTML = '';
+    }
+  }
+
+  // #2 caption on variables step
+  var lowComp = issues.filter(function(i){ return i.id === 'low-comp-count'; })[0];
+  var cap = document.getElementById('variables-comp-warning');
+  if (cap) {
+    if (lowComp) { cap.style.display = 'block'; cap.textContent = lowComp.detail; }
+    else { cap.style.display = 'none'; cap.textContent = ''; }
+  }
+
+  renderWishlistPrompt();
+  renderDemoGating();
+}
+
+function renderWishlistPrompt() {
+  var wl = parseInt(document.getElementById('wishlist-count').value) || 0;
+  var signalsFilled = isCommunitySignalsFilled();
+  var details = document.getElementById('community-signals-details');
+  var prompt = document.getElementById('wishlist-community-prompt');
+  if (!prompt) return;
+  var expanded = details && details.open;
+  var expandLink = '<a onclick="document.getElementById(\'community-signals-details\').open=true; document.getElementById(\'community-signals-details\').scrollIntoView({behavior:\'smooth\'});">Add your community signals below</a>';
+  if (wl > 0 && !signalsFilled && !expanded) {
+    if (isRoundWishlist(wl)) {
+      prompt.innerHTML = 'This looks like an estimate rather than a tracked number. ' + expandLink + ' to sanity-check wishlist quality, or confirm this is your best current projection.';
+    } else {
+      prompt.innerHTML = 'Wishlist count alone predicts launch success only ~17% of the time under 10,000 wishlists. ' + expandLink + ' to strengthen this estimate.';
+    }
+    prompt.style.display = 'block';
+  } else {
+    prompt.style.display = 'none';
+  }
+}
+
+function renderDemoGating() {
+  var note = document.getElementById('demo-gate-note');
+  if (!note) return;
+  var demoExists = getDemoExists();
+  if (demoExists === 'yes') {
+    note.className = 'demo-note required';
+    note.style.display = 'block';
+    note.innerHTML = 'Demo data will be used to adjust your first-week sales estimate. Complete Traffic & Reach, Engagement Depth, and Conversion Events below.';
+  } else {
+    note.className = 'demo-note advisory';
+    note.style.display = 'block';
+    note.innerHTML = 'No demo data \u2014 using non-demo wishlist conversion benchmarks (8\u201312%) instead of demo-driven benchmarks (18\u201325%). A demo is one of the strongest predictors of launch revenue quality.';
+  }
+}
 
 // === GAME PROFILE STATE ===
 window.gameProfile = {};
@@ -1893,7 +2141,28 @@ function switchStep(idx) {
     if (stepOrder[idx] === 'sources') document.getElementById('tab-summary').classList.add('active');
   }
 }
-function goNext() { var cur = getCurrentStepIndex(); if (cur >= 9) showSummary(); else switchStep(cur + 1); window.scrollTo(0,0); }
+function goNext() {
+  var cur = getCurrentStepIndex();
+  if (cur >= 9) {
+    var issues = computeReconciliation();
+    var conflict = issues.filter(function(i){ return i.id === 'price-tier-conflict' && i.severity === 'blocking'; })[0];
+    if (conflict) {
+      switchStep(stepOrder.indexOf('pricing'));
+      window.scrollTo(0,0);
+      return;
+    }
+    var demoMissing = issues.filter(function(i){ return i.id === 'demo-required-missing'; })[0];
+    if (demoMissing) {
+      switchStep(stepOrder.indexOf('demo'));
+      window.scrollTo(0,0);
+      return;
+    }
+    showSummary();
+  } else {
+    switchStep(cur + 1);
+  }
+  window.scrollTo(0,0);
+}
 function goPrev() { var cur = getCurrentStepIndex(); switchStep(Math.max(0, cur - 1)); window.scrollTo(0,0); }
 function showSummary() {
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
@@ -1937,6 +2206,7 @@ function checkCompletion() {
   completedSteps.variables = true;
   completedSteps.pricing = !!(parseFloat(document.getElementById('target-sale-price').value) && parseFloat(document.getElementById('discount-depth').value));
   completedSteps.wishlist = !!(parseInt(document.getElementById('wishlist-count').value) > 0);
+  completedSteps.demo = (getDemoExists() === 'no') || isDemoComplete();
   completedSteps.ea = !!visitedSteps.ea;
   completedSteps.regional = !!visitedSteps.regional;
   completedSteps.monitoring = !!visitedSteps.monitoring;
@@ -1981,7 +2251,31 @@ function buildSummary() {
   var menaPrice = lp * menaMult;
   var demoResult = getDemoHealthScore();
 
+  var issues = computeReconciliation();
+  var blockingIssues = issues.filter(function(i){ return i.severity === 'blocking'; });
+  var warningIssues = issues.filter(function(i){ return i.severity === 'warning'; });
+  var advisoryIssues = issues.filter(function(i){ return i.severity === 'advisory'; });
+  var unresolved = blockingIssues.concat(warningIssues);
+  var unresolvedCount = unresolved.length;
+  var allRenderable = unresolved.concat(advisoryIssues);
+  var flagHtml = unresolvedCount > 0
+    ? '<div class="reconcile-flag flag-blocking">\u26A0 ' + unresolvedCount + ' unresolved pricing ' + (unresolvedCount === 1 ? 'issue' : 'issues') + ' \u2014 review before exporting</div>'
+    : '<div class="reconcile-flag flag-clear">\u2713 All pricing checks reconciled</div>';
+  var issuesHtml = allRenderable.length > 0
+    ? '<div class="card"><h3>' + (unresolvedCount > 0 ? 'Reconciliation Required' : 'Advisories') + '</h3>' + allRenderable.map(function(i){
+        var sevClass = i.severity === 'blocking' ? 'sev-blocking' : (i.severity === 'warning' ? 'sev-warning' : 'sev-advisory');
+        return '<div class="reconcile-issue"><span class="issue-title">' + i.title + '<span class="issue-sev ' + sevClass + '">' + i.severity + '</span></span><div class="issue-detail">' + i.detail + '</div></div>';
+      }).join('') + '</div>'
+    : '';
+  var contentHrs = parseFloat(document.getElementById('content-hours-input').value) || 0;
+  var contentBand = contentHrs > 0 ? getContentBand(contentHrs) : null;
+  var contentMismatch = issues.filter(function(i){ return i.id === 'content-depth-conflict'; })[0];
+  var demoConvRate = getDemoConversionRate();
+  var hasDemoData = (getDemoExists() === 'yes' && demoConvRate > 0);
+  var demoConvLow = issues.filter(function(i){ return i.id === 'demo-conversion-low'; })[0];
+
   document.getElementById('summary-content').innerHTML =
+    flagHtml + issuesHtml +
     '<div class="card"><h3>Recommended Tier</h3><div style="font-family:var(--serif);font-size:28px;font-weight:700">' + (tierText || '—') + '</div>' +
     (gp.instinctPrice > 0 && tierText ? '<p class="muted">Your instinct: $' + gp.instinctPrice.toFixed(2) + ' vs. Calculated: ' + tierText + '</p>' : '') +
     '<p class="muted">From Step 2: Four Variables weighted scoring.</p></div>' +
@@ -2005,7 +2299,13 @@ function buildSummary() {
     '<div class="card"><h3>Comps & Wishlist</h3>' +
     '<div class="output-row"><span class="output-label">Comp Games Analyzed</span><span class="output-value">' + compCount + '</span></div>' +
     '<div class="output-row"><span class="output-label">Projected Wishlist Count</span><span class="output-value">' + (wishlistCount > 0 ? wishlistCount.toLocaleString() : '—') + '</span></div></div>' +
-    (demoResult.score > 0 ? '<div class="card"><h3>Demo Performance</h3><div class="output-row"><span class="output-label">Demo Health Score</span><span class="output-value">' + demoResult.score + '/100 (' + demoResult.label + ')</span></div><div class="output-row"><span class="output-label">Demo Quality Multiplier</span><span class="output-value">' + demoResult.multiplier.toFixed(2) + 'x</span></div></div>' : '') +
+    '<div class="card"><h3>Content-Depth Cross-Check</h3>' +
+    '<div class="output-row"><span class="output-label">Expected Content Hours</span><span class="output-value">' + (contentHrs > 0 ? contentHrs + ' hrs' : '—') + '</span></div>' +
+    '<div class="output-row"><span class="output-label">Typical Price Band</span><span class="output-value">' + (contentBand ? contentBand.price : '—') + '</span></div>' +
+    (contentMismatch ? '<p class="muted" style="color:var(--coral);margin-top:8px">\u26A0 ' + contentMismatch.detail + '</p>' : '') + '</div>' +
+    ((demoResult.score > 0 || hasDemoData) ? '<div class="card"><h3>Demo Performance</h3><div class="output-row"><span class="output-label">Demo Health Score</span><span class="output-value">' + (demoResult.score > 0 ? demoResult.score + '/100 (' + demoResult.label + ')' : '—') + '</span></div>' +
+    (hasDemoData ? '<div class="output-row"><span class="output-label">Demo Conversion Applied</span><span class="output-value">' + demoConvRate.toFixed(1) + '%</span></div><p class="muted" style="margin-top:8px">First-week estimate adjusted using your demo conversion data (' + demoConvRate.toFixed(1) + '%) instead of generic benchmarks.</p>' : '<div class="output-row"><span class="output-label">Demo Quality Multiplier</span><span class="output-value">' + demoResult.multiplier.toFixed(2) + 'x</span></div>') +
+    (demoConvLow ? '<p class="muted" style="color:var(--coral);margin-top:8px">\u26A0 ' + demoConvLow.detail + '</p>' : '') + '</div>' : '') +
     '<div class="card"><h3>Early Access</h3>' +
     '<div class="output-row"><span class="output-label">EA Discount vs 1.0 Price</span><span class="output-value">' + eaDiscPct + '%</span></div>' +
     '<div class="output-row"><span class="output-label">Recommended EA Launch Price</span><span class="output-value">' + (lp > 0 ? '$' + eaPrice.toFixed(2) : '—') + '</span></div></div>' +
@@ -2064,7 +2364,7 @@ function injectWizardUI() {
   var sumEl = document.getElementById('tab-summary');
   if (sumEl && !sumEl.querySelector('.wizard-nav')) {
     var wn = document.createElement('div'); wn.className = 'wizard-nav';
-    wn.innerHTML = '<button class="wizard-prev" onclick="switchStep(7)" aria-label="Back to Sources">← Back to Sources</button>';
+    wn.innerHTML = '<button class="wizard-prev" onclick="switchStep(9)" aria-label="Back to Sources">← Back to Sources</button>';
     sumEl.appendChild(wn);
   }
 }
