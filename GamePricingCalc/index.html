@@ -773,7 +773,8 @@
         <h3>Your Inputs</h3>
         <div style="margin-bottom:14px">
           <label class="stat-label">Projected Wishlist Count at Launch</label>
-          <input type="number" id="wishlist-count" value="5000" min="0" step="500" oninput="updateWishlist()">
+          <input type="number" id="wishlist-count" value="" min="0" step="500" oninput="markManual('wishlist-count'); updateWishlist()">
+          <div class="estimate-note heuristic" id="wishlist-estimate-note"></div>
           <p class="output-note" style="margin-top:4px">Use organic wishlist count only — exclude botted, fabricated, or incentivised wishlists. Steam's algorithm detects artificial activity and may penalise your Visibility Rounds.</p>
           <div class="inline-prompt" id="wishlist-community-prompt">Wishlist count alone predicts launch success only ~17% of the time under 10,000 wishlists. <a onclick="document.getElementById('community-signals-details').open=true; document.getElementById('community-signals-details').scrollIntoView({behavior:'smooth'});">Add your community signals below</a> to strengthen this estimate.</div>
         </div>
@@ -794,13 +795,14 @@
         <details class="summary-bar" id="community-signals-details" style="margin-top:12px;border-left:3px solid var(--gold);background:rgba(195,165,95,0.06)">
           <summary style="color:var(--dark);font-weight:600;font-size:11px">Community Signals (optional) — click to expand</summary>
           <p class="muted" style="margin-bottom:12px;font-size:12px">Why this matters: GameDiscoverCo research shows wishlist count alone predicts launch success only ~17% of the time for games under 10,000 wishlists — community engagement and wishlist source quality are stronger secondary signals. Use these optional fields to sanity-check whether your wishlist count reflects real purchase intent.</p>
+          <p class="estimate-note heuristic" id="community-default-note" style="margin-bottom:12px"></p>
           <div style="margin-bottom:12px">
             <label class="stat-label">Discord Member Count</label>
             <input type="number" id="discord-count" value="" min="0" step="10" placeholder="e.g. 500" oninput="updateWishlist()">
           </div>
           <div style="margin-bottom:12px">
-            <label class="stat-label">Discord Activity Level</label>
-            <select id="discord-activity" onchange="updateWishlist()">
+            <label class="stat-label">Discord Activity Level <span class="estimate-tag heuristic" id="discord-activity-tag" style="display:none">Estimated default</span></label>
+            <select id="discord-activity" onchange="markManual('discord-activity'); updateWishlist()">
               <option value="">—</option>
               <option value="low">Low — mostly inactive/lurkers</option>
               <option value="moderate">Moderate — regular posts, some engagement</option>
@@ -808,12 +810,12 @@
             </select>
           </div>
           <div style="margin-bottom:12px">
-            <label class="stat-label">Steam / Social Follower Count</label>
-            <input type="number" id="follower-count" value="" min="0" step="10" placeholder="e.g. 1200" oninput="updateWishlist()">
+            <label class="stat-label">Steam / Social Follower Count <span class="estimate-tag heuristic" id="follower-tag" style="display:none">Estimated default</span></label>
+            <input type="number" id="follower-count" value="" min="0" step="10" placeholder="e.g. 1200" oninput="markManual('follower-count'); updateWishlist()">
           </div>
           <div style="margin-bottom:4px">
-            <label class="stat-label">Primary Wishlist Source</label>
-            <select id="wishlist-source" onchange="updateWishlist()">
+            <label class="stat-label">Primary Wishlist Source <span class="estimate-tag heuristic" id="wishlist-source-tag" style="display:none">Estimated default</span></label>
+            <select id="wishlist-source" onchange="markManual('wishlist-source'); updateWishlist()">
               <option value="">—</option>
               <option value="organic">Mostly organic (Steam discovery, word of mouth)</option>
               <option value="mixed">Mixed</option>
@@ -843,21 +845,22 @@
         <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="radio" name="demo-exists" value="no" checked onchange="renderDemoGating(); updateWishlist();"> No</label>
       </div>
       <div class="demo-note" id="demo-gate-note"></div>
+      <div class="estimate-note benchmark" id="demo-default-note"></div>
     </div>
 
     <div class="card">
       <h3>Traffic &amp; Reach</h3>
       <div style="margin-bottom:14px">
         <label class="stat-label">Total Store Page Visitors During Tracking Period</label>
-        <input type="number" id="demo-visitors" value="" min="0" step="10" placeholder="e.g. 5000" oninput="updateDemoStats()">
+        <input type="number" id="demo-visitors" value="" min="0" step="10" placeholder="e.g. 5000" oninput="markManual('demo-visitors'); updateDemoStats()">
       </div>
       <div style="margin-bottom:14px">
         <label class="stat-label">Total Demo Downloads / Plays</label>
-        <input type="number" id="demo-downloads" value="" min="0" step="10" placeholder="e.g. 1500" oninput="updateDemoStats()">
+        <input type="number" id="demo-downloads" value="" min="0" step="10" placeholder="e.g. 1500" oninput="markManual('demo-downloads'); updateDemoStats()">
       </div>
       <div style="margin-bottom:0">
         <label class="stat-label">Total Wishlist Additions During Tracking Period</label>
-        <input type="number" id="demo-wishlists" value="" min="0" step="10" placeholder="e.g. 300" oninput="updateDemoStats()">
+        <input type="number" id="demo-wishlists" value="" min="0" step="10" placeholder="e.g. 300" oninput="markManual('demo-wishlists'); updateDemoStats()">
       </div>
     </div>
 
@@ -865,15 +868,15 @@
       <h3>Engagement Depth</h3>
       <div style="margin-bottom:14px">
         <label class="stat-label">Average Session Length (minutes)</label>
-        <input type="number" id="demo-avg-session" value="" min="0" step="0.5" placeholder="e.g. 18" oninput="updateDemoStats()">
+        <input type="number" id="demo-avg-session" value="" min="0" step="0.5" placeholder="e.g. 18" oninput="markManual('demo-avg-session'); updateDemoStats()">
       </div>
       <div style="margin-bottom:14px">
         <label class="stat-label">Target / Intended Session Length (minutes)</label>
-        <input type="number" id="demo-target-session" value="" min="0" step="0.5" placeholder="e.g. 20" oninput="updateDemoStats()">
+        <input type="number" id="demo-target-session" value="" min="0" step="0.5" placeholder="e.g. 20" oninput="markManual('demo-target-session'); updateDemoStats()">
       </div>
       <div style="margin-bottom:0">
         <label class="stat-label">Demo Completion Rate (%)</label>
-        <input type="number" id="demo-completion" value="" min="0" max="100" step="1" placeholder="e.g. 35" oninput="updateDemoStats()">
+        <input type="number" id="demo-completion" value="" min="0" max="100" step="1" placeholder="e.g. 35" oninput="markManual('demo-completion'); updateDemoStats()">
       </div>
     </div>
 
@@ -881,7 +884,7 @@
       <h3>Conversion Events</h3>
       <div style="margin-bottom:14px">
         <label class="stat-label">Players Who Played the Demo AND Wishlisted</label>
-        <input type="number" id="demo-played-wishlisted" value="" min="0" step="1" placeholder="e.g. 75" oninput="updateDemoStats()">
+        <input type="number" id="demo-played-wishlisted" value="" min="0" step="1" placeholder="e.g. 75" oninput="markManual('demo-played-wishlisted'); updateDemoStats()">
       </div>
       <div>
         <label class="stat-label">Wishlist Additions From Non-Demo Players (auto-calc)</label>
@@ -1150,9 +1153,22 @@
   .demo-note.advisory { background:rgba(107,102,96,0.10); color:var(--mid); border-left:3px solid var(--faint); }
   .demo-note.required { background:rgba(42,143,118,0.08); color:#1a6e5a; border-left:3px solid var(--teal); }
   .demo-fields.required-on { border:1px dashed var(--teal); border-radius:var(--radius); }
+  /* === DERIVED DEFAULTS === */
+  .estimate-note { font-family:var(--sans); font-size:11px; line-height:1.5; margin-top:6px; padding:8px 10px; border-radius:var(--radius); display:none; }
+  .estimate-note.heuristic { background:rgba(107,100,179,0.08); border:1px dashed var(--purple); color:#3d3680; }
+  .estimate-note.benchmark { background:rgba(42,143,118,0.08); border:1px dashed var(--teal); color:#1a6e5a; }
+  .estimate-tag { font-family:var(--mono); font-size:8px; letter-spacing:0.06em; text-transform:uppercase; padding:2px 6px; border-radius:3px; margin-left:6px; vertical-align:middle; }
+  .estimate-tag.heuristic { background:rgba(107,100,179,0.15); color:#3d3680; }
+  .estimate-tag.benchmark { background:rgba(42,143,118,0.15); color:#1a6e5a; }
+  .estimate-note details { margin-top:4px; }
+  .estimate-note summary { font-family:var(--mono); font-size:9px; cursor:pointer; color:var(--mid); letter-spacing:0.04em; }
+  .estimate-note details span { font-family:var(--mono); font-size:9px; color:var(--mid); letter-spacing:0.02em; display:block; margin-top:2px; }
+  input:disabled, select:disabled { background:var(--cream-dark); color:var(--faint); cursor:not-allowed; }
 </style>
 
 <script>
+window.manualFields = {};
+
 function switchTab(tabName) {
   document.querySelectorAll('nav button').forEach(function(b){b.classList.remove('active');});
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
@@ -1309,6 +1325,7 @@ async function fetchSteamData(appId, row) {
         var revData = await revResp.json();
         if (revData && revData.query_summary) {
           var qs = revData.query_summary;
+          row.setAttribute('data-total-reviews', (qs.total_positive || 0) + (qs.total_negative || 0));
           var result = mapReception(qs.review_score_desc, qs.total_positive, qs.total_negative);
           if (result) {
             row.querySelector('.comp-reception').value = result.value;
@@ -1327,6 +1344,7 @@ async function fetchSteamData(appId, row) {
     row.dataset.fetched = 'true';
     showRowStatus(row, 'Fetched from Steam', 'ok');
     updateCompStats();
+    refreshDerivedDefaults();
   } catch (err) {
     showRowStatus(row, 'Could not fetch — check App ID or enter manually', 'error');
   } finally {
@@ -1905,10 +1923,8 @@ function getDemoConversionRate() {
 }
 
 function isCommunitySignalsFilled() {
-  return !!(document.getElementById('discord-count').value ||
-            document.getElementById('follower-count').value ||
-            document.getElementById('discord-activity').value ||
-            document.getElementById('wishlist-source').value);
+  return isManual('follower-count') || isManual('discord-activity') || isManual('wishlist-source') ||
+    !!(document.getElementById('discord-count').value);
 }
 
 function isRoundWishlist(n) {
@@ -2062,12 +2078,178 @@ function renderDemoGating() {
   if (demoExists === 'yes') {
     note.className = 'demo-note required';
     note.style.display = 'block';
-    note.innerHTML = 'Demo data will be used to adjust your first-week sales estimate. Complete Traffic & Reach, Engagement Depth, and Conversion Events below.';
+    note.innerHTML = 'Demo data will be used to adjust your first-week sales estimate. Fields below are pre-filled with benchmark-based estimates \u2014 replace them with your actual demo data.';
   } else {
     note.className = 'demo-note advisory';
     note.style.display = 'block';
     note.innerHTML = 'No demo data \u2014 using non-demo wishlist conversion benchmarks (8\u201312%) instead of demo-driven benchmarks (18\u201325%). A demo is one of the strongest predictors of launch revenue quality.';
   }
+  refreshDemoDefaults();
+}
+
+// === DERIVED DEFAULTS (heuristic vs benchmark) ===
+function markManual(fieldId) { window.manualFields[fieldId] = true; }
+function isManual(fieldId) { return !!window.manualFields[fieldId]; }
+
+function getAvgCompReviews() {
+  var totals = [];
+  document.querySelectorAll('#comp-tbody tr').forEach(function(tr){
+    var rv = parseInt(tr.getAttribute('data-total-reviews'));
+    if (!isNaN(rv) && rv > 0) totals.push(rv);
+  });
+  if (totals.length === 0) return 0;
+  return totals.reduce(function(s,v){return s+v;},0) / totals.length;
+}
+
+function budgetMultiplier() {
+  var map = { under50k:0.4, '50to250k':0.7, '250to1m':1.0, '1to5m':1.8, over5m:3.5 };
+  return map[document.getElementById('profile-budget').value] || 1.0;
+}
+function teamMultiplier() {
+  var t = parseInt(document.getElementById('profile-team-size').value) || 0;
+  if (t <= 0) return 1.0;
+  if (t === 1) return 0.5;
+  if (t === 2) return 0.75;
+  if (t <= 5) return 1.0;
+  if (t <= 10) return 1.6;
+  return 2.5;
+}
+
+function deriveWishlistEstimate() {
+  var avgReviews = getAvgCompReviews();
+  var base = avgReviews > 0 ? avgReviews : 1200;
+  var est = base * budgetMultiplier() * teamMultiplier();
+  return Math.max(100, Math.round(est / 100) * 100);
+}
+
+function updateWishlistEstimateLabel() {
+  var note = document.getElementById('wishlist-estimate-note');
+  if (!note) return;
+  if (isManual('wishlist-count')) { note.style.display = 'none'; note.innerHTML = ''; return; }
+  var avgReviews = getAvgCompReviews();
+  var bm = budgetMultiplier();
+  var tm = teamMultiplier();
+  var avgTxt = avgReviews > 0 ? Math.round(avgReviews).toLocaleString() : 'n/a (no Steam review data \u2192 fallback 1,200)';
+  note.className = 'estimate-note heuristic';
+  note.style.display = 'block';
+  note.innerHTML = '<span style="font-weight:600">Heuristic starting point \u2014 not a published benchmark.</span> Starting estimate based on your comp set. Replace with your actual tracked wishlist count.' +
+    '<details><summary>How is this estimated?</summary><span>average comp review total (' + avgTxt + ') \u00D7 budget factor (' + bm.toFixed(1) + ') \u00D7 team factor (' + tm.toFixed(1) + ')</span></details>';
+}
+
+function deriveFollowerEstimate() {
+  var wl = parseInt(document.getElementById('wishlist-count').value) || 0;
+  return wl > 0 ? Math.round(wl / 4) : 0;
+}
+
+function refreshCommunityDefaults() {
+  var fEl = document.getElementById('follower-count');
+  var fTag = document.getElementById('follower-tag');
+  if (!isManual('follower-count')) {
+    if (fEl) fEl.value = deriveFollowerEstimate();
+    if (fTag) fTag.style.display = 'inline';
+  } else if (fTag) { fTag.style.display = 'none'; }
+
+  var dEl = document.getElementById('discord-activity');
+  var dTag = document.getElementById('discord-activity-tag');
+  if (!isManual('discord-activity')) {
+    if (dEl) dEl.value = 'moderate';
+    if (dTag) dTag.style.display = 'inline';
+  } else if (dTag) { dTag.style.display = 'none'; }
+
+  var sEl = document.getElementById('wishlist-source');
+  var sTag = document.getElementById('wishlist-source-tag');
+  if (!isManual('wishlist-source')) {
+    if (sEl) sEl.value = 'mixed';
+    if (sTag) sTag.style.display = 'inline';
+  } else if (sTag) { sTag.style.display = 'none'; }
+
+  var note = document.getElementById('community-default-note');
+  if (note) {
+    var anyAuto = !isManual('follower-count') || !isManual('discord-activity') || !isManual('wishlist-source');
+    if (anyAuto) {
+      note.className = 'estimate-note heuristic';
+      note.style.display = 'block';
+      note.innerHTML = 'Some fields below are pre-filled with <strong>estimated defaults</strong> from your Project Context \u2014 <em>not benchmarks</em>. Adjust to your actual numbers; the Community Score recalculates live as you do.';
+    } else { note.style.display = 'none'; }
+  }
+}
+
+function deriveDemoDefaults() {
+  var wl = parseInt(document.getElementById('wishlist-count').value) || 0;
+  if (wl <= 0) return null;
+  var storeRate = 0.15;
+  var downloadRate = 0.30;
+  var demoConv = 0.20;
+  var completion = 35;
+  var visitors = Math.round(wl / storeRate);
+  var downloads = Math.round(visitors * downloadRate);
+  return {
+    visitors: visitors,
+    downloads: downloads,
+    wishlists: wl,
+    avgSession: 18,
+    targetSession: 20,
+    completion: completion,
+    playedWishlisted: Math.round(downloads * demoConv)
+  };
+}
+
+function setDemoFieldsDisabled(disabled) {
+  ['demo-visitors','demo-downloads','demo-wishlists','demo-avg-session','demo-target-session','demo-completion','demo-played-wishlisted'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.disabled = disabled;
+  });
+}
+
+function refreshDemoDefaults() {
+  var demoExists = getDemoExists();
+  var note = document.getElementById('demo-default-note');
+  if (demoExists !== 'yes') {
+    setDemoFieldsDisabled(true);
+    ['demo-visitors','demo-downloads','demo-wishlists','demo-avg-session','demo-target-session','demo-completion','demo-played-wishlisted'].forEach(function(id){
+      if (!isManual(id)) { var el = document.getElementById(id); if (el) el.value = ''; }
+    });
+    if (note) { note.style.display = 'none'; note.innerHTML = ''; }
+    return;
+  }
+  setDemoFieldsDisabled(false);
+  var d = deriveDemoDefaults();
+  if (!d) {
+    if (note) { note.style.display = 'none'; note.innerHTML = ''; }
+    return;
+  }
+  var fieldMap = {
+    'demo-visitors': d.visitors,
+    'demo-downloads': d.downloads,
+    'demo-wishlists': d.wishlists,
+    'demo-avg-session': d.avgSession,
+    'demo-target-session': d.targetSession,
+    'demo-completion': d.completion,
+    'demo-played-wishlisted': d.playedWishlisted
+  };
+  var anyApplied = false;
+  for (var id in fieldMap) {
+    if (!isManual(id)) {
+      var el = document.getElementById(id);
+      if (el) { el.value = fieldMap[id]; anyApplied = true; }
+    }
+  }
+  if (note) {
+    if (anyApplied) {
+      note.className = 'estimate-note benchmark';
+      note.style.display = 'block';
+      note.innerHTML = '<span style="font-weight:600">Benchmark-based estimate.</span> Pre-filled from Next Fest post-mortem ranges (demo-driven conversion 18\u201325%, completion >30%, store\u2192wishlist ~12\u201325%), scaled by your projected wishlist count. A few ratios are internal assumptions anchored to those ranges \u2014 replace with your actual demo data.';
+    } else { note.style.display = 'none'; }
+  }
+}
+
+function refreshDerivedDefaults() {
+  if (!isManual('wishlist-count')) {
+    document.getElementById('wishlist-count').value = deriveWishlistEstimate();
+  }
+  updateWishlistEstimateLabel();
+  refreshCommunityDefaults();
+  updateWishlist();
 }
 
 // === GAME PROFILE STATE ===
@@ -2118,6 +2300,8 @@ function updateGameProfile() {
   var showEa = p.monetization === 'premium' || p.monetization === 'premium_dlc';
   var eaTabNav = document.querySelector('nav button[data-tab="ea"]');
   if (eaTabNav) eaTabNav.style.display = showEa ? '' : 'none';
+
+  refreshDerivedDefaults();
 }
 
 var stepOrder = ['profile','comp','variables','pricing','wishlist','demo','ea','regional','monitoring','sources'];
@@ -2376,6 +2560,7 @@ completedSteps.comp = false;
 updateStepper();
 updateWizardButtons();
 populateSummaryBar();
+refreshDerivedDefaults();
 
 function escapeHtml(str) {
   var div = document.createElement('div');
