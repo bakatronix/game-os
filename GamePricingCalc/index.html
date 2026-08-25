@@ -685,7 +685,7 @@
       <div style="display:flex;align-items:center;gap:16px;margin-bottom:14px;flex-wrap:wrap">
         <div style="flex:1;min-width:180px">
           <label class="stat-label">Content Hours</label>
-          <input type="number" id="content-hours-input" value="10" min="0.5" step="0.5" oninput="updateContentCheck()" style="max-width:160px">
+          <input type="number" id="content-hours-input" value="10" min="0.5" step="0.5" oninput="markManual('content-hours-input'); updateContentCheck()" style="max-width:160px">
         </div>
         <div style="flex-shrink:0">
           <span class="output-value" id="content-check-result">—</span>
@@ -1105,16 +1105,22 @@
   <section class="tab" id="tab-summary">
     <h2>Pricing Summary</h2>
     <p class="subtitle">Your complete pricing decision recap. All data derived from your inputs across Steps 0–8.</p>
-    <div style="display:flex;gap:10px;margin-bottom:16px">
+    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px">
       <button class="btn" onclick="try{buildSummary();}catch(e){};setTimeout(function(){window.print()},400)" id="pdf-btn">Download PDF</button>
+      <button class="btn-ghost wb-btn" onclick="exportWorkbook()">Save workbook (.json)</button>
+      <button class="btn-ghost wb-btn" onclick="document.getElementById('import-file-input').click()">Load workbook (.json)</button>
+      <button class="btn-ghost wb-btn" onclick="copyShareableLink()">Copy shareable link</button>
+      <input type="file" id="import-file-input" accept=".json,application/json" style="display:none" onchange="importWorkbook(event)">
     </div>
+    <div class="import-error" id="import-error"></div>
+    <div class="share-feedback" id="share-feedback"></div>
     <div id="summary-content"></div>
   </section>
 </main>
 
 <style>
   @media print {
-    header, .stepper, .stepper-mobile, .wizard-nav, .summary-bar, #pdf-btn, nav, .nav-wrapper, .nav-select, footer { display: none !important; }
+    header, .stepper, .stepper-mobile, .wizard-nav, .summary-bar, #pdf-btn, nav, .nav-wrapper, .nav-select, footer, .wb-btn, .restore-banner, .import-error, .share-feedback { display: none !important; }
     body { background: #fff; color: #000; font-size: 12px; }
     .card { border: 1px solid #ccc; box-shadow: none; break-inside: avoid; }
     .tab { display: block !important; }
@@ -1164,6 +1170,13 @@
   .estimate-note summary { font-family:var(--mono); font-size:9px; cursor:pointer; color:var(--mid); letter-spacing:0.04em; }
   .estimate-note details span { font-family:var(--mono); font-size:9px; color:var(--mid); letter-spacing:0.02em; display:block; margin-top:2px; }
   input:disabled, select:disabled { background:var(--cream-dark); color:var(--faint); cursor:not-allowed; }
+  /* === SESSION PERSISTENCE UI === */
+  .restore-banner { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; background: var(--white); border-bottom: 1px solid var(--border); padding: 10px 18px; display: flex; align-items: center; gap: 12px; font-family: var(--sans); font-size: 13px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .restore-banner span { flex: 1; color: var(--dark); }
+  .restore-dismiss { background: none; border: none; font-size: 18px; line-height: 1; cursor: pointer; color: var(--mid); padding: 0 6px; }
+  .import-error { display: none; font-family: var(--mono); font-size: 11px; color: var(--coral); margin-top: 8px; }
+  .share-feedback { font-family: var(--mono); font-size: 11px; color: var(--teal); margin-top: 8px; }
+  .share-feedback.error { color: var(--coral); }
 </style>
 
 <script>
@@ -1240,7 +1253,7 @@ var steamProxyUrl = 'https://httpsllamagriffincomsebsteam-proxyjs.abbas-saleem-k
 
 function saveProxyUrl() {
   steamProxyUrl = document.getElementById('steam-proxy-url').value.trim();
-  localStorage.setItem('steamProxyUrl', steamProxyUrl);
+  try { localStorage.setItem('steamProxyUrl', steamProxyUrl); } catch(e) {}
   var btn = document.querySelector('.proxy-config .btn-ghost');
   btn.textContent = 'Saved!';
   btn.style.borderColor = '#2a8f76';
@@ -1345,6 +1358,7 @@ async function fetchSteamData(appId, row) {
     showRowStatus(row, 'Fetched from Steam', 'ok');
     updateCompStats();
     refreshDerivedDefaults();
+    scheduleAutosave();
   } catch (err) {
     showRowStatus(row, 'Could not fetch — check App ID or enter manually', 'error');
   } finally {
@@ -1373,7 +1387,7 @@ function addCompRow(title, launch, current, quality, reception, hours) {
     '<td><select class="comp-quality"><option' + (quality==='Better'?' selected':'') + '>Better</option><option' + (quality==='Equal'?' selected':'') + '>Equal</option><option' + (quality==='Worse'?' selected':'') + '>Worse</option></select></td>' +
     '<td><select class="comp-reception"><option' + (reception==='Positive'?' selected':'') + '>Positive</option><option' + (reception==='Mixed'?' selected':'') + '>Mixed</option><option' + (reception==='Negative'?' selected':'') + '>Negative</option></select><span class="reception-auto-note"></span></td>' +
     '<td><input type="number" value="' + hours + '" step="0.5" min="0" placeholder="0" class="comp-hours"></td>' +
-    '<td><button class="btn-ghost row-del" onclick="this.closest(\'tr\').remove(); compRowCount--; updateCompStats();">' + '✕' + '</button></td>';
+    '<td><button class="btn-ghost row-del" onclick="this.closest(\'tr\').remove(); compRowCount--; updateCompStats(); scheduleAutosave();">' + '✕' + '</button></td>';
   tr.querySelector('.fetch-btn').addEventListener('click', function() {
     var appId = extractAppId(tr.querySelector('.comp-appid').value);
     if (!appId) { showRowStatus(tr, 'Enter a valid Steam App ID or URL', 'error'); return; }
@@ -2286,7 +2300,7 @@ function updateGameProfile() {
   window.gameProfile = p;
 
   // Sync playtime to content-hours in Step 2
-  if (p.playtime > 0) document.getElementById('content-hours-input').value = p.playtime;
+  if (p.playtime > 0 && !isManual('content-hours-input')) document.getElementById('content-hours-input').value = p.playtime;
 
   // Visibility gating
   var showDlc = (p.monetization === 'premium_dlc' || p.monetization === 'subscription') && p.dlcPlan !== 'no';
@@ -2561,6 +2575,276 @@ updateStepper();
 updateWizardButtons();
 populateSummaryBar();
 refreshDerivedDefaults();
+
+// === SESSION PERSISTENCE (autosave / export / import / share) ===
+var PERSIST_KEY = 'gameOsPriceCalc.v1';
+var PERSIST_SCHEMA = 1;
+var autosaveTimer = null;
+
+function serialiseState() {
+  var state = { schema: PERSIST_SCHEMA, fields: {}, radios: {}, compRows: [], manualFields: {}, proxyUrl: steamProxyUrl, visitedSteps: visitedSteps, completedSteps: completedSteps };
+
+  document.querySelectorAll('input[id], select[id], textarea[id]').forEach(function(el){
+    if (el.id === 'steam-proxy-url' || el.type === 'file') return;
+    if (el.type === 'checkbox' || el.type === 'radio') { state.fields[el.id] = el.checked; }
+    else if (el.tagName === 'SELECT' && el.multiple) {
+      var sel = [];
+      for (var i = 0; i < el.options.length; i++) { if (el.options[i].selected) sel.push(el.options[i].value); }
+      state.fields[el.id] = sel;
+    } else { state.fields[el.id] = el.value; }
+  });
+
+  document.querySelectorAll('input[type="radio"]').forEach(function(el){
+    if (el.name && el.checked) state.radios[el.name] = el.value;
+  });
+
+  document.querySelectorAll('#comp-tbody tr').forEach(function(tr){
+    state.compRows.push({
+      title: (tr.querySelector('.comp-title') || {}).value || '',
+      appId: (tr.querySelector('.comp-appid') || {}).value || '',
+      launch: (tr.querySelector('.comp-launch') || {}).value || '',
+      current: (tr.querySelector('.comp-current') || {}).value || '',
+      releaseDate: (tr.querySelector('.comp-release-date') || {}).value || '',
+      quality: (tr.querySelector('.comp-quality') || {}).value || 'Equal',
+      reception: (tr.querySelector('.comp-reception') || {}).value || 'Mixed',
+      hours: (tr.querySelector('.comp-hours') || {}).value || '',
+      totalReviews: tr.getAttribute('data-total-reviews') || '',
+      genres: (tr.querySelector('.genres-tags') || {}).textContent || '',
+      fetched: tr.getAttribute('data-fetched') === 'true'
+    });
+  });
+
+  state.manualFields = window.manualFields || {};
+  return state;
+}
+
+function restoreState(state) {
+  var f = state.fields || {};
+  for (var id in f) {
+    var el = document.getElementById(id);
+    if (!el) continue;
+    var val = f[id];
+    if (el.type === 'checkbox' || el.type === 'radio') { el.checked = !!val; }
+    else if (el.tagName === 'SELECT' && el.multiple) {
+      var vals = val || [];
+      for (var i = 0; i < el.options.length; i++) { el.options[i].selected = (vals.indexOf(el.options[i].value) !== -1); }
+    } else if (el.type !== 'file') { el.value = (val == null) ? '' : val; }
+  }
+
+  var radios = state.radios || {};
+  for (var name in radios) {
+    var els = document.getElementsByName(name);
+    for (var i = 0; i < els.length; i++) {
+      if (els[i].type === 'radio' && els[i].value === radios[name]) { els[i].checked = true; break; }
+    }
+  }
+
+  var tbody = document.getElementById('comp-tbody');
+  if (tbody) {
+    tbody.innerHTML = '';
+    compRowCount = 0;
+    var rows = state.compRows || [];
+    rows.forEach(function(r){
+      addCompRow(r.title, r.launch, r.current, r.quality, r.reception, r.hours);
+      var tr = tbody.lastElementChild;
+      if (!tr) return;
+      var appId = tr.querySelector('.comp-appid'); if (appId) appId.value = r.appId || '';
+      var rd = tr.querySelector('.comp-release-date'); if (rd) rd.value = r.releaseDate || '';
+      var gt = tr.querySelector('.genres-tags'); if (gt) gt.textContent = r.genres || '';
+      if (r.totalReviews) tr.setAttribute('data-total-reviews', r.totalReviews);
+      if (r.fetched) {
+        tr.setAttribute('data-fetched', 'true');
+        var badge = tr.querySelector('.steam-badge'); if (badge) badge.style.display = 'inline-block';
+      }
+    });
+  }
+
+  window.manualFields = state.manualFields || {};
+  visitedSteps = state.visitedSteps || {};
+  completedSteps = state.completedSteps || {};
+
+  if (state.proxyUrl) {
+    steamProxyUrl = state.proxyUrl;
+    document.getElementById('steam-proxy-url').value = state.proxyUrl;
+  }
+
+  updateCompStats();
+  updateVariables();
+  updateContentCheck();
+  updateGameProfile();
+  updateAllLinked();
+  updateStepper();
+  updateWizardButtons();
+  renderReconciliation();
+  renderDemoGating();
+}
+
+function saveToLocalStorage() {
+  try {
+    var payload = serialiseState();
+    payload.savedAt = Date.now();
+    localStorage.setItem(PERSIST_KEY, JSON.stringify(payload));
+  } catch(e) { /* storage unavailable or full — degrade to in-memory only */ }
+}
+function loadFromLocalStorage() {
+  try {
+    var raw = localStorage.getItem(PERSIST_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch(e) { return null; }
+}
+function clearLocalStorage() {
+  try { localStorage.removeItem(PERSIST_KEY); } catch(e) {}
+}
+
+function scheduleAutosave() {
+  if (autosaveTimer) clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(function(){ saveToLocalStorage(); }, 400);
+}
+
+function relativeTime(ts) {
+  var diff = Date.now() - (ts || 0);
+  var s = Math.round(diff / 1000);
+  if (s < 60) return 'just now';
+  var m = Math.round(s / 60);
+  if (m < 60) return m + ' minute' + (m === 1 ? '' : 's') + ' ago';
+  var h = Math.round(m / 60);
+  if (h < 24) return h + ' hour' + (h === 1 ? '' : 's') + ' ago';
+  var d = Math.round(h / 24);
+  if (d === 1) return 'yesterday';
+  return d + ' days ago';
+}
+
+function showRestoreBanner(savedAt) {
+  var banner = document.createElement('div');
+  banner.className = 'restore-banner';
+  banner.innerHTML = '<span>Restored your previous session \u2014 ' + relativeTime(savedAt) + '.</span>' +
+    '<button class="btn-ghost" onclick="clearLocalStorage(); location.hash=\'\'; location.reload();">Start fresh</button>' +
+    '<button class="restore-dismiss" onclick="this.parentNode.remove()" aria-label="Dismiss">\u00D7</button>';
+  document.body.appendChild(banner);
+}
+
+function pad2(n) { return (n < 10 ? '0' : '') + n; }
+function gameSlug() {
+  var name = (window.gameProfile && window.gameProfile.name) ? window.gameProfile.name : '';
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'untitled';
+}
+function exportWorkbook() {
+  try {
+    var state = serialiseState();
+    var d = new Date();
+    var filename = 'pricing-' + gameSlug() + '-' + d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) + '.json';
+    var blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 500);
+  } catch(e) { showImportError('Export failed: ' + e.message); }
+}
+
+function showImportError(msg) {
+  var el = document.getElementById('import-error');
+  if (!el) return;
+  if (msg) { el.textContent = msg; el.style.display = 'block'; }
+  else { el.textContent = ''; el.style.display = 'none'; }
+}
+
+function importWorkbook(evt) {
+  var file = evt.target.files && evt.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var obj = JSON.parse(e.target.result);
+      if (!obj || typeof obj !== 'object' || obj.schema !== PERSIST_SCHEMA) {
+        showImportError('Invalid workbook file \u2014 unrecognised or missing schema version.');
+        return;
+      }
+      restoreState(obj);
+      showImportError('');
+      scheduleAutosave();
+    } catch(err) {
+      showImportError('Could not read that file \u2014 it is not valid JSON.');
+    }
+  };
+  reader.onerror = function(){ showImportError('Could not read that file.'); };
+  reader.readAsText(file);
+  evt.target.value = '';
+}
+
+function b64urlEncode(str) {
+  var bytes = new TextEncoder().encode(str);
+  var bin = '';
+  for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function b64urlDecode(s) {
+  var b64 = s.replace(/-/g, '+').replace(/_/g, '/');
+  while (b64.length % 4) b64 += '=';
+  var bin = atob(b64);
+  var bytes = new Uint8Array(bin.length);
+  for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new TextDecoder().decode(bytes);
+}
+function copyTextToClipboard(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text);
+  return new Promise(function(resolve, reject){
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); resolve(); } catch(e) { reject(e); }
+    document.body.removeChild(ta);
+  });
+}
+function showShareFeedback(msg, isError) {
+  var el = document.getElementById('share-feedback');
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'share-feedback' + (isError ? ' error' : '');
+}
+function copyShareableLink() {
+  try {
+    var encoded = b64urlEncode(JSON.stringify(serialiseState()));
+    if (encoded.length > 8000) {
+      showShareFeedback('This workbook is too large for a link \u2014 use Save workbook (.json) instead.', true);
+      return;
+    }
+    var url = location.href.split('#')[0] + '#s=' + encoded;
+    copyTextToClipboard(url).then(function(){
+      showShareFeedback('Shareable link copied to clipboard.');
+    }).catch(function(){
+      showShareFeedback('Could not copy automatically. Here is your link:\n' + url, true);
+    });
+  } catch(e) { showShareFeedback('Failed to generate link: ' + e.message, true); }
+}
+function getSharePayloadFromHash() {
+  try {
+    var m = location.hash.match(/#s=([A-Za-z0-9_-]+)/);
+    if (!m) return null;
+    return JSON.parse(b64urlDecode(m[1]));
+  } catch(e) { return null; }
+}
+
+function initPersistence() {
+  document.addEventListener('input', scheduleAutosave);
+  document.addEventListener('change', scheduleAutosave);
+  try { window.addEventListener('pagehide', function(){ saveToLocalStorage(); }); } catch(e) {}
+
+  var sharePayload = getSharePayloadFromHash();
+  if (sharePayload && sharePayload.schema === PERSIST_SCHEMA) {
+    restoreState(sharePayload);
+    return; // hash takes precedence over localStorage
+  }
+
+  var saved = loadFromLocalStorage();
+  if (saved && saved.schema === PERSIST_SCHEMA) {
+    restoreState(saved);
+    showRestoreBanner(saved.savedAt);
+  }
+}
+initPersistence();
 
 function escapeHtml(str) {
   var div = document.createElement('div');
