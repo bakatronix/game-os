@@ -1143,14 +1143,47 @@
 </main>
 
 <style>
+  /* === PRINT COVER (screen + print) === */
+  .print-cover { text-align: center; padding: 2.5rem 1rem; margin-bottom: 16px; }
+  .print-cover .cover-brand { font-family: var(--mono); font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold-dark); margin-bottom: 20px; }
+  .print-cover .cover-title { font-family: var(--serif); font-size: 36px; font-weight: 700; margin-bottom: 6px; color: var(--dark); }
+  .print-cover .cover-subtitle { font-family: var(--sans); font-size: 14px; color: var(--mid); margin-bottom: 26px; }
+  .print-cover .cover-price { font-family: var(--serif); font-size: 20px; font-weight: 700; color: var(--dark); margin-bottom: 6px; }
+  .print-cover .cover-date { font-family: var(--mono); font-size: 11px; color: var(--mid); margin-bottom: 30px; }
+  .print-cover .cover-attribution { font-family: var(--sans); font-size: 11px; color: var(--mid); }
+
+  @page {
+    margin: 16mm 14mm;
+    @top-center { content: "Indie Game Pricing Dashboard"; font-family: "DM Sans", sans-serif; font-size: 8pt; color: #555; }
+    @bottom-center { content: "Page " counter(page) " of " counter(pages); font-family: "DM Sans", sans-serif; font-size: 8pt; color: #555; }
+  }
+
   @media print {
     header, .stepper, .stepper-mobile, .wizard-nav, .summary-bar, #pdf-btn, nav, .nav-wrapper, .nav-select, footer, .wb-btn, .restore-banner, .import-error, .share-feedback, .ack-control, .scenario-actions { display: none !important; }
-    body { background: #fff; color: #000; font-size: 12px; }
-    .card { border: 1px solid #ccc; box-shadow: none; break-inside: avoid; }
+    body { background: #fff; color: #000; font-size: 11px; line-height: 1.45; }
     .tab { display: block !important; }
     .tab:not(#tab-summary) { display: none !important; }
     .container { max-width: 100%; padding: 0; }
-    main { padding: 20px 0; }
+    main { padding: 0; }
+    .card { border: 1px solid #999; box-shadow: none; break-inside: avoid; page-break-inside: avoid; }
+    h3 { break-after: avoid; page-break-after: avoid; }
+    .reconcile-issue, .ack-record, .compare-card, .framework-card, .wishlist-band, .output-row, .stat-grid .stat-cell { break-inside: avoid; page-break-inside: avoid; }
+    thead { display: table-header-group; }
+    tr { break-inside: avoid; page-break-inside: avoid; }
+    .print-cover { break-after: page; page-break-after: always; }
+
+    /* reflow wide tables instead of clipping */
+    .scenario-table { font-size: 10px; table-layout: auto; }
+    .scenario-table th, .scenario-table td { padding: 6px 8px; word-break: break-word; }
+    table { table-layout: auto; }
+
+    /* greyscale: convey status via text/shape, not colour */
+    .badge, .issue-sev { background: none !important; color: #000 !important; border: 1px solid #666; }
+    .scenario-best::before { content: "\25B2 "; }
+    .scenario-worst::before { content: "\25BC "; }
+    .reconcile-flag.flag-blocking, .reconcile-flag.flag-clear { background: #f0f0f0 !important; border: 1px solid #666; color: #000 !important; }
+    .export-blocked-note { border: 1px solid #666; border-left: 3px solid #000; background: #f0f0f0; }
+    a { color: #000; text-decoration: none; }
   }
 </style>
 
@@ -3144,6 +3177,20 @@ function renderScenarioComparison() {
   return html;
 }
 
+function coverBlock(gp, tierText) {
+  var d = new Date();
+  var dateStr = d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+  var title = (gp && gp.name) ? gp.name : 'Indie Game Pricing Report';
+  return '<div class="card print-cover">' +
+    '<div class="cover-brand">Llama &amp; Griffin</div>' +
+    '<div class="cover-title">' + escapeHtml(title) + '</div>' +
+    '<div class="cover-subtitle">Indie Game Pricing Dashboard</div>' +
+    '<div class="cover-price">Recommended price: ' + (tierText || '\u2014') + '</div>' +
+    '<div class="cover-date">Generated ' + dateStr + '</div>' +
+    '<div class="cover-attribution">Based on the <a href="https://gamestudiounlocked.substack.com/">GameStudioUnlocked</a> pricing methodology. Design by <a href="https://llamagriffin.com/brand-guide/">Llama &amp; Griffin</a>.</div>' +
+    '</div>';
+}
+
 function buildSummary() {
   try {
   var gp = window.gameProfile || {};
@@ -3206,8 +3253,9 @@ function buildSummary() {
   var wlScenarios = (wishlistCount > 0 && lp > 0) ? computeWishlistScenarios(wishlistCount, lp, devShare) : null;
 
   document.getElementById('summary-content').innerHTML =
+    coverBlock(gp, tierText) +
     flagHtml + blockedHtml + ackHtml + issuesHtml +
-    '<div class="card"><h3>Recommended Tier</h3><div style="font-family:var(--serif);font-size:28px;font-weight:700">' + (tierText || '—') + '</div>' +
+    '<div class="card"><h3>Recommended Tier ' + srcLine('gdc', '2025-10-15') + '</h3><div style="font-family:var(--serif);font-size:28px;font-weight:700">' + (tierText || '—') + '</div>' +
     (gp.instinctPrice > 0 && tierText ? '<p class="muted">Your instinct: $' + gp.instinctPrice.toFixed(2) + ' vs. Calculated: ' + tierText + '</p>' : '') +
     '<p class="muted">From Step 2: Four Variables weighted scoring.</p></div>' +
     (gp.name ? ('<div class="card"><h3>Game Profile</h3>' +
@@ -3221,7 +3269,7 @@ function buildSummary() {
     (gp.budget ? '<div class="output-row"><span class="output-label">Budget</span><span class="output-value">' + gp.budget + '</span></div>' : '') +
     (gp.launchWindow ? '<div class="output-row"><span class="output-label">Launch Window</span><span class="output-value">' + gp.launchWindow + '</span></div>' : '') +
     '<div class="output-row"><span class="output-label">Publisher</span><span class="output-value">' + (gp.publisher || 'self') + '</span></div></div>') : '') +
-    '<div class="card"><h3>Launch Price & Revenue</h3>' +
+    '<div class="card"><h3>Launch Price & Revenue ' + srcLine('steamworks', '2026-03-15') + '</h3>' +
     '<div class="output-row"><span class="output-label">Required Launch Price</span><span class="output-value">' + (lp > 0 ? ('$' + lp.toFixed(2) + (snappedLaunchUp != null && Math.round(snappedLaunchUp * 100) !== Math.round(lp * 100) ? ' <span class="output-note">\u2192 set $' + snappedLaunchUp.toFixed(2) + '</span>' : '')) : '—') + '</span></div>' +
     '<div class="output-row"><span class="output-label">Actual Discount at Target Sale</span><span class="output-value">' + (lp > 0 ? (discountFactor * 100).toFixed(1) + '%' : '—') + '</span></div>' +
     '<div class="output-row"><span class="output-label">Net Revenue per Unit (Full)</span><span class="output-value">' + (lp > 0 ? '$' + netFull.toFixed(2) : '—') + '</span></div>' +
@@ -3229,7 +3277,7 @@ function buildSummary() {
     '<div class="output-row"><span class="output-label">Price Floor</span><span class="output-value">' + floorPct + '% off max</span></div>' +
     (be.devCost > 0 ? '<div class="output-row"><span class="output-label">Break-Even Units <span class="output-note">Blended ' + be.fullShare.toFixed(0) + '%/' + (100 - be.fullShare).toFixed(0) + '% split</span></span><span class="output-value">' + Math.ceil(be.blendedUnits).toLocaleString() + '</span></div>' : '') +
     '</div>' +
-    '<div class="card"><h3>Comps & Wishlist</h3>' +
+    '<div class="card"><h3>Comps & Wishlist ' + srcLine('gdc-wishlist', '2025-06-01') + '</h3>' +
     '<div class="output-row"><span class="output-label">Comp Games Analyzed</span><span class="output-value">' + compCount + '</span></div>' +
     '<div class="output-row"><span class="output-label">Projected Wishlist Count</span><span class="output-value">' + (wishlistCount > 0 ? wishlistCount.toLocaleString() : '—') + '</span></div>' +
     (wlScenarios ? (
@@ -3238,17 +3286,17 @@ function buildSummary() {
       (wlScenarios.centralCapped ? '<p class="muted" style="color:var(--coral);margin-top:8px">\u26A0 Central estimate was capped \u2014 stacked multipliers pushed it outside the 5\u201335% benchmark envelope.</p>' : '')
     ) : '<div class="output-row"><span class="output-label">First-Week Estimate</span><span class="output-value">—</span></div>') +
     '</div>' +
-    '<div class="card"><h3>Content-Depth Cross-Check</h3>' +
+    '<div class="card"><h3>Content-Depth Cross-Check ' + srcLine('zukowski', '2025-06-01') + '</h3>' +
     '<div class="output-row"><span class="output-label">Expected Content Hours</span><span class="output-value">' + (contentHrs > 0 ? contentHrs + ' hrs' : '—') + '</span></div>' +
     '<div class="output-row"><span class="output-label">Typical Price Band</span><span class="output-value">' + (contentBand ? contentBand.price : '—') + '</span></div>' +
     (contentMismatch ? '<p class="muted" style="color:var(--coral);margin-top:8px">\u26A0 ' + contentMismatch.detail + '</p>' : '') + '</div>' +
-    ((demoResult.score > 0 || hasDemoData) ? '<div class="card"><h3>Demo Performance</h3><div class="output-row"><span class="output-label">Demo Health Score</span><span class="output-value">' + (demoResult.score > 0 ? demoResult.score + '/100 (' + demoResult.label + ')' : '—') + '</span></div>' +
+    ((demoResult.score > 0 || hasDemoData) ? '<div class="card"><h3>Demo Performance ' + srcLine('next-fest', '2025-06-01') + '</h3><div class="output-row"><span class="output-label">Demo Health Score</span><span class="output-value">' + (demoResult.score > 0 ? demoResult.score + '/100 (' + demoResult.label + ')' : '—') + '</span></div>' +
     (hasDemoData ? '<div class="output-row"><span class="output-label">Demo Conversion Applied</span><span class="output-value">' + demoConvRate.toFixed(1) + '%</span></div><p class="muted" style="margin-top:8px">First-week estimate adjusted using your demo conversion data (' + demoConvRate.toFixed(1) + '%) instead of generic benchmarks.</p>' : '<div class="output-row"><span class="output-label">Demo Quality Multiplier</span><span class="output-value">' + demoResult.multiplier.toFixed(2) + 'x</span></div>') +
     (demoConvLow ? '<p class="muted" style="color:var(--coral);margin-top:8px">\u26A0 ' + demoConvLow.detail + '</p>' : '') + '</div>' : '') +
-    '<div class="card"><h3>Early Access</h3>' +
+    '<div class="card"><h3>Early Access ' + srcLine('gdc-ea', '2025-06-01') + '</h3>' +
     '<div class="output-row"><span class="output-label">EA Discount vs 1.0 Price</span><span class="output-value">' + eaDiscPct + '%</span></div>' +
     '<div class="output-row"><span class="output-label">Recommended EA Launch Price</span><span class="output-value">' + (lp > 0 ? fmtSnappedPrice(eaPrice) : '—') + '</span></div></div>' +
-    '<div class="card"><h3>Regional: USD_MENA</h3>' +
+    '<div class="card"><h3>Regional: USD_MENA ' + srcLine('steamdb-matrix', '2026-03-15') + '</h3>' +
     '<div class="output-row"><span class="output-label">Conversion Method</span><span class="output-value">' + (menaMethod ? menaMethod.options[menaMethod.selectedIndex].text.split(' —')[0] : '—') + '</span></div>' +
     '<div class="output-row"><span class="output-label">Estimated MENA Price</span><span class="output-value">' + (lp > 0 ? fmtSnappedPrice(menaPrice) : '—') + '</span></div></div>' +
     renderScenarioComparison();
