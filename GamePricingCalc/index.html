@@ -1313,6 +1313,13 @@ window.acknowledgements = {};
 window.pinnedScenarios = [];
 window.fetchCache = {};
 
+// Explicit application state read by the updaters (replaces window globals).
+var AppState = {
+  currentTier: null,
+  currentTotalScore: 0,
+  gameProfile: {}
+};
+
 // === BENCHMARK PROVENANCE ===
 // Last full review of the benchmark dataset. Backdate this past ~6 months
 // (180 days) to surface the "due for review" notice on the Sources tab.
@@ -1370,6 +1377,270 @@ function associateLabels() {
     }
   });
 }
+
+// === PricingModel — PURE CALCULATION LAYER (no DOM access) ===
+// Every function takes explicit arguments and returns values. No getElementById,
+// querySelector, window, or document references live in this object.
+var PricingModel = {
+  // --- Four Variables / tier mapping ---
+  tierData: [
+    { range: '1.00—2.00', price: '$4.99—$9.99', min: 4.99, max: 9.99, context: 'Budget / experimental. High volume play.' },
+    { range: '2.01—3.00', price: '$9.99—$14.99', min: 9.99, max: 14.99, context: 'Lower mid-tier. Solid indie. Genre median for casual-adjacent.' },
+    { range: '3.01—3.75', price: '$14.99—$19.99', min: 14.99, max: 19.99, context: 'Mid-tier sweet spot. GameDiscoverCo median for top-performing indies (2023—25).' },
+    { range: '3.76—4.25', price: '$19.99—$24.99', min: 19.99, max: 24.99, context: 'Upper mid. Requires clear scope and polish signal.' },
+    { range: '4.26—5.00', price: '$24.99—$34.99', min: 24.99, max: 34.99, context: 'Premium indie. Above $25 trickier for unknown studios.' }
+  ],
+  getTier: function(score) {
+    if (score <= 2) return { price: this.tierData[0].price, idx: 0, min: this.tierData[0].min, max: this.tierData[0].max };
+    if (score <= 3) return { price: this.tierData[1].price, idx: 1, min: this.tierData[1].min, max: this.tierData[1].max };
+    if (score <= 3.75) return { price: this.tierData[2].price, idx: 2, min: this.tierData[2].min, max: this.tierData[2].max };
+    if (score <= 4.25) return { price: this.tierData[3].price, idx: 3, min: this.tierData[3].min, max: this.tierData[3].max };
+    return { price: this.tierData[4].price, idx: 4, min: this.tierData[4].min, max: this.tierData[4].max };
+  },
+  weightedScore: function(vals) {
+    var weights = [0.25, 0.30, 0.25, 0.20];
+    var total = 0;
+    for (var i = 0; i < 4; i++) total += vals[i] * weights[i];
+    return total;
+  },
+  priceBandGap: function(lp, tier) {
+    var belowGap = lp < tier.min ? (tier.min - lp) / tier.min : 0;
+    var aboveGap = (tier.idx === 4 ? lp > tier.max : lp >= tier.max) ? (lp - tier.max) / tier.max : 0;
+    return { below: belowGap, above: aboveGap };
+  },
+
+  // --- Content-depth ---
+  contentBands: [
+    { label: 'Under 5 hrs', min: 0, max: 4.99, price: '$10—$12' },
+    { label: '5—15 hrs', min: 5, max: 14.99, price: '~$15' },
+    { label: '15—30 hrs', min: 15, max: 29.99, price: '$18—$20' },
+    { label: '30—50 hrs', min: 30, max: 49.99, price: '$20—$25' },
+    { label: '50+ hrs (w/ replay)', min: 50, max: Infinity, price: '$25—$30' }
+  ],
+  getContentBand: function(hrs) {
+    for (var i = 0; i < this.contentBands.length; i++) {
+      if (hrs >= this.contentBands[i].min && hrs <= this.contentBands[i].max) return this.contentBands[i];
+    }
+    return null;
+  },
+
+  // --- Wishlist conversion ---
+  getWishlistConversion: function(wishlistCount) {
+    var rate;
+    if (wishlistCount < 5000) rate = 0.15;
+    else if (wishlistCount <= 25000) rate = 0.18;
+    else if (wishlistCount <= 100000) rate = 0.21;
+    else rate = 0.25;
+    return rate;
+  },
+  COMMUNITY_FOLLOWER_HEALTHY: 1.10,
+  COMMUNITY_FOLLOWER_LOWINTENT: 0.75,
+  COMMUNITY_DISCORD_HIGH: 1.15,
+  COMMUNITY_DISCORD_LOW: 0.85,
+  COMMUNITY_SOURCE_ORGANIC: 1.15,
+  COMMUNITY_SOURCE_PAID: 0.75,
+  communityScore: function(wishlistCount, followerCount, discordActivity, wishlistSource) {
+    var multiplier = 1.0;
+    var breakdown = [];
+    if (followerCount > 0 && wishlistCount > 0) {
+      var ratio = wishlistCount / followerCount;
+      if (ratio >= 7 && ratio <= 20) { multiplier *= this.COMMUNITY_FOLLOWER_HEALTHY; breakdown.push('Follower ratio: ' + ratio.toFixed(1) + 'x — healthy range (+10%)'); }
+      else if (ratio > 35) { multiplier *= this.COMMUNITY_FOLLOWER_LOWINTENT; breakdown.push('Follower ratio: ' + ratio.toFixed(1) + 'x — wishlists may include low-intent adds (−25%)'); }
+      else if ((ratio >= 3 && ratio < 7) || (ratio > 20 && ratio <= 35)) { breakdown.push('Follower ratio: ' + ratio.toFixed(1) + 'x — neutral (0%)'); }
+      else { breakdown.push('Follower ratio: ' + ratio.toFixed(1) + 'x — under-converted (0%)'); }
+    } else {
+      breakdown.push('Follower ratio: skipped (no follower data)');
+    }
+    if (discordActivity === 'high') { multiplier *= this.COMMUNITY_DISCORD_HIGH; breakdown.push('Discord: High (+15%)'); }
+    else if (discordActivity === 'moderate') { breakdown.push('Discord: Moderate (0%)'); }
+    else if (discordActivity === 'low') { multiplier *= this.COMMUNITY_DISCORD_LOW; breakdown.push('Discord: Low (−15%)'); }
+    else { breakdown.push('Discord: skipped (no data)'); }
+    if (wishlistSource === 'organic') { multiplier *= this.COMMUNITY_SOURCE_ORGANIC; breakdown.push('Source: Mostly organic (+15%)'); }
+    else if (wishlistSource === 'mixed') { breakdown.push('Source: Mixed (0%)'); }
+    else if (wishlistSource === 'paid') { multiplier *= this.COMMUNITY_SOURCE_PAID; breakdown.push('Source: Mostly paid/spike (−25%)'); }
+    else { breakdown.push('Source: skipped (no data)'); }
+    return { multiplier: multiplier, breakdown: breakdown };
+  },
+  WISHLIST_SPREAD_LOW: 0.65,
+  WISHLIST_SPREAD_HIGH: 1.45,
+  WISHLIST_RATE_MIN: 0.05,
+  WISHLIST_RATE_MAX: 0.35,
+  clampWishlistRate: function(r) { return Math.max(this.WISHLIST_RATE_MIN, Math.min(this.WISHLIST_RATE_MAX, r)); },
+  computeScenarioBand: function(count, lp, devShare, baseRate, pricePenalty, communityMultiplier, demoFactor) {
+    var rawRate = baseRate * pricePenalty * communityMultiplier * demoFactor;
+    var centralRate = this.clampWishlistRate(rawRate);
+    var conservativeRate = this.clampWishlistRate(rawRate * this.WISHLIST_SPREAD_LOW);
+    var optimisticRate = this.clampWishlistRate(rawRate * this.WISHLIST_SPREAD_HIGH);
+    function scenario(rate) {
+      var units = Math.round(count * rate);
+      return { rate: rate, units: units, revenue: units * lp * devShare };
+    }
+    return {
+      rawRate: rawRate,
+      centralCapped: (rawRate > this.WISHLIST_RATE_MAX || rawRate < this.WISHLIST_RATE_MIN),
+      conservative: scenario(conservativeRate),
+      central: scenario(centralRate),
+      optimistic: scenario(optimisticRate)
+    };
+  },
+
+  // --- Demo health ---
+  demoHealthScore: function(visitors, downloads, wishlists, avgSession, targetSession, completion, playedWishlisted) {
+    var nonDemoWishlists = Math.max(0, wishlists - playedWishlisted);
+    var storeRate = visitors > 0 ? (wishlists / visitors) * 100 : 0;
+    var demoConvRate = downloads > 0 ? (playedWishlisted / downloads) * 100 : 0;
+    var sessionRatio = targetSession > 0 ? (avgSession / targetSession) * 100 : 0;
+    if (visitors === 0 && downloads === 0) {
+      return { score: 0, multiplier: 1.0, label: '', nonDemoWishlists: nonDemoWishlists, storeRate: storeRate, demoConvRate: demoConvRate, sessionRatio: sessionRatio };
+    }
+    var convSub = Math.min(100, (demoConvRate / 20) * 100);
+    var storeSub = Math.min(100, (storeRate / 20) * 100);
+    var compSub = Math.min(100, completion);
+    var healthScore = Math.round(convSub * 0.45 + storeSub * 0.25 + compSub * 0.30);
+    var label;
+    if (healthScore >= 80) label = 'Excellent — demo is a strong sales asset';
+    else if (healthScore >= 60) label = 'Good — solid predictor of launch performance';
+    else if (healthScore >= 40) label = 'Needs improvement — investigate drop-off points';
+    else label = 'Weak — demo may be hurting conversion quality';
+    var mult = healthScore >= 80 ? 1.20 : (healthScore >= 60 ? 1.10 : (healthScore >= 40 ? 1.00 : 0.85));
+    return { score: healthScore, multiplier: mult, label: label, nonDemoWishlists: nonDemoWishlists, storeRate: storeRate, demoConvRate: demoConvRate, sessionRatio: sessionRatio };
+  },
+
+  // --- Profile heuristics ---
+  budgetMultiplier: function(budget) {
+    var map = { under50k:0.4, '50to250k':0.7, '250to1m':1.0, '1to5m':1.8, over5m:3.5 };
+    return map[budget] || 1.0;
+  },
+  teamMultiplier: function(teamSize) {
+    var t = teamSize || 0;
+    if (t <= 0) return 1.0;
+    if (t === 1) return 0.5;
+    if (t === 2) return 0.75;
+    if (t <= 5) return 1.0;
+    if (t <= 10) return 1.6;
+    return 2.5;
+  },
+  deriveWishlistEstimate: function(avgReviews, budget, teamSize) {
+    var base = avgReviews > 0 ? avgReviews : 1200;
+    var est = base * this.budgetMultiplier(budget) * this.teamMultiplier(teamSize);
+    return Math.max(100, Math.round(est / 100) * 100);
+  },
+
+  // --- Price snapping ---
+  STEAM_PRICE_GRID: [0.99, 1.99, 2.99, 3.99, 4.99, 5.99, 6.99, 7.99, 8.99, 9.99, 10.99, 11.99, 12.99, 13.99, 14.99, 15.99, 16.99, 17.99, 18.99, 19.99, 20.99, 21.99, 22.99, 23.99, 24.99, 25.99, 26.99, 27.99, 28.99, 29.99, 34.99, 39.99, 44.99, 49.99, 59.99],
+  snapToSteamPrice: function(usd) {
+    if (usd == null || isNaN(usd) || usd <= 0) return null;
+    var cents = Math.round(usd * 100);
+    var best = null;
+    for (var i = 0; i < this.STEAM_PRICE_GRID.length; i++) {
+      if (Math.round(this.STEAM_PRICE_GRID[i] * 100) <= cents) best = this.STEAM_PRICE_GRID[i];
+      else break;
+    }
+    return best;
+  },
+  snapToSteamPriceUp: function(usd) {
+    if (usd == null || isNaN(usd) || usd <= 0) return null;
+    var cents = Math.round(usd * 100);
+    for (var i = 0; i < this.STEAM_PRICE_GRID.length; i++) {
+      if (Math.round(this.STEAM_PRICE_GRID[i] * 100) >= cents) return this.STEAM_PRICE_GRID[i];
+    }
+    return this.STEAM_PRICE_GRID[this.STEAM_PRICE_GRID.length - 1];
+  },
+
+  // --- Price & discount ---
+  discountMath: function(target, discountDepth, devShare) {
+    var discountFactor = discountDepth / 100;
+    var launchPrice = target / (1 - discountFactor);
+    var snappedLaunchUp = this.snapToSteamPriceUp(launchPrice);
+    var realDiscount = snappedLaunchUp > 0 ? (snappedLaunchUp - target) / snappedLaunchUp : 0;
+    var netFull = launchPrice * devShare;
+    var netSale = target * devShare;
+    var unitsNeeded = netSale > 0 ? Math.round((netFull * 1000) / netSale) : 0;
+    var deepDiscountPrice = launchPrice * 0.5;
+    var netDeepDiscount = deepDiscountPrice * devShare;
+    var launchDiscPrice = launchPrice * 0.875;
+    return { launchPrice: launchPrice, snappedLaunchUp: snappedLaunchUp, realDiscount: realDiscount, netFull: netFull, netSale: netSale, unitsNeeded: unitsNeeded, deepDiscountPrice: deepDiscountPrice, netDeepDiscount: netDeepDiscount, launchDiscPrice: launchDiscPrice };
+  },
+  breakEven: function(devCost, launchPrice, target, devShare, fullShare) {
+    if (isNaN(fullShare)) fullShare = 60;
+    fullShare = Math.max(0, Math.min(100, fullShare));
+    var netFull = launchPrice * devShare;
+    var netSale = target * devShare;
+    var blendedNet = (fullShare / 100) * netFull + ((100 - fullShare) / 100) * netSale;
+    return {
+      devCost: devCost,
+      netFull: netFull,
+      netSale: netSale,
+      fullPriceUnits: (devCost > 0 && netFull > 0) ? devCost / netFull : 0,
+      salePriceUnits: (devCost > 0 && netSale > 0) ? devCost / netSale : 0,
+      blendedUnits: (devCost > 0 && blendedNet > 0) ? devCost / blendedNet : 0,
+      fullShare: fullShare,
+      blendedNet: blendedNet
+    };
+  },
+
+  // --- Parsing ---
+  parsePriceRange: function(priceStr) {
+    var nums = String(priceStr).replace(/[^0-9.]/g, ' ').trim().split(/\s+/).map(parseFloat).filter(function(n){ return !isNaN(n); });
+    if (nums.length === 0) return null;
+    return { min: Math.min.apply(null, nums), max: Math.max.apply(null, nums) };
+  },
+
+  // --- Reconciliation rules (pure evaluation) ---
+  reconcile: function(inputs) {
+    var issues = [];
+    var lp = inputs.lp, tier = inputs.tier, devCost = inputs.devCost, be = inputs.be;
+    var fwUnits = inputs.fwUnits, optUnits = inputs.optUnits, compCount = inputs.compCount;
+    var hrs = inputs.hrs, band = inputs.band, wl = inputs.wl, signalsFilled = inputs.signalsFilled;
+    var demoExists = inputs.demoExists, demoComplete = inputs.demoComplete, demoConv = inputs.demoConv;
+
+    if (lp > 0 && tier) {
+      var gap = this.priceBandGap(lp, tier);
+      if (gap.below > 0.15 || gap.above > 0.15) {
+        var dir = gap.above > 0 ? 'above' : 'below';
+        var unitDetail = '';
+        if (devCost > 0) {
+          unitDetail = ' At $' + lp.toFixed(2) + ' you need to sell about ' + Math.ceil(be.blendedUnits).toLocaleString() + ' units to recoup your $' + devCost.toLocaleString() + ' development cost' + (fwUnits > 0 ? ', versus ' + fwUnits.toLocaleString() + ' units implied by your first-week estimate (' + (be.blendedUnits / fwUnits).toFixed(1) + 'x).' : '.');
+        }
+        issues.push({ id: 'price-tier-conflict', severity: 'blocking', title: 'Pricing conflict: Required Launch Price vs Recommended Tier', detail: 'Your Required Launch Price ($' + lp.toFixed(2) + ') is significantly ' + dir + ' your comp-based Recommended Tier (' + tier.price + ').' + unitDetail + ' Revisit your comp analysis, budget inputs, or expected content hours before finalizing.' });
+      }
+    }
+
+    if (compCount < 8) {
+      issues.push({ id: 'low-comp-count', severity: 'warning', title: 'Low comp count', detail: 'Recommended tier based on only ' + compCount + ' comps (target: 8\u201412). Confidence is reduced \u2014 treat this range as provisional.' });
+    }
+
+    if (band) {
+      var bandRange = this.parsePriceRange(band.price);
+      var mismatch = false;
+      if (bandRange && lp > 0 && (lp < bandRange.min * 0.85 || lp > bandRange.max * 1.15)) mismatch = true;
+      if (bandRange && tier && (tier.max < bandRange.min * 0.85 || tier.min > bandRange.max * 1.15)) mismatch = true;
+      if (mismatch) {
+        issues.push({ id: 'content-depth-conflict', severity: 'warning', title: 'Content-depth mismatch', detail: 'Expected content (' + hrs + ' hrs) suggests a typical price band of ' + band.price + ', which disagrees with your Required Launch Price or Recommended Tier \u2014 reconcile these three numbers.' });
+      }
+    }
+
+    if (wl > 0 && inputs.roundWishlist && !signalsFilled) {
+      issues.push({ id: 'wishlist-round', severity: 'warning', title: 'Wishlist estimate unverified', detail: 'This looks like an estimate rather than a tracked number. Expand Community Signals to sanity-check wishlist quality, or confirm this is your best current projection.' });
+    }
+
+    if (demoExists === 'yes') {
+      if (!demoComplete) {
+        issues.push({ id: 'demo-required-missing', severity: 'blocking', title: 'Demo fields incomplete', detail: 'You indicated you have a public demo. Complete the Traffic & Reach, Engagement Depth, and Conversion Events fields before finalizing your pricing plan.' });
+      } else if (demoConv > 0 && demoConv < 15) {
+        issues.push({ id: 'demo-conversion-low', severity: 'warning', title: 'Weak demo conversion', detail: 'Demo conversion is below the 15% diagnostic threshold \u2014 review capsule art, trailer, and end-of-demo CTA, since a weak demo undermines the wishlist-to-sale projection.' });
+      }
+    } else {
+      issues.push({ id: 'no-demo', severity: 'advisory', title: 'No demo data', detail: 'Using non-demo wishlist conversion benchmarks (8\u201312%) instead of demo-driven benchmarks (18\u201325%). A demo is one of the strongest predictors of launch revenue quality; consider Next Fest or a public demo before finalizing your pricing plan.' });
+    }
+
+    if (devCost > 0 && optUnits > 0 && be.blendedUnits > optUnits * 10) {
+      issues.push({ id: 'break-even-gap', severity: 'warning', title: 'Break-even far exceeds projected first-week units', detail: 'Your break-even point (' + Math.ceil(be.blendedUnits).toLocaleString() + ' units) is more than 10x your optimistic first-week estimate (' + optUnits.toLocaleString() + ' units) \u2014 the price and budget are likely incompatible and one of the two must move.' });
+    }
+
+    return issues;
+  }
+};
 
 function switchTab(tabName) {
   document.querySelectorAll('nav button').forEach(function(b){ b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
@@ -1922,21 +2193,11 @@ tierData.forEach(function(t){
   });
   tierBody.appendChild(tr);
 });
-function getTier(score) {
-  if (score <= 2) return { price: tierData[0].price, idx: 0, min: tierData[0].min, max: tierData[0].max };
-  if (score <= 3) return { price: tierData[1].price, idx: 1, min: tierData[1].min, max: tierData[1].max };
-  if (score <= 3.75) return { price: tierData[2].price, idx: 2, min: tierData[2].min, max: tierData[2].max };
-  if (score <= 4.25) return { price: tierData[3].price, idx: 3, min: tierData[3].min, max: tierData[3].max };
-  return { price: tierData[4].price, idx: 4, min: tierData[4].min, max: tierData[4].max };
-}
+function getTier(score) { return PricingModel.getTier(score); }
 
 // Half-open tier band gap: how far a launch price sits below/above the tier's
 // [min, max) band (tier 4 inclusive). Gap is 0 when the price is inside the band.
-function priceBandGap(lp, tier) {
-  var belowGap = lp < tier.min ? (tier.min - lp) / tier.min : 0;
-  var aboveGap = (tier.idx === 4 ? lp > tier.max : lp >= tier.max) ? (lp - tier.max) / tier.max : 0;
-  return { below: belowGap, above: aboveGap };
-}
+function priceBandGap(lp, tier) { return PricingModel.priceBandGap(lp, tier); }
 var sliderValueText = {
   v1: ['1 of 5 — low-priced genre', '2 of 5 — below genre average', '3 of 5 — mid-priced genre', '4 of 5 — above genre average', '5 of 5 — high-priced genre'],
   v2: ['1 of 5 — looks like a $10 product', '2 of 5 — looks like a $15 product', '3 of 5 — looks like a $20 product', '4 of 5 — looks like a $25 product', '5 of 5 — looks like a $30 product'],
@@ -1960,8 +2221,8 @@ function updateVariables() {
   var tier = getTier(total);
   document.getElementById('tier-result').innerHTML = 'Recommended: <span>' + tier.price + '</span>';
   document.querySelectorAll('.tier-row').forEach(function(tr, i){ tr.classList.toggle('active', i === tier.idx); });
-  window.currentTier = tier;
-  window.currentTotalScore = total;
+  AppState.currentTier = tier;
+  AppState.currentTotalScore = total;
   renderReconciliation();
 }
 
@@ -2010,26 +2271,10 @@ var STEAM_PRICE_GRID = [
 ];
 
 // Nearest valid Steam price AT OR BELOW raw (never rounds up).
-function snapToSteamPrice(usd) {
-  if (usd == null || isNaN(usd) || usd <= 0) return null;
-  var cents = Math.round(usd * 100);
-  var best = null;
-  for (var i = 0; i < STEAM_PRICE_GRID.length; i++) {
-    if (Math.round(STEAM_PRICE_GRID[i] * 100) <= cents) best = STEAM_PRICE_GRID[i];
-    else break;
-  }
-  return best;
-}
+function snapToSteamPrice(usd) { return PricingModel.snapToSteamPrice(usd); }
 
 // Nearest valid Steam price AT OR ABOVE raw.
-function snapToSteamPriceUp(usd) {
-  if (usd == null || isNaN(usd) || usd <= 0) return null;
-  var cents = Math.round(usd * 100);
-  for (var i = 0; i < STEAM_PRICE_GRID.length; i++) {
-    if (Math.round(STEAM_PRICE_GRID[i] * 100) >= cents) return STEAM_PRICE_GRID[i];
-  }
-  return STEAM_PRICE_GRID[STEAM_PRICE_GRID.length - 1];
-}
+function snapToSteamPriceUp(usd) { return PricingModel.snapToSteamPriceUp(usd); }
 
 // Display helper: snapped recommendation with raw noted, e.g. "$8.99 (raw 9.40)".
 function fmtSnappedPrice(raw) {
@@ -2052,15 +2297,15 @@ function updatePricing() {
     return;
   }
   var devShare = getDevShare();
-  var discountFactor = discPct / 100;
-  var launchPrice = target / (1 - discountFactor);
-  var snappedLaunchUp = snapToSteamPriceUp(launchPrice);
-  var realDiscount = snappedLaunchUp > 0 ? (snappedLaunchUp - target) / snappedLaunchUp : 0;
-  var netFull = launchPrice * devShare;
-  var netSale = target * devShare;
-  var unitsNeeded = netSale > 0 ? Math.round((netFull * 1000) / netSale) : 0;
-  var deepDiscountPrice = launchPrice * 0.5;
-  var netDeepDiscount = deepDiscountPrice * devShare;
+  var dm = PricingModel.discountMath(target, discPct, devShare);
+  var launchPrice = dm.launchPrice;
+  var snappedLaunchUp = dm.snappedLaunchUp;
+  var realDiscount = dm.realDiscount;
+  var netFull = dm.netFull;
+  var netSale = dm.netSale;
+  var unitsNeeded = dm.unitsNeeded;
+  var deepDiscountPrice = dm.deepDiscountPrice;
+  var netDeepDiscount = dm.netDeepDiscount;
 
   var launchPriceHtml = '$' + launchPrice.toFixed(2);
   if (snappedLaunchUp != null && Math.round(snappedLaunchUp * 100) !== Math.round(launchPrice * 100)) {
@@ -2139,22 +2384,8 @@ function getBreakEven() {
   var lp = getValidatedLaunchPrice();
   var target = parseFloat(document.getElementById('target-sale-price').value) || 0;
   var devShare = getDevShare();
-  var netFull = lp * devShare;
-  var netSale = target * devShare;
   var fullShare = parseFloat(document.getElementById('be-full-share').value);
-  if (isNaN(fullShare)) fullShare = 60;
-  fullShare = Math.max(0, Math.min(100, fullShare));
-  var blendedNet = (fullShare / 100) * netFull + ((100 - fullShare) / 100) * netSale;
-  return {
-    devCost: devCost,
-    netFull: netFull,
-    netSale: netSale,
-    fullPriceUnits: (devCost > 0 && netFull > 0) ? devCost / netFull : 0,
-    salePriceUnits: (devCost > 0 && netSale > 0) ? devCost / netSale : 0,
-    blendedUnits: (devCost > 0 && blendedNet > 0) ? devCost / blendedNet : 0,
-    fullShare: fullShare,
-    blendedNet: blendedNet
-  };
+  return PricingModel.breakEven(devCost, lp, target, devShare, fullShare);
 }
 
 function renderBreakEven() {
@@ -2198,50 +2429,30 @@ function getDemoHealthScore() {
   var completion = parseFloat(document.getElementById('demo-completion').value) || 0;
   var playedWishlisted = parseInt(document.getElementById('demo-played-wishlisted').value) || 0;
 
-  // Auto-calc non-demo wishlists
-  var nonDemoWishlists = Math.max(0, wishlists - playedWishlisted);
-  document.getElementById('demo-non-demo-wishlists').value = wishlists > 0 ? nonDemoWishlists : '—';
+  var r = PricingModel.demoHealthScore(visitors, downloads, wishlists, avgSession, targetSession, completion, playedWishlisted);
 
-  // Store page → wishlist rate
-  var storeRate = visitors > 0 ? (wishlists / visitors) * 100 : 0;
+  document.getElementById('demo-non-demo-wishlists').value = wishlists > 0 ? r.nonDemoWishlists : '—';
   var storeRateEl = document.getElementById('demo-store-rate');
-  storeRateEl.textContent = visitors > 0 ? storeRate.toFixed(1) + '%' : '—';
-  storeRateEl.style.color = storeRate > 25 ? 'var(--teal)' : (storeRate >= 12 ? 'var(--gold)' : 'var(--coral)');
-
-  // Demo conversion rate
-  var demoConvRate = downloads > 0 ? (playedWishlisted / downloads) * 100 : 0;
+  storeRateEl.textContent = visitors > 0 ? r.storeRate.toFixed(1) + '%' : '—';
+  storeRateEl.style.color = r.storeRate > 25 ? 'var(--teal)' : (r.storeRate >= 12 ? 'var(--gold)' : 'var(--coral)');
   var demoConvEl = document.getElementById('demo-conv-rate');
-  demoConvEl.textContent = downloads > 0 ? demoConvRate.toFixed(1) + '%' : '—';
-  demoConvEl.style.color = demoConvRate >= 25 ? 'var(--teal)' : (demoConvRate >= 15 ? 'var(--gold)' : 'var(--coral)');
-
-  // Session completion ratio
-  var sessionRatio = targetSession > 0 ? (avgSession / targetSession) * 100 : 0;
+  demoConvEl.textContent = downloads > 0 ? r.demoConvRate.toFixed(1) + '%' : '—';
+  demoConvEl.style.color = r.demoConvRate >= 25 ? 'var(--teal)' : (r.demoConvRate >= 15 ? 'var(--gold)' : 'var(--coral)');
   var sessionEl = document.getElementById('demo-session-ratio');
-  sessionEl.textContent = targetSession > 0 ? sessionRatio.toFixed(0) + '%' : '—';
-  sessionEl.style.color = sessionRatio >= 100 ? 'var(--teal)' : (sessionRatio >= 60 ? 'var(--gold)' : 'var(--coral)');
+  sessionEl.textContent = targetSession > 0 ? r.sessionRatio.toFixed(0) + '%' : '—';
+  sessionEl.style.color = r.sessionRatio >= 100 ? 'var(--teal)' : (r.sessionRatio >= 60 ? 'var(--gold)' : 'var(--coral)');
 
-  // Demo Health Score (0-100 composite)
-  // Sub-scores: each capped at 100, weighted
+  var healthEl = document.getElementById('demo-health-score');
+  var healthLabelEl = document.getElementById('demo-health-label');
   if (visitors === 0 && downloads === 0) {
-    document.getElementById('demo-health-score').textContent = '—';
-    document.getElementById('demo-health-label').textContent = '';
+    healthEl.textContent = '—';
+    healthLabelEl.textContent = '';
     return { score: 0, multiplier: 1.0 };
   }
-  var convSub = Math.min(100, (demoConvRate / 20) * 100); // 20% = 100 points
-  var storeSub = Math.min(100, (storeRate / 20) * 100);   // 20% = 100 points
-  var compSub = Math.min(100, completion);                // 100% completion = 100 points
-  var healthScore = Math.round(convSub * 0.45 + storeSub * 0.25 + compSub * 0.30);
-  var healthEl = document.getElementById('demo-health-score');
-  healthEl.textContent = healthScore;
-  var label;
-  if (healthScore >= 80) { label = 'Excellent — demo is a strong sales asset'; healthEl.style.color = 'var(--teal)'; }
-  else if (healthScore >= 60) { label = 'Good — solid predictor of launch performance'; healthEl.style.color = 'var(--teal)'; }
-  else if (healthScore >= 40) { label = 'Needs improvement — investigate drop-off points'; healthEl.style.color = 'var(--gold)'; }
-  else { label = 'Weak — demo may be hurting conversion quality'; healthEl.style.color = 'var(--coral)'; }
-  document.getElementById('demo-health-label').textContent = label;
-
-  var mult = healthScore >= 80 ? 1.20 : (healthScore >= 60 ? 1.10 : (healthScore >= 40 ? 1.00 : 0.85));
-  return { score: healthScore, multiplier: mult, label: label };
+  healthEl.textContent = r.score;
+  healthEl.style.color = r.score >= 80 ? 'var(--teal)' : (r.score >= 60 ? 'var(--teal)' : (r.score >= 40 ? 'var(--gold)' : 'var(--coral)'));
+  healthLabelEl.textContent = r.label;
+  return { score: r.score, multiplier: r.multiplier, label: r.label };
 }
 
 function updateDemoStats() {
@@ -2250,14 +2461,7 @@ function updateDemoStats() {
 }
 
 // === WISHLIST ===
-function getWishlistConversion(wishlistCount) {
-  var rate;
-  if (wishlistCount < 5000) rate = 0.15;
-  else if (wishlistCount <= 25000) rate = 0.18;
-  else if (wishlistCount <= 100000) rate = 0.21;
-  else rate = 0.25;
-  return rate;
-}
+function getWishlistConversion(wishlistCount) { return PricingModel.getWishlistConversion(wishlistCount); }
 
 // Community signal factors — composed multiplicatively so a neutral (1.00)
 // signal never dilutes a positive or negative one. Magnitudes preserved.
@@ -2273,31 +2477,7 @@ function getCommunityScore() {
   var followerCount = parseInt(document.getElementById('follower-count').value) || 0;
   var discordActivity = document.getElementById('discord-activity').value;
   var wishlistSource = document.getElementById('wishlist-source').value;
-
-  var multiplier = 1.0;
-  var breakdown = [];
-
-  if (followerCount > 0 && wishlistCount > 0) {
-    var ratio = wishlistCount / followerCount;
-    if (ratio >= 7 && ratio <= 20) { multiplier *= COMMUNITY_FOLLOWER_HEALTHY; breakdown.push('Follower ratio: ' + ratio.toFixed(1) + 'x — healthy range (+10%)'); }
-    else if (ratio > 35) { multiplier *= COMMUNITY_FOLLOWER_LOWINTENT; breakdown.push('Follower ratio: ' + ratio.toFixed(1) + 'x — wishlists may include low-intent adds (−25%)'); }
-    else if ((ratio >= 3 && ratio < 7) || (ratio > 20 && ratio <= 35)) { breakdown.push('Follower ratio: ' + ratio.toFixed(1) + 'x — neutral (0%)'); }
-    else { breakdown.push('Follower ratio: ' + ratio.toFixed(1) + 'x — under-converted (0%)'); }
-  } else {
-    breakdown.push('Follower ratio: skipped (no follower data)');
-  }
-
-  if (discordActivity === 'high') { multiplier *= COMMUNITY_DISCORD_HIGH; breakdown.push('Discord: High (+15%)'); }
-  else if (discordActivity === 'moderate') { breakdown.push('Discord: Moderate (0%)'); }
-  else if (discordActivity === 'low') { multiplier *= COMMUNITY_DISCORD_LOW; breakdown.push('Discord: Low (−15%)'); }
-  else { breakdown.push('Discord: skipped (no data)'); }
-
-  if (wishlistSource === 'organic') { multiplier *= COMMUNITY_SOURCE_ORGANIC; breakdown.push('Source: Mostly organic (+15%)'); }
-  else if (wishlistSource === 'mixed') { breakdown.push('Source: Mixed (0%)'); }
-  else if (wishlistSource === 'paid') { multiplier *= COMMUNITY_SOURCE_PAID; breakdown.push('Source: Mostly paid/spike (−25%)'); }
-  else { breakdown.push('Source: skipped (no data)'); }
-
-  return { multiplier: multiplier, breakdown: breakdown };
+  return PricingModel.communityScore(wishlistCount, followerCount, discordActivity, wishlistSource);
 }
 
 function updateWishlist() {
@@ -2368,7 +2548,7 @@ var WISHLIST_SPREAD_HIGH = 1.45;
 var WISHLIST_RATE_MIN = 0.05;
 var WISHLIST_RATE_MAX = 0.35;
 
-function clampWishlistRate(r) { return Math.max(WISHLIST_RATE_MIN, Math.min(WISHLIST_RATE_MAX, r)); }
+function clampWishlistRate(r) { return PricingModel.clampWishlistRate(r); }
 function fmtMoney(v) { return '$' + v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 
 function computeWishlistScenarios(count, lp, devShare) {
@@ -2379,28 +2559,18 @@ function computeWishlistScenarios(count, lp, devShare) {
   var community = getCommunityScore();
   var demo = getDemoHealthScore();
   var demoFactor = hasDemoData ? 1.0 : demo.multiplier;
-  var rawRate = baseRate * pricePenalty * community.multiplier * demoFactor;
-
-  var centralRate = clampWishlistRate(rawRate);
-  var conservativeRate = clampWishlistRate(rawRate * WISHLIST_SPREAD_LOW);
-  var optimisticRate = clampWishlistRate(rawRate * WISHLIST_SPREAD_HIGH);
-
-  function scenario(rate) {
-    var units = Math.round(count * rate);
-    return { rate: rate, units: units, revenue: units * lp * devShare };
-  }
-
+  var band = PricingModel.computeScenarioBand(count, lp, devShare, baseRate, pricePenalty, community.multiplier, demoFactor);
   return {
     baseRate: baseRate,
     hasDemoData: hasDemoData,
     demoConvRate: demoConvRate,
     community: community,
     demo: demo,
-    rawRate: rawRate,
-    centralCapped: (rawRate > WISHLIST_RATE_MAX || rawRate < WISHLIST_RATE_MIN),
-    conservative: scenario(conservativeRate),
-    central: scenario(centralRate),
-    optimistic: scenario(optimisticRate)
+    rawRate: band.rawRate,
+    centralCapped: band.centralCapped,
+    conservative: band.conservative,
+    central: band.central,
+    optimistic: band.optimistic
   };
 }
 
@@ -2574,115 +2744,34 @@ function isRoundWishlist(n) {
   return n > 0 && (n % 1000 === 0 || n % 5000 === 0);
 }
 
-function getContentBand(hrs) {
-  for (var i = 0; i < contentBands.length; i++) {
-    if (hrs >= contentBands[i].min && hrs <= contentBands[i].max) return contentBands[i];
-  }
-  return null;
-}
+function getContentBand(hrs) { return PricingModel.getContentBand(hrs); }
 
-function parsePriceRange(priceStr) {
-  var nums = String(priceStr).replace(/[^0-9.]/g, ' ').trim().split(/\s+/).map(parseFloat).filter(function(n){ return !isNaN(n); });
-  if (nums.length === 0) return null;
-  return { min: Math.min.apply(null, nums), max: Math.max.apply(null, nums) };
-}
+function parsePriceRange(priceStr) { return PricingModel.parsePriceRange(priceStr); }
 
 function computeReconciliation() {
-  var issues = [];
   var lp = getValidatedLaunchPrice();
-  var tier = window.currentTier;
+  var tier = AppState.currentTier;
   var devCost = getDevCost();
   var be = getBreakEven();
   var wlCount = parseInt(document.getElementById('wishlist-count').value) || 0;
   var wlScen = (wlCount > 0 && lp > 0) ? computeWishlistScenarios(wlCount, lp, getDevShare()) : null;
   var fwUnits = wlScen ? wlScen.central.units : 0;
-
-  // #1 — Required Launch Price vs Recommended Tier
-  if (lp > 0 && tier) {
-    var gap = priceBandGap(lp, tier);
-    if (gap.below > 0.15 || gap.above > 0.15) {
-      var dir = gap.above > 0 ? 'above' : 'below';
-      var unitDetail = '';
-      if (devCost > 0) {
-        unitDetail = ' At $' + lp.toFixed(2) + ' you need to sell about ' + Math.ceil(be.blendedUnits).toLocaleString() + ' units to recoup your $' + devCost.toLocaleString() + ' development cost' + (fwUnits > 0 ? ', versus ' + fwUnits.toLocaleString() + ' units implied by your first-week estimate (' + (be.blendedUnits / fwUnits).toFixed(1) + 'x).' : '.');
-      }
-      issues.push({
-        id: 'price-tier-conflict', severity: 'blocking', title: 'Pricing conflict: Required Launch Price vs Recommended Tier',
-        detail: 'Your Required Launch Price ($' + lp.toFixed(2) + ') is significantly ' + dir + ' your comp-based Recommended Tier (' + tier.price + ').' + unitDetail + ' Revisit your comp analysis, budget inputs, or expected content hours before finalizing.'
-      });
-    }
-  }
-
-  // #2 — comp count
+  var optUnits = wlScen ? wlScen.optimistic.units : 0;
   var compCount = getCompCount();
-  if (compCount < 8) {
-    issues.push({
-      id: 'low-comp-count', severity: 'warning', title: 'Low comp count',
-      detail: 'Recommended tier based on only ' + compCount + ' comps (target: 8\u201412). Confidence is reduced \u2014 treat this range as provisional.'
-    });
-  }
-
-  // #3 — content-depth cross-check
   var hrs = parseFloat(document.getElementById('content-hours-input').value) || 0;
   var band = hrs > 0 ? getContentBand(hrs) : null;
-  if (band) {
-    var bandRange = parsePriceRange(band.price);
-    var mismatch = false;
-    if (bandRange && lp > 0 && (lp < bandRange.min * 0.85 || lp > bandRange.max * 1.15)) mismatch = true;
-    if (bandRange && tier && (tier.max < bandRange.min * 0.85 || tier.min > bandRange.max * 1.15)) mismatch = true;
-    if (mismatch) {
-      issues.push({
-        id: 'content-depth-conflict', severity: 'warning', title: 'Content-depth mismatch',
-        detail: 'Expected content (' + hrs + ' hrs) suggests a typical price band of ' + band.price + ', which disagrees with your Required Launch Price or Recommended Tier \u2014 reconcile these three numbers.'
-      });
-    }
-  }
-
-  // #4 — round wishlist number
   var wl = parseInt(document.getElementById('wishlist-count').value) || 0;
-  if (wl > 0 && isRoundWishlist(wl) && !isCommunitySignalsFilled()) {
-    issues.push({
-      id: 'wishlist-round', severity: 'warning', title: 'Wishlist estimate unverified',
-      detail: 'This looks like an estimate rather than a tracked number. Expand Community Signals to sanity-check wishlist quality, or confirm this is your best current projection.'
-    });
-  }
-
-  // #7 — demo gating
+  var signalsFilled = isCommunitySignalsFilled();
   var demoExists = getDemoExists();
-  if (demoExists === 'yes') {
-    if (!isDemoComplete()) {
-      issues.push({
-        id: 'demo-required-missing', severity: 'blocking', title: 'Demo fields incomplete',
-        detail: 'You indicated you have a public demo. Complete the Traffic & Reach, Engagement Depth, and Conversion Events fields before finalizing your pricing plan.'
-      });
-    } else {
-      var demoConv = getDemoConversionRate();
-      if (demoConv > 0 && demoConv < 15) {
-        issues.push({
-          id: 'demo-conversion-low', severity: 'warning', title: 'Weak demo conversion',
-          detail: 'Demo conversion is below the 15% diagnostic threshold \u2014 review capsule art, trailer, and end-of-demo CTA, since a weak demo undermines the wishlist-to-sale projection.'
-        });
-      }
-    }
-  } else {
-    issues.push({
-      id: 'no-demo', severity: 'advisory', title: 'No demo data',
-      detail: 'Using non-demo wishlist conversion benchmarks (8\u201312%) instead of demo-driven benchmarks (18\u201325%). A demo is one of the strongest predictors of launch revenue quality; consider Next Fest or a public demo before finalizing your pricing plan.'
-    });
-  }
-
-  // #9 — break-even vs optimistic first-week units
-  if (devCost > 0 && wlScen) {
-    var optUnits = wlScen.optimistic.units;
-    if (optUnits > 0 && be.blendedUnits > optUnits * 10) {
-      issues.push({
-        id: 'break-even-gap', severity: 'warning', title: 'Break-even far exceeds projected first-week units',
-        detail: 'Your break-even point (' + Math.ceil(be.blendedUnits).toLocaleString() + ' units) is more than 10x your optimistic first-week estimate (' + optUnits.toLocaleString() + ' units) \u2014 the price and budget are likely incompatible and one of the two must move.'
-      });
-    }
-  }
-
-  return issues;
+  var demoComplete = isDemoComplete();
+  var demoConv = getDemoConversionRate();
+  return PricingModel.reconcile({
+    lp: lp, tier: tier, devCost: devCost, be: be,
+    fwUnits: fwUnits, optUnits: optUnits, compCount: compCount,
+    hrs: hrs, band: band, wl: wl, signalsFilled: signalsFilled,
+    roundWishlist: isRoundWishlist(wl),
+    demoExists: demoExists, demoComplete: demoComplete, demoConv: demoConv
+  });
 }
 
 function renderReconciliation() {
@@ -2764,24 +2853,18 @@ function getAvgCompReviews() {
 }
 
 function budgetMultiplier() {
-  var map = { under50k:0.4, '50to250k':0.7, '250to1m':1.0, '1to5m':1.8, over5m:3.5 };
-  return map[document.getElementById('profile-budget').value] || 1.0;
+  return PricingModel.budgetMultiplier(document.getElementById('profile-budget').value);
 }
 function teamMultiplier() {
   var t = parseInt(document.getElementById('profile-team-size').value) || 0;
-  if (t <= 0) return 1.0;
-  if (t === 1) return 0.5;
-  if (t === 2) return 0.75;
-  if (t <= 5) return 1.0;
-  if (t <= 10) return 1.6;
-  return 2.5;
+  return PricingModel.teamMultiplier(t);
 }
 
 function deriveWishlistEstimate() {
   var avgReviews = getAvgCompReviews();
-  var base = avgReviews > 0 ? avgReviews : 1200;
-  var est = base * budgetMultiplier() * teamMultiplier();
-  return Math.max(100, Math.round(est / 100) * 100);
+  var budget = document.getElementById('profile-budget').value;
+  var teamSize = parseInt(document.getElementById('profile-team-size').value) || 0;
+  return PricingModel.deriveWishlistEstimate(avgReviews, budget, teamSize);
 }
 
 function updateWishlistEstimateLabel() {
@@ -2916,7 +2999,7 @@ function refreshDerivedDefaults() {
 }
 
 // === GAME PROFILE STATE ===
-window.gameProfile = {};
+AppState.gameProfile = {};
 function updateGameProfile() {
   var p = {};
   p.name = document.getElementById('profile-name').value.trim();
@@ -2946,7 +3029,7 @@ function updateGameProfile() {
   p.workshop = ws ? ws.value : 'no';
   var dk = document.querySelector('input[name="profile-deck"]:checked');
   p.deck = dk ? dk.value : 'unsure';
-  window.gameProfile = p;
+  AppState.gameProfile = p;
 
   // Sync playtime to content-hours in Step 2
   if (p.playtime > 0 && !isManual('content-hours-input')) document.getElementById('content-hours-input').value = p.playtime;
@@ -3148,7 +3231,7 @@ function computeScenarioMetrics() {
   var target = parseFloat(document.getElementById('target-sale-price').value) || 0;
   var discPct = parseFloat(document.getElementById('discount-depth').value) || 0;
   var devShare = getDevShare();
-  var tier = window.currentTier;
+  var tier = AppState.currentTier;
   var count = parseInt(document.getElementById('wishlist-count').value) || 0;
   var wlScen = (count > 0 && lp > 0) ? computeWishlistScenarios(count, lp, devShare) : null;
   var be = getBreakEven();
@@ -3291,7 +3374,7 @@ function coverBlock(gp, tierText) {
 
 function buildSummary() {
   try {
-  var gp = window.gameProfile || {};
+  var gp = AppState.gameProfile || {};
   var lp = getValidatedLaunchPrice();
   var devShare = getDevShare();
   var tierText = document.getElementById('tier-result').textContent.replace('Recommended: ','');
@@ -3621,7 +3704,7 @@ function showRestoreBanner(savedAt) {
 
 function pad2(n) { return (n < 10 ? '0' : '') + n; }
 function gameSlug() {
-  var name = (window.gameProfile && window.gameProfile.name) ? window.gameProfile.name : '';
+  var name = (AppState.gameProfile && AppState.gameProfile.name) ? AppState.gameProfile.name : '';
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'untitled';
 }
 function exportWorkbook() {
@@ -3751,6 +3834,90 @@ function escapeHtml(str) {
   div.textContent = str;
   return div.innerHTML;
 }
+
+// === SELF-TEST (only runs when URL contains ?selftest=1) ===
+function runSelfTest() {
+  var tests = [];
+  function t(desc, pass) { tests.push({ desc: desc, pass: !!pass }); }
+
+  // Tier mapping at every boundary and just either side
+  t('getTier(2.0) -> idx 0', PricingModel.getTier(2.0).idx === 0);
+  t('getTier(1.99) -> idx 0', PricingModel.getTier(1.99).idx === 0);
+  t('getTier(2.01) -> idx 1', PricingModel.getTier(2.01).idx === 1);
+  t('getTier(3.0) -> idx 1', PricingModel.getTier(3.0).idx === 1);
+  t('getTier(3.01) -> idx 2', PricingModel.getTier(3.01).idx === 2);
+  t('getTier(3.75) -> idx 2', PricingModel.getTier(3.75).idx === 2);
+  t('getTier(3.76) -> idx 3', PricingModel.getTier(3.76).idx === 3);
+  t('getTier(4.25) -> idx 3', PricingModel.getTier(4.25).idx === 3);
+  t('getTier(4.26) -> idx 4', PricingModel.getTier(4.26).idx === 4);
+
+  // Weighted score math
+  var ws = PricingModel.weightedScore([3, 3, 2, 4]);
+  t('weightedScore([3,3,2,4]) == 2.95', Math.abs(ws - 2.95) < 1e-9);
+
+  // Discount math + round-trip
+  var dm = PricingModel.discountMath(14.99, 30, 0.70);
+  t('discountMath launch price == 21.4143', Math.abs(dm.launchPrice - 14.99 / 0.7) < 0.001);
+  t('discount round-trip back to target', Math.abs(dm.launchPrice * (1 - 0.30) - 14.99) < 0.001);
+
+  // Conversion rate tiers at boundaries
+  t('conversion 4999 -> 0.15', PricingModel.getWishlistConversion(4999) === 0.15);
+  t('conversion 5000 -> 0.18', PricingModel.getWishlistConversion(5000) === 0.18);
+  t('conversion 25000 -> 0.18', PricingModel.getWishlistConversion(25000) === 0.18);
+  t('conversion 25001 -> 0.21', PricingModel.getWishlistConversion(25001) === 0.21);
+  t('conversion 100000 -> 0.21', PricingModel.getWishlistConversion(100000) === 0.21);
+  t('conversion 100001 -> 0.25', PricingModel.getWishlistConversion(100001) === 0.25);
+
+  // >$10 penalty applies exactly once (only via the pricePenalty factor)
+  t('base conversion has no penalty baked in', PricingModel.getWishlistConversion(10000) === 0.18);
+  var bandNoPen = PricingModel.computeScenarioBand(10000, 9.99, 0.70, 0.18, 1.0, 1.0, 1.0);
+  var bandPen = PricingModel.computeScenarioBand(10000, 15.0, 0.70, 0.18, 0.70, 1.0, 1.0);
+  t('no penalty at <=$10 -> 18.0%', Math.abs(bandNoPen.central.rate - 0.18) < 1e-9);
+  t('penalty once at >$10 -> 12.6%', Math.abs(bandPen.central.rate - 0.126) < 1e-9);
+
+  // Community multiplier composition (no signal dilution)
+  var highOnly = PricingModel.communityScore(0, 0, 'high', '');
+  var highMixed = PricingModel.communityScore(0, 0, 'high', 'mixed');
+  t('high Discord alone == 1.15', Math.abs(highOnly.multiplier - 1.15) < 1e-9);
+  t('high Discord + mixed source >= 1.15', highMixed.multiplier >= 1.15 - 1e-9);
+
+  // snapToSteamPrice never rounds up
+  t('snap(9.40) -> 8.99 (no round up)', PricingModel.snapToSteamPrice(9.40) === 8.99);
+  t('snap(9.99) -> 9.99', PricingModel.snapToSteamPrice(9.99) === 9.99);
+  t('snap(4.80) -> 3.99', PricingModel.snapToSteamPrice(4.80) === 3.99);
+  t('snap(60) -> 59.99', PricingModel.snapToSteamPrice(60) === 59.99);
+  t('snap(21.41) -> 20.99', PricingModel.snapToSteamPrice(21.41) === 20.99);
+
+  // Break-even worked example ($150k, $14.99 target @30%, 70% share, 60/40)
+  var be = PricingModel.breakEven(150000, 14.99 / 0.7, 14.99, 0.70, 60);
+  t('break-even blended units ~= 11372', Math.abs(Math.ceil(be.blendedUnits) - 11372) <= 1);
+
+  // Reconciliation rules fire / not fire
+  var tier = PricingModel.getTier(2.95);
+  var conflictIn = PricingModel.reconcile({ lp: 21.41, tier: tier, devCost: 150000, be: be, fwUnits: 630, optUnits: 1305, compCount: 3, hrs: 10, band: PricingModel.getContentBand(10), wl: 5000, signalsFilled: false, roundWishlist: true, demoExists: 'no', demoComplete: false, demoConv: 0 });
+  t('price-tier-conflict fires when lp above band', conflictIn.some(function(i){ return i.id === 'price-tier-conflict'; }));
+  t('low-comp-count fires below 8 comps', conflictIn.some(function(i){ return i.id === 'low-comp-count'; }));
+  var gapIn = PricingModel.reconcile({ lp: 21.41, tier: tier, devCost: 500000, be: PricingModel.breakEven(500000, 21.41, 14.99, 0.70, 60), fwUnits: 100, optUnits: 1000, compCount: 12, hrs: 0, band: null, wl: 0, signalsFilled: true, roundWishlist: false, demoExists: 'no', demoComplete: false, demoConv: 0 });
+  t('break-even-gap fires when >10x optimistic units', gapIn.some(function(i){ return i.id === 'break-even-gap'; }));
+  var noConflict = PricingModel.reconcile({ lp: 11.99, tier: tier, devCost: 0, be: PricingModel.breakEven(0, 11.99, 8.99, 0.70, 60), fwUnits: 0, optUnits: 0, compCount: 10, hrs: 0, band: null, wl: 0, signalsFilled: true, roundWishlist: false, demoExists: 'no', demoComplete: false, demoConv: 0 });
+  t('no price-tier-conflict when lp in band', !noConflict.some(function(i){ return i.id === 'price-tier-conflict'; }));
+  t('no low-comp-count at 10 comps', !noConflict.some(function(i){ return i.id === 'low-comp-count'; }));
+  t('no break-even-gap with zero cost', !noConflict.some(function(i){ return i.id === 'break-even-gap'; }));
+
+  var passCount = tests.filter(function(x){ return x.pass; }).length;
+  var failCount = tests.length - passCount;
+  var html = '<div class="card" style="border:2px solid ' + (failCount === 0 ? 'var(--teal)' : 'var(--coral)') + '"><h3>Self-Test Results</h3><p class="muted">' + passCount + ' of ' + tests.length + ' passed, ' + failCount + ' failed.</p>';
+  tests.forEach(function(x){
+    html += '<div style="font-family:var(--mono);font-size:12px;padding:2px 0;color:' + (x.pass ? 'var(--teal)' : 'var(--coral)') + '">' + (x.pass ? '\u2713' : '\u2717') + ' ' + x.desc + '</div>';
+  });
+  html += '</div>';
+  var container = document.createElement('div');
+  container.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#fff;max-height:80vh;overflow:auto;padding:16px;border-bottom:2px solid #000';
+  container.innerHTML = html;
+  document.body.appendChild(container);
+}
+
+if (location.search && location.search.indexOf('selftest=1') !== -1) { runSelfTest(); }
 </script>
 </body>
 </html>
