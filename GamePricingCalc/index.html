@@ -1477,6 +1477,8 @@ var PricingModel = {
     return {
       rawRate: rawRate,
       centralCapped: (rawRate > this.WISHLIST_RATE_MAX || rawRate < this.WISHLIST_RATE_MIN),
+      afterPrice: baseRate * pricePenalty,
+      afterCommunity: baseRate * pricePenalty * communityMultiplier,
       conservative: scenario(conservativeRate),
       central: scenario(centralRate),
       optimistic: scenario(optimisticRate)
@@ -2489,7 +2491,6 @@ function updateWishlist() {
     return;
   }
   var s = computeWishlistScenarios(count, lp, devShare);
-  var demoRateNote = s.hasDemoData ? ' (using your demo conversion data)' : '';
 
   var community = s.community;
   var comLabel = community.multiplier > 1.05 ? 'Community signals suggest better-than-average conversion' :
@@ -2525,9 +2526,15 @@ function updateWishlist() {
       '<div><span class="band-k">Net revenue</span><span class="band-v">' + fmtMoney(opt.revenue) + '</span></div>' +
     '</div>';
 
+  var chainHtml =
+    '<div class="output-row"><span class="output-label">Base ' + (s.hasDemoData ? 'rate' : 'tier rate') + ' <span class="output-note">' + (s.hasDemoData ? 'measured demo conversion' : 'GameDiscoverCo tier, unadjusted') + '</span></span><span class="output-value">' + (s.baseRate * 100).toFixed(1) + '%</span></div>' +
+    (s.pricePenalty !== 1.0 ? '<div class="output-row"><span class="output-label">Price adjustment \u00D7 ' + s.pricePenalty.toFixed(2) + ' <span class="output-note">launch price above $10</span></span><span class="output-value">' + (s.afterPrice * 100).toFixed(1) + '%</span></div>' : '') +
+    '<div class="output-row"><span class="output-label">Community multiplier \u00D7 ' + s.community.multiplier.toFixed(2) + '</span><span class="output-value">' + (s.afterCommunity * 100).toFixed(1) + '%</span></div>' +
+    (s.demoFactor !== 1.0 ? '<div class="output-row"><span class="output-label">Demo factor \u00D7 ' + s.demoFactor.toFixed(2) + '</span><span class="output-value">' + (s.rawRate * 100).toFixed(1) + '%</span></div>' : '') +
+    '<div class="output-row"><span class="output-label">Central rate <span class="output-note">clamped; feeds the band central column</span></span><span class="output-value">' + (s.central.rate * 100).toFixed(1) + '%</span></div>';
+
   document.getElementById('wishlist-outputs').innerHTML =
-    '<div class="output-row"><span class="output-label">Base Conversion Rate' + demoRateNote + '</span><span class="output-value">' + (s.baseRate * 100).toFixed(1) + '%</span></div>' +
-    (lp > 10 ? '<p class="muted" style="margin-top:6px">Includes the 30% reduction for price above $10.</p>' : '') +
+    chainHtml +
     '<p class="muted" style="margin-top:10px">A range, not a forecast. Aggregate conversion benchmarks carry wide variance and wishlist count alone is a weak predictor below 10,000.</p>' +
     band +
     capNote +
@@ -2563,10 +2570,14 @@ function computeWishlistScenarios(count, lp, devShare) {
     baseRate: baseRate,
     hasDemoData: hasDemoData,
     demoConvRate: demoConvRate,
+    pricePenalty: pricePenalty,
     community: community,
     demo: demo,
+    demoFactor: demoFactor,
     rawRate: band.rawRate,
     centralCapped: band.centralCapped,
+    afterPrice: band.afterPrice,
+    afterCommunity: band.afterCommunity,
     conservative: band.conservative,
     central: band.central,
     optimistic: band.optimistic
@@ -3873,6 +3884,19 @@ function runSelfTest() {
   var bandPen = PricingModel.computeScenarioBand(10000, 15.0, 0.70, 0.18, 0.70, 1.0, 1.0);
   t('no penalty at <=$10 -> 18.0%', Math.abs(bandNoPen.central.rate - 0.18) < 1e-9);
   t('penalty once at >$10 -> 12.6%', Math.abs(bandPen.central.rate - 0.126) < 1e-9);
+
+  // Rate chain transparency: final chain rate equals band.central.rate, and the
+  // intermediate steps are the running product of the multipliers.
+  var chainBelow = PricingModel.computeScenarioBand(18000, 9.99, 0.70, 0.18, 1.0, 1.0, 1.0);
+  t('chain (<=$10): price adjustment not applied', chainBelow.afterPrice === 0.18);
+  t('chain (<=$10): central == clamp(rawRate)', chainBelow.central.rate === PricingModel.clampWishlistRate(chainBelow.rawRate));
+  var chainAbove = PricingModel.computeScenarioBand(18000, 21.32, 0.70, 0.18, 0.70, 1.45475, 1.0);
+  t('chain (>$10): afterPrice == 0.126', Math.abs(chainAbove.afterPrice - 0.126) < 1e-9);
+  t('chain (>$10): afterCommunity == afterPrice * 1.45475', Math.abs(chainAbove.afterCommunity - 0.126 * 1.45475) < 1e-9);
+  t('chain (>$10): central == clamp(rawRate)', chainAbove.central.rate === PricingModel.clampWishlistRate(chainAbove.rawRate));
+  var chainClamp = PricingModel.computeScenarioBand(18000, 21.32, 0.70, 0.30, 1.0, 1.45, 1.20);
+  t('chain (clamp): rawRate == 0.522', Math.abs(chainClamp.rawRate - 0.522) < 1e-9);
+  t('chain (clamp): central clamped to 0.35', chainClamp.central.rate === 0.35);
 
   // Community multiplier composition (no signal dilution)
   var highOnly = PricingModel.communityScore(0, 0, 'high', '');
