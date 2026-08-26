@@ -1128,6 +1128,7 @@
       <button class="btn-ghost wb-btn" id="save-workbook-btn" onclick="exportWorkbook()">Save workbook (.json)</button>
       <button class="btn-ghost wb-btn" onclick="document.getElementById('import-file-input').click()">Load workbook (.json)</button>
       <button class="btn-ghost wb-btn" id="copy-link-btn" onclick="copyShareableLink()">Copy shareable link</button>
+      <button class="btn-ghost wb-btn" id="pin-scenario-btn" onclick="pinScenario()">Pin this scenario</button>
       <input type="file" id="import-file-input" accept=".json,application/json" style="display:none" onchange="importWorkbook(event)">
     </div>
     <div class="import-error" id="import-error"></div>
@@ -1138,7 +1139,7 @@
 
 <style>
   @media print {
-    header, .stepper, .stepper-mobile, .wizard-nav, .summary-bar, #pdf-btn, nav, .nav-wrapper, .nav-select, footer, .wb-btn, .restore-banner, .import-error, .share-feedback, .ack-control { display: none !important; }
+    header, .stepper, .stepper-mobile, .wizard-nav, .summary-bar, #pdf-btn, nav, .nav-wrapper, .nav-select, footer, .wb-btn, .restore-banner, .import-error, .share-feedback, .ack-control, .scenario-actions { display: none !important; }
     body { background: #fff; color: #000; font-size: 12px; }
     .card { border: 1px solid #ccc; box-shadow: none; break-inside: avoid; }
     .tab { display: block !important; }
@@ -1217,11 +1218,21 @@
   .ack-record { padding: 10px 0; border-bottom: 1px solid var(--border); }
   .ack-record:last-child { border-bottom: none; }
   .btn:disabled, .btn-ghost:disabled { background: var(--border); color: var(--mid); cursor: not-allowed; opacity: 0.7; }
+  /* === SCENARIO COMPARISON === */
+  .scenario-table { width: 100%; border-collapse: collapse; table-layout: auto; }
+  .scenario-table th, .scenario-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); text-align: left; font-size: 13px; height: auto; }
+  .scenario-table th { background: var(--cream-dark); font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--dark); }
+  .scenario-table .scenario-label-input { font-family: var(--mono); font-size: 11px; height: 30px; width: 110px; }
+  .scenario-table .scenario-meta { display: flex; flex-direction: column; gap: 4px; }
+  .scenario-table .scenario-actions { display: flex; gap: 4px; margin-top: 4px; }
+  .scenario-table td.scenario-best { background: rgba(42,143,118,0.12); color: #1a6e5a; font-weight: 600; }
+  .scenario-table td.scenario-worst { background: rgba(184,90,58,0.10); color: #8b3a22; font-weight: 600; }
 </style>
 
 <script>
 window.manualFields = {};
 window.acknowledgements = {};
+window.pinnedScenarios = [];
 
 // === BENCHMARK PROVENANCE ===
 // Last full review of the benchmark dataset. Backdate this past ~6 months
@@ -2840,6 +2851,145 @@ function updateExportButtons(blocked) {
   btns.forEach(function(b){ if (b) b.disabled = blocked; });
 }
 
+// === SCENARIO PINNING & COMPARISON ===
+var SCENARIO_MAX = 3;
+
+function currentLaunchLabel() {
+  var lp = getValidatedLaunchPrice();
+  return lp > 0 ? '$' + lp.toFixed(2) : 'Scenario';
+}
+
+function computeScenarioMetrics() {
+  var lp = getValidatedLaunchPrice();
+  var target = parseFloat(document.getElementById('target-sale-price').value) || 0;
+  var discPct = parseFloat(document.getElementById('discount-depth').value) || 0;
+  var devShare = getDevShare();
+  var tier = window.currentTier;
+  var count = parseInt(document.getElementById('wishlist-count').value) || 0;
+  var wlScen = (count > 0 && lp > 0) ? computeWishlistScenarios(count, lp, devShare) : null;
+  var be = getBreakEven();
+  var issues = computeReconciliation();
+  var blockingCount = 0, warningCount = 0;
+  issues.forEach(function(i){ if (i.severity === 'blocking') blockingCount++; else if (i.severity === 'warning') warningCount++; });
+  return {
+    launchPrice: lp,
+    targetSalePrice: target,
+    discountDepth: discPct,
+    tierText: tier ? tier.price : '\u2014',
+    netRevenuePerUnit: lp * devShare,
+    firstWeekUnitsCons: wlScen ? wlScen.conservative.units : 0,
+    firstWeekUnitsCentral: wlScen ? wlScen.central.units : 0,
+    firstWeekUnitsOpt: wlScen ? wlScen.optimistic.units : 0,
+    netFirstWeekRevenue: wlScen ? wlScen.central.revenue : 0,
+    breakEvenUnits: (be.devCost > 0) ? be.blendedUnits : 0,
+    blockingCount: blockingCount,
+    warningCount: warningCount
+  };
+}
+
+function pinScenario() {
+  if (window.pinnedScenarios.length >= SCENARIO_MAX) {
+    alert('You can pin up to three scenarios. Remove one first.');
+    return;
+  }
+  var snapshot = serialiseState();
+  delete snapshot.pinnedScenarios;
+  window.pinnedScenarios.push({
+    label: currentLaunchLabel(),
+    pinnedAt: Date.now(),
+    state: snapshot,
+    metrics: computeScenarioMetrics()
+  });
+  scheduleAutosave();
+  buildSummary();
+}
+
+function removeScenario(i) {
+  window.pinnedScenarios.splice(i, 1);
+  scheduleAutosave();
+  buildSummary();
+}
+
+function loadScenario(i) {
+  var p = window.pinnedScenarios[i];
+  if (!p) return;
+  if (!confirm('Load "' + p.label + '" into the live workbook? This replaces your current inputs.')) return;
+  restoreState(p.state);
+  scheduleAutosave();
+  buildSummary();
+}
+
+function renameScenario(i) {
+  var input = document.getElementById('scenario-label-' + i);
+  if (!input) return;
+  var label = input.value.replace(/^\s+|\s+$/g, '');
+  window.pinnedScenarios[i].label = label || currentLaunchLabel();
+  scheduleAutosave();
+  buildSummary();
+}
+
+function restorePinnedScenarios(state) {
+  window.pinnedScenarios = (state && state.pinnedScenarios) ? state.pinnedScenarios : [];
+}
+
+function renderScenarioComparison() {
+  var pins = window.pinnedScenarios || [];
+  if (pins.length === 0) return '';
+  var rows = [
+    { key: 'launchPrice', label: 'Launch Price', dir: null },
+    { key: 'targetSalePrice', label: 'Target Sale Price', dir: null },
+    { key: 'discountDepth', label: 'Discount Depth', dir: null },
+    { key: 'tierText', label: 'Recommended Tier', dir: null },
+    { key: 'netRevenuePerUnit', label: 'Net Revenue / Unit', dir: 'higher' },
+    { key: 'firstWeekUnitsCons', label: 'First-Week Units (Conservative)', dir: 'higher' },
+    { key: 'firstWeekUnitsCentral', label: 'First-Week Units (Central)', dir: 'higher' },
+    { key: 'firstWeekUnitsOpt', label: 'First-Week Units (Optimistic)', dir: 'higher' },
+    { key: 'netFirstWeekRevenue', label: 'Net First-Week Revenue', dir: 'higher' },
+    { key: 'breakEvenUnits', label: 'Break-Even Units', dir: 'lower' },
+    { key: 'blockingCount', label: 'Blocking Issues', dir: 'lower', allowZero: true },
+    { key: 'warningCount', label: 'Warning Issues', dir: 'lower', allowZero: true }
+  ];
+  function fmtMetric(key, m) {
+    var v = m[key];
+    if (key === 'launchPrice' || key === 'targetSalePrice') return v > 0 ? '$' + v.toFixed(2) : '\u2014';
+    if (key === 'discountDepth') return v > 0 ? v + '%' : '\u2014';
+    if (key === 'tierText') return v || '\u2014';
+    if (key === 'netRevenuePerUnit' || key === 'netFirstWeekRevenue') return v > 0 ? fmtMoney(v) : '\u2014';
+    if (key === 'firstWeekUnitsCons' || key === 'firstWeekUnitsCentral' || key === 'firstWeekUnitsOpt') return v > 0 ? v.toLocaleString() : '\u2014';
+    if (key === 'breakEvenUnits') return v > 0 ? Math.ceil(v).toLocaleString() : '\u2014';
+    return String(v);
+  }
+  rows.forEach(function(row){
+    if (!row.dir) return;
+    var distinct = [];
+    pins.forEach(function(p){
+      var v = p.metrics[row.key];
+      if (typeof v === 'number' && (row.allowZero ? v >= 0 : v > 0) && distinct.indexOf(v) === -1) distinct.push(v);
+    });
+    if (distinct.length < 2) return;
+    row.best = row.dir === 'higher' ? Math.max.apply(null, distinct) : Math.min.apply(null, distinct);
+    row.worst = row.dir === 'higher' ? Math.min.apply(null, distinct) : Math.max.apply(null, distinct);
+  });
+  var html = '<div class="card"><h3>Scenario Comparison</h3><div style="overflow-x:auto"><table class="scenario-table"><thead><tr><th>Metric</th>';
+  pins.forEach(function(p, i){
+    html += '<th><div class="scenario-meta"><input type="text" class="scenario-label-input" id="scenario-label-' + i + '" value="' + escapeHtml(p.label) + '" onchange="renameScenario(' + i + ')"><div class="scenario-actions"><button class="btn-ghost" onclick="loadScenario(' + i + ')">Load</button><button class="btn-ghost" onclick="removeScenario(' + i + ')">\u00D7</button></div></div></th>';
+  });
+  html += '</tr></thead><tbody>';
+  rows.forEach(function(row){
+    html += '<tr><td>' + row.label + '</td>';
+    pins.forEach(function(p){
+      var v = p.metrics[row.key];
+      var cls = '';
+      if (row.best !== undefined && v === row.best) cls = 'scenario-best';
+      else if (row.worst !== undefined && v === row.worst) cls = 'scenario-worst';
+      html += '<td class="' + cls + '">' + fmtMetric(row.key, p.metrics) + '</td>';
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table></div></div>';
+  return html;
+}
+
 function buildSummary() {
   try {
   var gp = window.gameProfile || {};
@@ -2946,7 +3096,8 @@ function buildSummary() {
     '<div class="output-row"><span class="output-label">Recommended EA Launch Price</span><span class="output-value">' + (lp > 0 ? fmtSnappedPrice(eaPrice) : '—') + '</span></div></div>' +
     '<div class="card"><h3>Regional: USD_MENA</h3>' +
     '<div class="output-row"><span class="output-label">Conversion Method</span><span class="output-value">' + (menaMethod ? menaMethod.options[menaMethod.selectedIndex].text.split(' —')[0] : '—') + '</span></div>' +
-    '<div class="output-row"><span class="output-label">Estimated MENA Price</span><span class="output-value">' + (lp > 0 ? fmtSnappedPrice(menaPrice) : '—') + '</span></div></div>';
+    '<div class="output-row"><span class="output-label">Estimated MENA Price</span><span class="output-value">' + (lp > 0 ? fmtSnappedPrice(menaPrice) : '—') + '</span></div></div>' +
+    renderScenarioComparison();
 
   var sumWiz = document.querySelector('#tab-summary .wizard-nav');
   if (sumWiz) sumWiz.style.display = 'none';
@@ -3019,7 +3170,7 @@ var PERSIST_SCHEMA = 1;
 var autosaveTimer = null;
 
 function serialiseState() {
-  var state = { schema: PERSIST_SCHEMA, fields: {}, radios: {}, compRows: [], manualFields: {}, acknowledgements: window.acknowledgements || {}, proxyUrl: steamProxyUrl, visitedSteps: visitedSteps, completedSteps: completedSteps };
+  var state = { schema: PERSIST_SCHEMA, fields: {}, radios: {}, compRows: [], manualFields: {}, acknowledgements: window.acknowledgements || {}, pinnedScenarios: window.pinnedScenarios || [], proxyUrl: steamProxyUrl, visitedSteps: visitedSteps, completedSteps: completedSteps };
 
   document.querySelectorAll('input[id], select[id], textarea[id]').forEach(function(el){
     if (el.id === 'steam-proxy-url' || el.type === 'file') return;
@@ -3205,6 +3356,7 @@ function importWorkbook(evt) {
         return;
       }
       restoreState(obj);
+      restorePinnedScenarios(obj);
       showImportError('');
       scheduleAutosave();
     } catch(err) {
@@ -3248,7 +3400,9 @@ function showShareFeedback(msg, isError) {
 }
 function copyShareableLink() {
   try {
-    var encoded = b64urlEncode(JSON.stringify(serialiseState()));
+    var shareState = serialiseState();
+    delete shareState.pinnedScenarios; // keep the link compact — pins live in JSON export
+    var encoded = b64urlEncode(JSON.stringify(shareState));
     if (encoded.length > 8000) {
       showShareFeedback('This workbook is too large for a link \u2014 use Save workbook (.json) instead.', true);
       return;
@@ -3283,6 +3437,7 @@ function initPersistence() {
   var saved = loadFromLocalStorage();
   if (saved && saved.schema === PERSIST_SCHEMA) {
     restoreState(saved);
+    restorePinnedScenarios(saved);
     showRestoreBanner(saved.savedAt);
   }
 }
