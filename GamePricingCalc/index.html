@@ -351,6 +351,41 @@
   .summary-bar[open] summary::before { content: '− '; }
   .summary-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
   .summary-chip { font-family: var(--mono); font-size: 10px; padding: 4px 8px; border-radius: 4px; background: var(--white); border: 1px solid var(--border); color: var(--dark); }
+
+  /* === RESPONSIVE (phone) === */
+  @media (max-width: 719px) {
+    html, body { overflow-x: hidden; }
+    .container { padding: 0 0.85rem; }
+
+    /* Reflow wide tables into stacked cards, one card per row */
+    table.stackable, table.stackable thead, table.stackable tbody, table.stackable th, table.stackable td, table.stackable tr { display: block; }
+    table.stackable { width: 100%; }
+    table.stackable thead { position: absolute; top: -9999px; left: -9999px; }
+    table.stackable tr { border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 14px; background: var(--white); }
+    table.stackable td { border: none; border-bottom: 1px solid var(--border); padding: 10px 12px 10px 42%; position: relative; min-height: 44px; text-align: left; height: auto; }
+    table.stackable td:last-child { border-bottom: none; }
+    table.stackable td::before { content: attr(data-label); position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 36%; font-family: var(--mono); font-size: 8px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--mid); font-weight: 500; }
+    table.stackable td.stackable-hide { display: none; }
+    table.stackable td.stackable-action { padding-left: 12px; text-align: right; }
+    table.stackable td.stackable-action .row-del { width: 100%; height: 44px; min-width: 44px; justify-content: center; }
+    table.stackable td > input, table.stackable td > select { width: 100%; height: 44px; }
+    table.stackable td .steam-row { flex-wrap: wrap; }
+    table.stackable td .steam-row input { flex: 1 1 100%; height: 44px; }
+    table.stackable td .steam-row .fetch-btn { height: 44px; min-width: 44px; }
+    table.stackable td .fetch-status, table.stackable td .genres-tags, table.stackable td .reception-auto-note, table.stackable td .steam-badge { position: static; margin-top: 4px; }
+
+    /* Touch targets */
+    input[type="range"] { min-height: 44px; }
+    .tier-row { min-height: 44px; }
+    .tier-row td { height: auto; min-height: 44px; }
+
+    /* Stat grid to two columns */
+    .stat-grid { grid-template-columns: 1fr 1fr; }
+
+    /* Nav/stepper are handled by the existing 768px block (dropdown + progress
+       bar); ensure the dropdown stays full-width with no overflow */
+    .nav-select { width: 100%; }
+  }
 </style>
 </head>
 <body>
@@ -603,7 +638,7 @@
     </div>
 
     <div class="card" style="overflow-x:auto">
-      <table id="comp-table">
+      <table id="comp-table" class="stackable">
         <thead>
           <tr>
             <th style="width:14%">Game Title</th>
@@ -776,7 +811,7 @@
         <span class="muted">Won't discount below this long-term</span>
       </div>
       <div class="floor-warning" id="floor-warning" style="display:none"></div>
-      <table>
+      <table class="stackable">
         <thead><tr><th>Stage</th><th>When</th><th>Discount</th><th>Price</th><th>Purpose</th></tr></thead>
         <tbody id="staircase-body"></tbody>
       </table>
@@ -1003,7 +1038,7 @@
     <h3 style="margin-bottom:12px">Global Regions</h3>
     <p class="subtitle" style="margin-bottom:16px">Estimated prices derived from Step 3 launch price. Accept Steam defaults for most regions. <span id="regional-src"></span></p>
     <div class="card" style="overflow-x:auto">
-      <table>
+      <table class="stackable">
         <thead><tr><th>Region</th><th>Recommendation</th><th>Mult.</th><th>Est. Price (USD)</th><th>Action</th><th>Notes</th></tr></thead>
         <tbody id="regional-body"></tbody>
       </table>
@@ -1035,7 +1070,7 @@
     <div class="card" style="overflow-x:auto;margin-bottom:16px">
       <h3>Gulf States (Local Currency)</h3>
       <p class="muted" style="font-size:12px;margin-bottom:10px">These countries have their own local Steam currencies and are priced independently — not folded into USD_MENA. <a href="https://partner.steamgames.com/pricing/explorer" target="_blank" class="source-link">Verify with Steam's Pricing Explorer.</a> <span id="gulf-src"></span></p>
-      <table>
+      <table class="stackable">
         <thead><tr><th>Country</th><th>Currency</th><th>Recommended Pricing</th><th>Est. Price (USD)</th><th>Notes</th></tr></thead>
         <tbody id="gulf-body"></tbody>
       </table>
@@ -1044,7 +1079,7 @@
     <h3 style="margin-bottom:12px;margin-top:28px">DLC Pricing Guide</h3>
     <p class="subtitle" style="margin-bottom:16px">Suggested DLC price ranges. Benchmarks from Steamworks data and Chris Zukowski.</p>
     <div class="card" style="overflow-x:auto">
-      <table>
+      <table class="stackable">
         <thead><tr><th>DLC Type</th><th>Pricing Rule</th><th>Suggested Range</th><th>Notes</th></tr></thead>
         <tbody id="dlc-body"></tbody>
       </table>
@@ -1735,17 +1770,17 @@ function addCompRow(title, launch, current, quality, reception, hours) {
   compRowCount++;
   var tr = document.createElement('tr');
   tr.innerHTML =
-    '<td><input type="text" value="' + escapeHtml(title) + '" placeholder="Game title" class="comp-title" aria-label="Game title"><span class="steam-badge" style="display:none">Steam</span></td>' +
-    '<td><div class="steam-row"><input type="text" placeholder="URL or App ID" class="comp-appid" aria-label="Steam App ID or URL"><button class="fetch-btn" type="button">Fetch</button></div><div class="fetch-status"></div></td>' +
-    '<td></td>' +
-    '<td><input type="number" value="' + launch + '" step="0.01" min="0" placeholder="0.00" class="comp-launch" aria-label="Launch price (USD)" oninput="this.removeAttribute(\'data-fetched\'); updateCompStats()"></td>' +
-    '<td><input type="number" value="' + current + '" step="0.01" min="0" placeholder="0.00" class="comp-current" aria-label="Current price (USD)"></td>' +
-    '<td><input type="number" value="" step="0.01" min="0" placeholder="0.00" class="comp-historical" aria-label="Historical low (USD)" readonly></td>' +
-    '<td><input type="text" value="" placeholder="e.g. 15 Mar 2024" class="comp-release-date" aria-label="Release date" readonly><div class="genres-tags"></div></td>' +
-    '<td><select class="comp-quality" aria-label="Quality vs. mine"><option' + (quality==='Better'?' selected':'') + '>Better</option><option' + (quality==='Equal'?' selected':'') + '>Equal</option><option' + (quality==='Worse'?' selected':'') + '>Worse</option></select></td>' +
-    '<td><select class="comp-reception" aria-label="Community reception"><option' + (reception==='Positive'?' selected':'') + '>Positive</option><option' + (reception==='Mixed'?' selected':'') + '>Mixed</option><option' + (reception==='Negative'?' selected':'') + '>Negative</option></select><span class="reception-auto-note"></span></td>' +
-    '<td><input type="number" value="' + hours + '" step="0.5" min="0" placeholder="0" class="comp-hours"></td>' +
-    '<td><button class="btn-ghost row-del" onclick="this.closest(\'tr\').remove(); compRowCount--; updateCompStats(); scheduleAutosave();">' + '✕' + '</button></td>';
+    '<td data-label="Game Title"><input type="text" value="' + escapeHtml(title) + '" placeholder="Game title" class="comp-title" aria-label="Game title"><span class="steam-badge" style="display:none">Steam</span></td>' +
+    '<td data-label="Steam ID"><div class="steam-row"><input type="text" placeholder="URL or App ID" class="comp-appid" aria-label="Steam App ID or URL"><button class="fetch-btn" type="button">Fetch</button></div><div class="fetch-status"></div></td>' +
+    '<td class="stackable-hide"></td>' +
+    '<td data-label="Launch Price"><input type="number" value="' + launch + '" step="0.01" min="0" placeholder="0.00" class="comp-launch" aria-label="Launch price (USD)" oninput="this.removeAttribute(\'data-fetched\'); updateCompStats()"></td>' +
+    '<td data-label="Current Price"><input type="number" value="' + current + '" step="0.01" min="0" placeholder="0.00" class="comp-current" aria-label="Current price (USD)"></td>' +
+    '<td data-label="Historical Low"><input type="number" value="" step="0.01" min="0" placeholder="0.00" class="comp-historical" aria-label="Historical low (USD)" readonly></td>' +
+    '<td data-label="Release"><input type="text" value="" placeholder="e.g. 15 Mar 2024" class="comp-release-date" aria-label="Release date" readonly><div class="genres-tags"></div></td>' +
+    '<td data-label="Quality"><select class="comp-quality" aria-label="Quality vs. mine"><option' + (quality==='Better'?' selected':'') + '>Better</option><option' + (quality==='Equal'?' selected':'') + '>Equal</option><option' + (quality==='Worse'?' selected':'') + '>Worse</option></select></td>' +
+    '<td data-label="Reception"><select class="comp-reception" aria-label="Community reception"><option' + (reception==='Positive'?' selected':'') + '>Positive</option><option' + (reception==='Mixed'?' selected':'') + '>Mixed</option><option' + (reception==='Negative'?' selected':'') + '>Negative</option></select><span class="reception-auto-note"></span></td>' +
+    '<td data-label="Hours"><input type="number" value="' + hours + '" step="0.5" min="0" placeholder="0" class="comp-hours"></td>' +
+    '<td class="stackable-action"><button class="btn-ghost row-del" onclick="this.closest(\'tr\').remove(); compRowCount--; updateCompStats(); scheduleAutosave();">' + '✕' + '</button></td>';
   tr.querySelector('.fetch-btn').addEventListener('click', function() {
     var appId = extractAppId(tr.querySelector('.comp-appid').value);
     if (!appId) { showRowStatus(tr, 'Enter a valid Steam App ID or URL', 'error'); return; }
@@ -2071,9 +2106,9 @@ function updatePricing() {
   } else { floorWarn.style.display = 'none'; }
   document.getElementById('staircase-body').innerHTML =
     staircase.map(function(s){
-      return '<tr><td><strong>' + s.stage + '</strong></td><td>' + s.when + '</td><td>' + (s.pct*100).toFixed(0) + '%</td><td style="color:var(--teal);font-weight:500">' + fmtSnappedPrice(launchPrice * (1 - s.pct)) + '</td><td>' + s.purpose + '</td></tr>';
+      return '<tr><td data-label="Stage"><strong>' + s.stage + '</strong></td><td data-label="When">' + s.when + '</td><td data-label="Discount">' + (s.pct*100).toFixed(0) + '%</td><td data-label="Price" style="color:var(--teal);font-weight:500">' + fmtSnappedPrice(launchPrice * (1 - s.pct)) + '</td><td data-label="Purpose">' + s.purpose + '</td></tr>';
     }).join('') +
-    '<tr class="floor-row"><td><strong>Price Floor</strong></td><td>Long-term minimum</td><td>' + floorPct + '%</td><td>' + fmtSnappedPrice(launchPrice * (1 - floorPct/100)) + '</td><td>Permanent price floor threshold</td></tr>';
+    '<tr class="floor-row"><td data-label="Stage"><strong>Price Floor</strong></td><td data-label="When">Long-term minimum</td><td data-label="Discount">' + floorPct + '%</td><td data-label="Price">' + fmtSnappedPrice(launchPrice * (1 - floorPct/100)) + '</td><td data-label="Purpose">Permanent price floor threshold</td></tr>';
   updateRegionalTable();
   renderReconciliation();
   renderBreakEven();
@@ -2434,12 +2469,12 @@ function updateRegionalTable() {
 
   document.getElementById('regional-body').innerHTML = regionalData.map(function(r){
     var estPrice = lp > 0 ? fmtSnappedPrice(lp * r.multiplier) : '\u2014';
-    return '<tr><td><strong>' + r.flag + ' ' + r.region + '</strong></td><td>' + r.rec + '</td><td style="text-align:center">' + r.multiplier.toFixed(2) + 'x</td><td style="color:var(--teal);font-weight:500">' + estPrice + '</td><td>' + r.action + ' ' + r.badge + '</td><td>' + r.notes + '</td></tr>';
+    return '<tr><td data-label="Region"><strong>' + r.flag + ' ' + r.region + '</strong></td><td data-label="Recommendation">' + r.rec + '</td><td data-label="Multiplier" style="text-align:center">' + r.multiplier.toFixed(2) + 'x</td><td data-label="Est. Price" style="color:var(--teal);font-weight:500">' + estPrice + '</td><td data-label="Action">' + r.action + ' ' + r.badge + '</td><td data-label="Notes">' + r.notes + '</td></tr>';
   }).join('');
 
   document.getElementById('gulf-body').innerHTML = gulfData.map(function(g){
     var estPrice = lp > 0 ? fmtSnappedPrice(lp * g.multiplier) : '\u2014';
-    return '<tr><td><strong>' + g.flag + ' ' + g.country + '</strong></td><td>' + g.currency + '</td><td>~' + (g.multiplier*100).toFixed(0) + '% of US price</td><td style="color:var(--teal);font-weight:500">' + estPrice + '</td><td>' + g.notes + '</td></tr>';
+    return '<tr><td data-label="Country"><strong>' + g.flag + ' ' + g.country + '</strong></td><td data-label="Currency">' + g.currency + '</td><td data-label="Recommended Pricing">~' + (g.multiplier*100).toFixed(0) + '% of US price</td><td data-label="Est. Price" style="color:var(--teal);font-weight:500">' + estPrice + '</td><td data-label="Notes">' + g.notes + '</td></tr>';
   }).join('');
 }
 function updateDlcTable() {
@@ -2451,7 +2486,7 @@ function updateDlcTable() {
   ];
   document.getElementById('dlc-body').innerHTML = dlcTypes.map(function(d, idx){
     var color = idx === 0 ? 'var(--purple)' : (idx === 1 ? 'var(--teal)' : 'var(--gold)');
-    return '<tr><td><strong>' + d.type + '</strong></td><td>' + d.rule + '</td><td style="color:' + color + ';font-weight:500">' + d.calc + '</td><td>' + d.notes + '</td></tr>';
+    return '<tr><td data-label="DLC Type"><strong>' + d.type + '</strong></td><td data-label="Pricing Rule">' + d.rule + '</td><td data-label="Suggested Range" style="color:' + color + ';font-weight:500">' + d.calc + '</td><td data-label="Notes">' + d.notes + '</td></tr>';
   }).join('');
 }
 
