@@ -732,11 +732,26 @@
           <label class="stat-label">Lifetime Revenue to Date (USD) <span class="output-note">Optional</span></label>
           <input type="number" id="lifetime-revenue" value="0" min="0" step="100000" oninput="autoSelectTier(); updateAllLinked()">
         </div>
+        <div style="margin-bottom:0">
+          <label class="stat-label">Total Development Cost to Recoup (USD) <span class="estimate-tag heuristic" id="dev-cost-tag" style="display:none">Estimated default</span></label>
+          <input type="number" id="dev-cost" value="" min="0" step="1000" placeholder="e.g. 150000" oninput="markManual('dev-cost'); updateAllLinked()">
+          <div class="output-note">Pre-filled from your budget band in Step 0 — replace with your actual figure.</div>
+        </div>
       </div>
       <div class="card">
         <h3>Calculated Outputs</h3>
         <div id="pricing-outputs"></div>
       </div>
+    </div>
+
+    <div class="card">
+      <h3>Break-Even Analysis</h3>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap">
+        <label class="stat-label">Full-price share of sales (%)</label>
+        <input type="number" id="be-full-share" value="60" min="0" max="100" step="5" oninput="updateAllLinked()" style="width:72px">
+        <span class="muted">Assumption: remaining sales at the discounted price</span>
+      </div>
+      <div id="break-even-outputs"></div>
     </div>
 
     <div class="card">
@@ -1701,6 +1716,81 @@ function updatePricing() {
     '<tr class="floor-row"><td><strong>Price Floor</strong></td><td>Long-term minimum</td><td>' + floorPct + '%</td><td>' + fmtSnappedPrice(launchPrice * (1 - floorPct/100)) + '</td><td>Permanent price floor threshold</td></tr>';
   updateRegionalTable();
   renderReconciliation();
+  renderBreakEven();
+}
+
+// === BREAK-EVEN ANALYSIS ===
+var BUDGET_MIDPOINTS = { under50k: 25000, '50to250k': 150000, '250to1m': 625000, '1to5m': 3000000, over5m: 7500000 };
+
+function getDevCost() {
+  return parseFloat(document.getElementById('dev-cost').value) || 0;
+}
+
+function refreshDevCostDefault() {
+  var el = document.getElementById('dev-cost');
+  var tag = document.getElementById('dev-cost-tag');
+  if (!el) return;
+  if (!isManual('dev-cost')) {
+    var mid = BUDGET_MIDPOINTS[document.getElementById('profile-budget').value];
+    if (mid) {
+      el.value = mid;
+      if (tag) tag.style.display = 'inline';
+    }
+  } else if (tag) { tag.style.display = 'none'; }
+}
+
+function getBreakEven() {
+  var devCost = getDevCost();
+  var lp = getValidatedLaunchPrice();
+  var target = parseFloat(document.getElementById('target-sale-price').value) || 0;
+  var devShare = getDevShare();
+  var netFull = lp * devShare;
+  var netSale = target * devShare;
+  var fullShare = parseFloat(document.getElementById('be-full-share').value);
+  if (isNaN(fullShare)) fullShare = 60;
+  fullShare = Math.max(0, Math.min(100, fullShare));
+  var blendedNet = (fullShare / 100) * netFull + ((100 - fullShare) / 100) * netSale;
+  return {
+    devCost: devCost,
+    netFull: netFull,
+    netSale: netSale,
+    fullPriceUnits: (devCost > 0 && netFull > 0) ? devCost / netFull : 0,
+    salePriceUnits: (devCost > 0 && netSale > 0) ? devCost / netSale : 0,
+    blendedUnits: (devCost > 0 && blendedNet > 0) ? devCost / blendedNet : 0,
+    fullShare: fullShare,
+    blendedNet: blendedNet
+  };
+}
+
+function renderBreakEven() {
+  var be = getBreakEven();
+  var el = document.getElementById('break-even-outputs');
+  if (!el) return;
+  if (be.devCost <= 0) {
+    el.innerHTML = '<p class="muted">Enter your total development cost to recoup (in Your Inputs above) to see break-even units.</p>';
+    return;
+  }
+  var count = parseInt(document.getElementById('wishlist-count').value) || 0;
+  var lp = getValidatedLaunchPrice();
+  var fwUnits = 0;
+  if (count > 0 && lp > 0) {
+    fwUnits = computeWishlistScenarios(count, lp, getDevShare()).central.units;
+  }
+  var multipleHtml = '';
+  if (fwUnits > 0) {
+    var mult = be.blendedUnits / fwUnits;
+    multipleHtml =
+      '<div class="output-row"><span class="output-label">Break-Even vs Projected First-Week Units</span><span class="output-value">' + Math.ceil(be.blendedUnits).toLocaleString() + ' vs ' + fwUnits.toLocaleString() + ' <span class="output-note">(' + mult.toFixed(1) + 'x)</span></span></div>' +
+      '<p class="muted" style="margin-top:6px">Break-even needs ' + mult.toFixed(1) + 'x your projected first-week units. First-week units are typically a fraction of lifetime units, so a multiple above 1 is normal \u2014 the number to watch is how large it is.</p>';
+  }
+  el.innerHTML =
+    '<div class="output-row"><span class="output-label">Net Revenue per Unit (Full Price)</span><span class="output-value">' + fmtMoney(be.netFull) + '</span></div>' +
+    '<div class="output-row"><span class="output-label">Net Revenue per Unit (Sale Price)</span><span class="output-value">' + fmtMoney(be.netSale) + '</span></div>' +
+    '<div class="output-row"><span class="output-label">Units to Break Even (Full Price)</span><span class="output-value">' + Math.ceil(be.fullPriceUnits).toLocaleString() + '</span></div>' +
+    '<div class="output-row"><span class="output-label">Units to Break Even (Sale Price)</span><span class="output-value">' + Math.ceil(be.salePriceUnits).toLocaleString() + '</span></div>' +
+    '<div class="output-row"><span class="output-label">Units to Break Even (Blended)</span><span class="output-value">' + Math.ceil(be.blendedUnits).toLocaleString() + '</span></div>' +
+    '<div class="output-row"><span class="output-label">Blended Split Assumption</span><span class="output-value">' + be.fullShare.toFixed(0) + '% full / ' + (100 - be.fullShare).toFixed(0) + '% discounted</span></div>' +
+    multipleHtml;
 }
 
 // === DEMO PERFORMANCE ===
@@ -1860,6 +1950,7 @@ function updateWishlist() {
     comRow +
     demoRow +
     '<p class="muted" style="margin-top:10px;font-style:italic">Base conversion rates from GameDiscoverCo aggregate Steam data. Community multiplier is a directional estimate based on published correlations between community engagement and wishlist quality — not a guaranteed formula. A large wishlist count with a small, inactive community is a known risk pattern; a smaller wishlist backed by an active Discord and organic growth often converts better than the raw number suggests.</p>';
+  renderBreakEven();
 }
 
 // === WISHLIST SCENARIO BAND (shared by updateWishlist + buildSummary) ===
@@ -2078,6 +2169,11 @@ function computeReconciliation() {
   var issues = [];
   var lp = getValidatedLaunchPrice();
   var tier = window.currentTier;
+  var devCost = getDevCost();
+  var be = getBreakEven();
+  var wlCount = parseInt(document.getElementById('wishlist-count').value) || 0;
+  var wlScen = (wlCount > 0 && lp > 0) ? computeWishlistScenarios(wlCount, lp, getDevShare()) : null;
+  var fwUnits = wlScen ? wlScen.central.units : 0;
 
   // #1 — Required Launch Price vs Recommended Tier
   if (lp > 0 && tier) {
@@ -2085,9 +2181,13 @@ function computeReconciliation() {
     var aboveGap = lp > tier.max ? (lp - tier.max) / tier.max : 0;
     if (belowGap > 0.15 || aboveGap > 0.15) {
       var dir = lp > tier.max ? 'above' : 'below';
+      var unitDetail = '';
+      if (devCost > 0) {
+        unitDetail = ' At $' + lp.toFixed(2) + ' you need to sell about ' + Math.ceil(be.blendedUnits).toLocaleString() + ' units to recoup your $' + devCost.toLocaleString() + ' development cost' + (fwUnits > 0 ? ', versus ' + fwUnits.toLocaleString() + ' units implied by your first-week estimate (' + (be.blendedUnits / fwUnits).toFixed(1) + 'x).' : '.');
+      }
       issues.push({
         id: 'price-tier-conflict', severity: 'blocking', title: 'Pricing conflict: Required Launch Price vs Recommended Tier',
-        detail: 'Your Required Launch Price ($' + lp.toFixed(2) + ') is significantly ' + dir + ' your comp-based Recommended Tier (' + tier.price + '). This usually means your budget/revenue target requires more units than your comp set or content scope supports at this price — revisit your comp analysis, budget inputs, or expected content hours before finalizing.'
+        detail: 'Your Required Launch Price ($' + lp.toFixed(2) + ') is significantly ' + dir + ' your comp-based Recommended Tier (' + tier.price + ').' + unitDetail + ' Revisit your comp analysis, budget inputs, or expected content hours before finalizing.'
       });
     }
   }
@@ -2148,6 +2248,17 @@ function computeReconciliation() {
       id: 'no-demo', severity: 'advisory', title: 'No demo data',
       detail: 'Using non-demo wishlist conversion benchmarks (8\u201312%) instead of demo-driven benchmarks (18\u201325%). A demo is one of the strongest predictors of launch revenue quality; consider Next Fest or a public demo before finalizing your pricing plan.'
     });
+  }
+
+  // #9 — break-even vs optimistic first-week units
+  if (devCost > 0 && wlScen) {
+    var optUnits = wlScen.optimistic.units;
+    if (optUnits > 0 && be.blendedUnits > optUnits * 10) {
+      issues.push({
+        id: 'break-even-gap', severity: 'warning', title: 'Break-even far exceeds projected first-week units',
+        detail: 'Your break-even point (' + Math.ceil(be.blendedUnits).toLocaleString() + ' units) is more than 10x your optimistic first-week estimate (' + optUnits.toLocaleString() + ' units) \u2014 the price and budget are likely incompatible and one of the two must move.'
+      });
+    }
   }
 
   return issues;
@@ -2379,6 +2490,7 @@ function refreshDerivedDefaults() {
   }
   updateWishlistEstimateLabel();
   refreshCommunityDefaults();
+  refreshDevCostDefault();
   updateWishlist();
 }
 
@@ -2564,6 +2676,7 @@ function buildSummary() {
   var menaMult = menaMethod ? menaMultipliers[menaMethod.value] : 0.47;
   var menaPrice = lp * menaMult;
   var snappedLaunchUp = snapToSteamPriceUp(lp);
+  var be = getBreakEven();
   var demoResult = getDemoHealthScore();
 
   var issues = computeReconciliation();
@@ -2611,7 +2724,9 @@ function buildSummary() {
     '<div class="output-row"><span class="output-label">Actual Discount at Target Sale</span><span class="output-value">' + (lp > 0 ? (discountFactor * 100).toFixed(1) + '%' : '—') + '</span></div>' +
     '<div class="output-row"><span class="output-label">Net Revenue per Unit (Full)</span><span class="output-value">' + (lp > 0 ? '$' + netFull.toFixed(2) : '—') + '</span></div>' +
     '<div class="output-row"><span class="output-label">Steam Share Tier</span><span class="output-value">' + (devShare*100).toFixed(0) + '% to dev</span></div>' +
-    '<div class="output-row"><span class="output-label">Price Floor</span><span class="output-value">' + floorPct + '% off max</span></div></div>' +
+    '<div class="output-row"><span class="output-label">Price Floor</span><span class="output-value">' + floorPct + '% off max</span></div>' +
+    (be.devCost > 0 ? '<div class="output-row"><span class="output-label">Break-Even Units <span class="output-note">Blended ' + be.fullShare.toFixed(0) + '%/' + (100 - be.fullShare).toFixed(0) + '% split</span></span><span class="output-value">' + Math.ceil(be.blendedUnits).toLocaleString() + '</span></div>' : '') +
+    '</div>' +
     '<div class="card"><h3>Comps & Wishlist</h3>' +
     '<div class="output-row"><span class="output-label">Comp Games Analyzed</span><span class="output-value">' + compCount + '</span></div>' +
     '<div class="output-row"><span class="output-label">Projected Wishlist Count</span><span class="output-value">' + (wishlistCount > 0 ? wishlistCount.toLocaleString() : '—') + '</span></div>' +
