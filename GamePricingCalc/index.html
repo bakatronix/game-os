@@ -1590,6 +1590,46 @@ function updateContentCheck() {
 updateVariables();
 updateContentCheck();
 
+// === STEAM PRICE SNAPPING ===
+// Valid USD Steam price points (conventional .99 endings). Auditable/editable in one place.
+var STEAM_PRICE_GRID = [
+  0.99, 1.99, 2.99, 3.99, 4.99, 5.99, 6.99, 7.99, 8.99, 9.99,
+  10.99, 11.99, 12.99, 13.99, 14.99, 15.99, 16.99, 17.99, 18.99, 19.99,
+  20.99, 21.99, 22.99, 23.99, 24.99, 25.99, 26.99, 27.99, 28.99, 29.99,
+  34.99, 39.99, 44.99, 49.99, 59.99
+];
+
+// Nearest valid Steam price AT OR BELOW raw (never rounds up).
+function snapToSteamPrice(usd) {
+  if (usd == null || isNaN(usd) || usd <= 0) return null;
+  var cents = Math.round(usd * 100);
+  var best = null;
+  for (var i = 0; i < STEAM_PRICE_GRID.length; i++) {
+    if (Math.round(STEAM_PRICE_GRID[i] * 100) <= cents) best = STEAM_PRICE_GRID[i];
+    else break;
+  }
+  return best;
+}
+
+// Nearest valid Steam price AT OR ABOVE raw.
+function snapToSteamPriceUp(usd) {
+  if (usd == null || isNaN(usd) || usd <= 0) return null;
+  var cents = Math.round(usd * 100);
+  for (var i = 0; i < STEAM_PRICE_GRID.length; i++) {
+    if (Math.round(STEAM_PRICE_GRID[i] * 100) >= cents) return STEAM_PRICE_GRID[i];
+  }
+  return STEAM_PRICE_GRID[STEAM_PRICE_GRID.length - 1];
+}
+
+// Display helper: snapped recommendation with raw noted, e.g. "$8.99 (raw 9.40)".
+function fmtSnappedPrice(raw) {
+  if (raw == null || isNaN(raw) || raw <= 0) return '\u2014';
+  var snapped = snapToSteamPrice(raw);
+  if (snapped == null) return '$' + raw.toFixed(2);
+  if (Math.round(snapped * 100) === Math.round(raw * 100)) return '$' + snapped.toFixed(2);
+  return '$' + snapped.toFixed(2) + ' <span class="output-note">(raw ' + raw.toFixed(2) + ')</span>';
+}
+
 // === PRICE & DISCOUNT MODEL ===
 function updatePricing() {
   var target = parseFloat(document.getElementById('target-sale-price').value);
@@ -1604,20 +1644,27 @@ function updatePricing() {
   var devShare = getDevShare();
   var discountFactor = discPct / 100;
   var launchPrice = target / (1 - discountFactor);
-  var actualDiscount = launchPrice > 0 ? (launchPrice - target) / launchPrice : 0;
+  var snappedLaunchUp = snapToSteamPriceUp(launchPrice);
+  var realDiscount = snappedLaunchUp > 0 ? (snappedLaunchUp - target) / snappedLaunchUp : 0;
   var netFull = launchPrice * devShare;
   var netSale = target * devShare;
   var unitsNeeded = netSale > 0 ? Math.round((netFull * 1000) / netSale) : 0;
   var deepDiscountPrice = launchPrice * 0.5;
   var netDeepDiscount = deepDiscountPrice * devShare;
 
+  var launchPriceHtml = '$' + launchPrice.toFixed(2);
+  if (snappedLaunchUp != null && Math.round(snappedLaunchUp * 100) !== Math.round(launchPrice * 100)) {
+    launchPriceHtml += ' <span class="output-note">\u2192 set ' + '$' + snappedLaunchUp.toFixed(2) + '</span>';
+  }
+
   document.getElementById('pricing-outputs').innerHTML =
-    '<div class="output-row"><span class="output-label">Required Launch Price <span class="output-note">Sustains target sale price at chosen discount</span></span><span class="output-value">$' + launchPrice.toFixed(2) + '</span></div>' +
-    '<div class="output-row"><span class="output-label">Actual Discount at Target Sale Price <span class="output-note">Should be ≥20% for wishlist emails</span></span><span class="output-value">' + (actualDiscount * 100).toFixed(1) + '% ' + (actualDiscount >= 0.2 ? '<span class="badge badge-teal">Meets 20%</span>' : '<span class="badge badge-coral">Below 20%</span>') + '</span></div>' +
+    '<div class="output-row"><span class="output-label">Required Launch Price <span class="output-note">Back-solved target \u2014 not a price you set directly</span></span><span class="output-value">' + launchPriceHtml + '</span></div>' +
+    '<div class="output-row"><span class="output-label">Actual Discount at Snapped Price <span class="output-note">Should be \u226520% for wishlist emails</span></span><span class="output-value">' + (realDiscount * 100).toFixed(1) + '% ' + (realDiscount >= 0.2 ? '<span class="badge badge-teal">Meets 20%</span>' : '<span class="badge badge-coral">Below 20%</span>') + '</span></div>' +
+    (realDiscount < 0.2 ? '<p class="muted" style="color:var(--coral);margin-top:6px">\u26A0 Snapping the launch price pushed the effective discount below the 20% wishlist-email threshold.</p>' : '') +
     '<div class="output-row"><span class="output-label">Net Revenue per Unit (Full Price) <span class="output-note">After Steam cut (' + (devShare*100).toFixed(0) + '% to dev)</span></span><span class="output-value">$' + netFull.toFixed(2) + '</span></div>' +
     '<div class="output-row"><span class="output-label">Net Revenue per Unit (Sale Price)</span><span class="output-value">$' + netSale.toFixed(2) + '</span></div>' +
     '<div class="output-row"><span class="output-label">Units at Sale Price to Match 1,000 Full-Price Units</span><span class="output-value">' + unitsNeeded.toLocaleString() + '</span></div>' +
-    '<div class="output-row"><span class="output-label">50% Deep-Discount Price <span class="output-note">2nd-year seasonal sale floor</span></span><span class="output-value">$' + deepDiscountPrice.toFixed(2) + '</span></div>' +
+    '<div class="output-row"><span class="output-label">50% Deep-Discount Price <span class="output-note">2nd-year seasonal sale floor</span></span><span class="output-value">' + fmtSnappedPrice(deepDiscountPrice) + '</span></div>' +
     '<div class="output-row"><span class="output-label">Net Revenue at 50% Discount <span class="output-note">Post Steam cut</span></span><span class="output-value">$' + netDeepDiscount.toFixed(2) + '</span></div>';
 
   var launchDiscPrice = launchPrice * 0.875;
@@ -1625,11 +1672,11 @@ function updatePricing() {
   var discLaunchNet = launchDiscPrice * devShare;
   document.getElementById('discount-compare').innerHTML =
     '<div class="compare-card"><h4>(A) Full Price Launch, Discount Later</h4>' +
-    '<div class="output-row"><span class="output-label">Launch Price</span><span class="output-value">$' + launchPrice.toFixed(2) + '</span></div>' +
+    '<div class="output-row"><span class="output-label">Launch Price</span><span class="output-value">' + fmtSnappedPrice(launchPrice) + '</span></div>' +
     '<div class="output-row"><span class="output-label">Net Revenue per Unit</span><span class="output-value">$' + fullNetComp.toFixed(2) + '</span></div>' +
     '<div class="tradeoff">Higher per-unit margin. Signals confidence. Less conversion lift from launch discount hype.</div></div>' +
-    '<div class="compare-card"><h4>(B) Launch With 10—15% Discount</h4>' +
-    '<div class="output-row"><span class="output-label">Launch Price</span><span class="output-value">$' + launchDiscPrice.toFixed(2) + '</span></div>' +
+    '<div class="compare-card"><h4>(B) Launch With 10\u201415% Discount</h4>' +
+    '<div class="output-row"><span class="output-label">Launch Price</span><span class="output-value">' + fmtSnappedPrice(launchDiscPrice) + '</span></div>' +
     '<div class="output-row"><span class="output-label">Net Revenue per Unit</span><span class="output-value">$' + discLaunchNet.toFixed(2) + '</span></div>' +
     '<div class="tradeoff">Triggers wishlist notification on day one if ≥20%. Lower margin but can drive higher volume.</div></div>';
 
@@ -1649,9 +1696,9 @@ function updatePricing() {
   } else { floorWarn.style.display = 'none'; }
   document.getElementById('staircase-body').innerHTML =
     staircase.map(function(s){
-      return '<tr><td><strong>' + s.stage + '</strong></td><td>' + s.when + '</td><td>' + (s.pct*100).toFixed(0) + '%</td><td style="color:var(--teal);font-weight:500">$' + (launchPrice * (1 - s.pct)).toFixed(2) + '</td><td>' + s.purpose + '</td></tr>';
+      return '<tr><td><strong>' + s.stage + '</strong></td><td>' + s.when + '</td><td>' + (s.pct*100).toFixed(0) + '%</td><td style="color:var(--teal);font-weight:500">' + fmtSnappedPrice(launchPrice * (1 - s.pct)) + '</td><td>' + s.purpose + '</td></tr>';
     }).join('') +
-    '<tr class="floor-row"><td><strong>Price Floor</strong></td><td>Long-term minimum</td><td>' + floorPct + '%</td><td>$' + (launchPrice * (1 - floorPct/100)).toFixed(2) + '</td><td>Permanent price floor threshold</td></tr>';
+    '<tr class="floor-row"><td><strong>Price Floor</strong></td><td>Long-term minimum</td><td>' + floorPct + '%</td><td>' + fmtSnappedPrice(launchPrice * (1 - floorPct/100)) + '</td><td>Permanent price floor threshold</td></tr>';
   updateRegionalTable();
   renderReconciliation();
 }
@@ -1882,7 +1929,7 @@ function updateEaCalc() {
   var fullNet = lp * devShare;
   var ratio = eaNet > 0 ? Math.round(fullNet / eaNet * 100) / 100 : 0;
   document.getElementById('ea-calc-outputs').innerHTML = lp > 0 ?
-    '<div class="output-row"><span class="output-label">Recommended EA Launch Price</span><span class="output-value">$' + eaPrice.toFixed(2) + '</span></div>' +
+    '<div class="output-row"><span class="output-label">Recommended EA Launch Price</span><span class="output-value">' + fmtSnappedPrice(eaPrice) + '</span></div>' +
     '<div class="output-row"><span class="output-label">Net Revenue per EA Unit <span class="output-note">After Steam cut (' + (devShare*100).toFixed(0) + '% to dev)</span></span><span class="output-value">$' + eaNet.toFixed(2) + '</span></div>' +
     '<div class="output-row"><span class="output-label">EA Units Needed per 1.0 Unit Revenue</span><span class="output-value">' + ratio.toFixed(2) + 'x</span></div>'
     : '<p class="muted">Set your Step 3 inputs first to see EA price calculations.</p>';
@@ -1913,31 +1960,31 @@ function updateRegionalTable() {
   var lp = getValidatedLaunchPrice();
   var method = document.getElementById('mena-method').value;
   var menaMult = menaMultipliers[method];
-  var menaPrice = lp > 0 ? '$' + (lp * menaMult).toFixed(2) : '—';
-  document.getElementById('mena-price').textContent = menaPrice;
+  var menaRaw = lp > 0 ? lp * menaMult : 0;
+  document.getElementById('mena-price').innerHTML = lp > 0 ? fmtSnappedPrice(menaRaw) : '\u2014';
 
   var floorPct = parseFloat(document.getElementById('price-floor').value) || 50;
-  var floorPrice = lp > 0 ? lp * (1 - floorPct / 100) : 0;
   var floorWarn = document.getElementById('mena-floor-warn');
   if (lp > 0 && (menaMult < (1 - floorPct / 100))) {
     floorWarn.style.display = 'block';
-    floorWarn.textContent = 'USD_MENA price ($' + (lp * menaMult).toFixed(2) + ') falls below your Price Floor (' + floorPct + '% off = $' + floorPrice.toFixed(2) + '). Consider using a less aggressive method (FX or Multi-variable).';
+    var snappedMena = snapToSteamPrice(menaRaw);
+    floorWarn.textContent = 'USD_MENA recommendation (' + (snappedMena != null ? '$' + snappedMena.toFixed(2) : '$' + menaRaw.toFixed(2)) + ') falls below your Price Floor (' + floorPct + '% off). Consider using a less aggressive method (FX or Multi-variable).';
   } else { floorWarn.style.display = 'none'; }
 
   document.getElementById('regional-body').innerHTML = regionalData.map(function(r){
-    var estPrice = lp > 0 ? '$' + (lp * r.multiplier).toFixed(2) : '—';
+    var estPrice = lp > 0 ? fmtSnappedPrice(lp * r.multiplier) : '\u2014';
     return '<tr><td><strong>' + r.flag + ' ' + r.region + '</strong></td><td>' + r.rec + '</td><td style="text-align:center">' + r.multiplier.toFixed(2) + 'x</td><td style="color:var(--teal);font-weight:500">' + estPrice + '</td><td>' + r.action + ' ' + r.badge + '</td><td>' + r.notes + '</td></tr>';
   }).join('');
 
   document.getElementById('gulf-body').innerHTML = gulfData.map(function(g){
-    var estPrice = lp > 0 ? '$' + (lp * g.multiplier).toFixed(2) : '—';
+    var estPrice = lp > 0 ? fmtSnappedPrice(lp * g.multiplier) : '\u2014';
     return '<tr><td><strong>' + g.flag + ' ' + g.country + '</strong></td><td>' + g.currency + '</td><td>~' + (g.multiplier*100).toFixed(0) + '% of US price</td><td style="color:var(--teal);font-weight:500">' + estPrice + '</td><td>' + g.notes + '</td></tr>';
   }).join('');
 }
 function updateDlcTable() {
   var lp = getValidatedLaunchPrice();
   var dlcTypes = [
-    { type: 'Large Expansion DLC', rule: '25—50% of base price', calc: lp > 0 ? '$' + (lp*0.25).toFixed(2) + ' — $' + (lp*0.50).toFixed(2) : '—', notes: 'Substantial new content: areas, mechanics, story chapters.' },
+    { type: 'Large Expansion DLC', rule: '25—50% of base price', calc: lp > 0 ? (fmtSnappedPrice(lp*0.25) + ' — ' + fmtSnappedPrice(lp*0.50)) : '—', notes: 'Substantial new content: areas, mechanics, story chapters.' },
     { type: 'Small Content Pack', rule: 'Flat $3—$5', calc: '$3.00—$5.00', notes: 'Cosmetics, small mission packs, single features.' },
     { type: '5—10 Hour Expansion', rule: 'Flat $8—$12', calc: '$8.00—$12.00', notes: 'Mid-length content drop. Story episodes, game modes.' },
   ];
@@ -2516,6 +2563,7 @@ function buildSummary() {
   var menaMethod = document.getElementById('mena-method');
   var menaMult = menaMethod ? menaMultipliers[menaMethod.value] : 0.47;
   var menaPrice = lp * menaMult;
+  var snappedLaunchUp = snapToSteamPriceUp(lp);
   var demoResult = getDemoHealthScore();
 
   var issues = computeReconciliation();
@@ -2559,7 +2607,7 @@ function buildSummary() {
     (gp.launchWindow ? '<div class="output-row"><span class="output-label">Launch Window</span><span class="output-value">' + gp.launchWindow + '</span></div>' : '') +
     '<div class="output-row"><span class="output-label">Publisher</span><span class="output-value">' + (gp.publisher || 'self') + '</span></div></div>') : '') +
     '<div class="card"><h3>Launch Price & Revenue</h3>' +
-    '<div class="output-row"><span class="output-label">Required Launch Price</span><span class="output-value">' + (lp > 0 ? '$' + lp.toFixed(2) : '—') + '</span></div>' +
+    '<div class="output-row"><span class="output-label">Required Launch Price</span><span class="output-value">' + (lp > 0 ? ('$' + lp.toFixed(2) + (snappedLaunchUp != null && Math.round(snappedLaunchUp * 100) !== Math.round(lp * 100) ? ' <span class="output-note">\u2192 set $' + snappedLaunchUp.toFixed(2) + '</span>' : '')) : '—') + '</span></div>' +
     '<div class="output-row"><span class="output-label">Actual Discount at Target Sale</span><span class="output-value">' + (lp > 0 ? (discountFactor * 100).toFixed(1) + '%' : '—') + '</span></div>' +
     '<div class="output-row"><span class="output-label">Net Revenue per Unit (Full)</span><span class="output-value">' + (lp > 0 ? '$' + netFull.toFixed(2) : '—') + '</span></div>' +
     '<div class="output-row"><span class="output-label">Steam Share Tier</span><span class="output-value">' + (devShare*100).toFixed(0) + '% to dev</span></div>' +
@@ -2582,10 +2630,10 @@ function buildSummary() {
     (demoConvLow ? '<p class="muted" style="color:var(--coral);margin-top:8px">\u26A0 ' + demoConvLow.detail + '</p>' : '') + '</div>' : '') +
     '<div class="card"><h3>Early Access</h3>' +
     '<div class="output-row"><span class="output-label">EA Discount vs 1.0 Price</span><span class="output-value">' + eaDiscPct + '%</span></div>' +
-    '<div class="output-row"><span class="output-label">Recommended EA Launch Price</span><span class="output-value">' + (lp > 0 ? '$' + eaPrice.toFixed(2) : '—') + '</span></div></div>' +
+    '<div class="output-row"><span class="output-label">Recommended EA Launch Price</span><span class="output-value">' + (lp > 0 ? fmtSnappedPrice(eaPrice) : '—') + '</span></div></div>' +
     '<div class="card"><h3>Regional: USD_MENA</h3>' +
     '<div class="output-row"><span class="output-label">Conversion Method</span><span class="output-value">' + (menaMethod ? menaMethod.options[menaMethod.selectedIndex].text.split(' —')[0] : '—') + '</span></div>' +
-    '<div class="output-row"><span class="output-label">Estimated MENA Price</span><span class="output-value">' + (lp > 0 ? '$' + menaPrice.toFixed(2) : '—') + '</span></div></div>';
+    '<div class="output-row"><span class="output-label">Estimated MENA Price</span><span class="output-value">' + (lp > 0 ? fmtSnappedPrice(menaPrice) : '—') + '</span></div></div>';
 
   var sumWiz = document.querySelector('#tab-summary .wizard-nav');
   if (sumWiz) sumWiz.style.display = 'none';
