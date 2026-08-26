@@ -806,7 +806,7 @@
               <tr><td>100,000+</td><td>~25%</td></tr>
             </tbody>
           </table>
-          <p class="muted" style="margin-top:8px">Conversion drops ~30% if launch price is above $10.</p>
+          <p class="muted" style="margin-top:8px">Conversion drops ~30% if launch price is above $10. <span id="wishlist-tiers-src"></span></p>
         </div>
 
         <details class="summary-bar" id="community-signals-details" style="margin-top:12px;border-left:3px solid var(--gold);background:rgba(195,165,95,0.06)">
@@ -852,7 +852,7 @@
   <section class="tab" id="tab-demo">
     <h2>Demo Performance</h2>
     <p class="subtitle">
-      Research across multiple Steam Next Fest post-mortems shows demo-driven wishlists convert to purchases at 18–25%, compared to just 8–12% for wishlists added without playing a demo — nearly double. A well-performing demo isn't just a marketing tool, it's a direct predictor of launch revenue quality. This data feeds your Wishlist Conversion Estimator and Pricing Summary.
+      Research across multiple Steam Next Fest post-mortems shows demo-driven wishlists convert to purchases at 18–25%, compared to just 8–12% for wishlists added without playing a demo — nearly double. A well-performing demo isn't just a marketing tool, it's a direct predictor of launch revenue quality. This data feeds your Wishlist Conversion Estimator and Pricing Summary. <span id="demo-src"></span>
     </p>
 
     <div class="card">
@@ -964,7 +964,7 @@
   <section class="tab" id="tab-ea">
     <h2>Early Access Pricing Decisions</h2>
     <p class="subtitle">
-      Early Access pricing is a separate decision with clear trade-offs. GameDiscoverCo data (2025): only 20% of EA games generate more revenue in their first 30 days post-1.0 than they did in their first month of EA.
+      Early Access pricing is a separate decision with clear trade-offs. GameDiscoverCo data (2025): only 20% of EA games generate more revenue in their first 30 days post-1.0 than they did in their first month of EA. <span id="ea-src"></span>
     </p>
 
     <div class="card">
@@ -996,7 +996,7 @@
     <h2>Regional Pricing &amp; DLC Guide</h2>
 
     <h3 style="margin-bottom:12px">Global Regions</h3>
-    <p class="subtitle" style="margin-bottom:16px">Estimated prices derived from Step 3 launch price. Accept Steam defaults for most regions.</p>
+    <p class="subtitle" style="margin-bottom:16px">Estimated prices derived from Step 3 launch price. Accept Steam defaults for most regions. <span id="regional-src"></span></p>
     <div class="card" style="overflow-x:auto">
       <table>
         <thead><tr><th>Region</th><th>Recommendation</th><th>Mult.</th><th>Est. Price (USD)</th><th>Action</th><th>Notes</th></tr></thead>
@@ -1023,12 +1023,13 @@
         <span class="output-label">USD_MENA Estimated Price <span class="output-note">14 countries, discounted USD</span></span>
         <span class="output-value" id="mena-price">—</span>
       </div>
+      <div class="muted" style="font-size:11px;margin-top:6px"><span id="mena-src"></span></div>
       <div class="floor-warning" id="mena-floor-warn" style="display:none"></div>
     </div>
 
     <div class="card" style="overflow-x:auto;margin-bottom:16px">
       <h3>Gulf States (Local Currency)</h3>
-      <p class="muted" style="font-size:12px;margin-bottom:10px">These countries have their own local Steam currencies and are priced independently — not folded into USD_MENA. <a href="https://partner.steamgames.com/pricing/explorer" target="_blank" class="source-link">Verify with Steam's Pricing Explorer.</a></p>
+      <p class="muted" style="font-size:12px;margin-bottom:10px">These countries have their own local Steam currencies and are priced independently — not folded into USD_MENA. <a href="https://partner.steamgames.com/pricing/explorer" target="_blank" class="source-link">Verify with Steam's Pricing Explorer.</a> <span id="gulf-src"></span></p>
       <table>
         <thead><tr><th>Country</th><th>Currency</th><th>Recommended Pricing</th><th>Est. Price (USD)</th><th>Notes</th></tr></thead>
         <tbody id="gulf-body"></tbody>
@@ -1060,7 +1061,7 @@
     </p>
 
     <div class="card">
-      <h3>Refund Rate Thresholds</h3>
+      <h3>Refund Rate Thresholds <span id="refund-src"></span></h3>
       <div class="checklist-item">
         <h4>Healthy: Under 10%</h4>
         <p>Within normal Steam ranges. Game meets player expectations. Monitor for spikes.</p>
@@ -1209,6 +1210,52 @@
 
 <script>
 window.manualFields = {};
+
+// === BENCHMARK PROVENANCE ===
+// Last full review of the benchmark dataset. Backdate this past ~6 months
+// (180 days) to surface the "due for review" notice on the Sources tab.
+var VERIFICATION_DATE = '2026-08-17';
+
+// Single registry of cited sources. The Sources tab is generated from this —
+// do not hand-maintain a separate list.
+var BENCHMARK_SOURCES = [
+  { id: 'gdc', name: 'GameDiscoverCo (Simon Carless)', url: 'https://newsletter.gamediscover.co/p/are-steam-game-prices-dropping-and', finding: 'Median Steam top-50 launch price fell from $23.70 (Feb 2023) to $20.35 (Oct 2025). >$25 pricing increasingly difficult for new IP. Wishlist conversion benchmarks and EA revenue data.' },
+  { id: 'zukowski', name: 'Chris Zukowski — How To Market A Game', url: 'https://howtomarketagame.com/', finding: 'Content-length pricing benchmarks, DLC pricing norms, and post-launch monitoring best practices for indie developers.' },
+  { id: 'gamesradar', name: 'GamesRadar / GameDiscoverCo', url: 'https://www.gamesradar.com/games/the-median-price-of-best-selling-new-games-on-steam-has-dropped-in-the-past-2-years-research-finds-charging-usd25-is-getting-trickier-as-players-compare-value-to-the-usd10-usd15-indie-titles/', finding: 'Secondary coverage of pricing trends. Includes Carless quote on >$25 difficulty.' },
+  { id: 'gdc-ea', name: 'GameDiscoverCo EA Research (2025)', url: 'https://wnhub.io/news/stores-and-publishing/item-49527', finding: 'Only 20% of EA games generate more revenue in their first 30 days post-1.0 than in their first EA month.' },
+  { id: 'gdc-wishlist', name: 'GameDiscoverCo Wishlist Conversion', url: 'https://automaton-media.com/en/news/steam-wishlist-to-sales-study-shows-how-genre-release-timing-and-reviews-affect-success-nsfw-games-show-unusually-high-conversion-rate/', finding: 'Median wishlist-to-first-week-sales ratio: 0.15x (25k+ wishlist games). Games under $10 convert at higher rates. Conversion drops ~30% above a $10 launch price.' },
+  { id: 'steamworks', name: 'Steamworks Documentation', url: 'https://partner.steamgames.com/doc/store/pricing', finding: 'Regional pricing tools, 2026 conversion method update, supported currencies. Revenue share tiering: 70% under $10M, 75% $10M—$50M, 80% above $50M. Refund rate guidelines (healthy under 10%, concerning over 15%).' },
+  { id: 'steamworks-currencies', name: 'Steamworks — Supported Currencies', url: 'https://partner.steamgames.com/doc/store/pricing/currencies', finding: 'Full list of Steam-supported currencies and regional pricing buckets. USD_MENA bloc details, Gulf state local currency handling (SAR, AED, KWD, QAR priced independently).' },
+  { id: 'steamdb-matrix', name: 'SteamDB — March 2026 Pricing Matrix Update', url: 'https://steamdb.info/blog/valve-price-matrix-2026/', finding: "Valve's March 2026 pricing matrix revision — first update since 2022. Conversion methods: FX, PPP, Multi-variable. MENA-USD at ~47% of US price under multi-variable method at $59.99 tier." },
+  { id: 'steam-api', name: 'Steam Storefront API', url: 'https://wiki.teamfortress.com/wiki/User:RJackson/StorefrontAPI', finding: 'Comp data can be auto-populated via the official Steam Storefront API. Launch price and content-hour figures require manual research (SteamDB, HowLongToBeat). See included steam-proxy.js.' },
+  { id: 'gsu', name: 'GameStudioUnlocked', url: 'https://gamestudiounlocked.substack.com/', finding: 'Full pricing methodology and context.' },
+  { id: 'next-fest', name: 'Steam Next Fest post-mortem research', url: 'https://partner.steamgames.com/doc/marketing/nextfest', finding: 'Demo-driven wishlists convert to purchases at 18–25% vs 8–12% for wishlists added without playing a demo.' }
+];
+
+function getSource(id) {
+  for (var i = 0; i < BENCHMARK_SOURCES.length; i++) {
+    if (BENCHMARK_SOURCES[i].id === id) return BENCHMARK_SOURCES[i];
+  }
+  return null;
+}
+
+function srcTip(id, verified) {
+  var s = getSource(id);
+  if (!s) return '';
+  return '<span class="tooltip-icon" title="' + s.name.replace(/"/g, '&quot;') + ' — verified ' + verified + ' · ' + s.url.replace(/"/g, '&quot;') + '">i</span>';
+}
+
+function srcLine(id, verified) {
+  var s = getSource(id);
+  if (!s) return '';
+  return '<span class="output-note">' + s.name + ' · verified ' + verified + '</span>';
+}
+
+function daysSince(dateStr) {
+  var d = new Date(dateStr + 'T00:00:00');
+  if (isNaN(d.getTime())) return 0;
+  return Math.round((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));
+}
 
 function switchTab(tabName) {
   document.querySelectorAll('nav button').forEach(function(b){b.classList.remove('active');});
@@ -1552,18 +1599,18 @@ for (var i = 0; i < 3; i++) addCompRow();
 // so a boundary price ($9.99, $14.99, $19.99, $24.99) maps to exactly one tier.
 // The displayed price labels are unchanged; min/max are internal comparison bounds.
 var tierData = [
-  { range: '1.00—2.00', price: '$4.99—$9.99', min: 4.99, max: 9.99, context: 'Budget / experimental. High volume play.' },
-  { range: '2.01—3.00', price: '$9.99—$14.99', min: 9.99, max: 14.99, context: 'Lower mid-tier. Solid indie. Genre median for casual-adjacent.' },
-  { range: '3.01—3.75', price: '$14.99—$19.99', min: 14.99, max: 19.99, context: 'Mid-tier sweet spot. GameDiscoverCo median for top-performing indies (2023—25).' },
-  { range: '3.76—4.25', price: '$19.99—$24.99', min: 19.99, max: 24.99, context: 'Upper mid. Requires clear scope and polish signal.' },
-  { range: '4.26—5.00', price: '$24.99—$34.99', min: 24.99, max: 34.99, context: 'Premium indie. Above $25 trickier for unknown studios.' },
+  { range: '1.00—2.00', price: '$4.99—$9.99', min: 4.99, max: 9.99, src: 'gdc', verified: '2025-10-15', context: 'Budget / experimental. High volume play.' },
+  { range: '2.01—3.00', price: '$9.99—$14.99', min: 9.99, max: 14.99, src: 'gdc', verified: '2025-10-15', context: 'Lower mid-tier. Solid indie. Genre median for casual-adjacent.' },
+  { range: '3.01—3.75', price: '$14.99—$19.99', min: 14.99, max: 19.99, src: 'gdc', verified: '2025-10-15', context: 'Mid-tier sweet spot. GameDiscoverCo median for top-performing indies (2023—25).' },
+  { range: '3.76—4.25', price: '$19.99—$24.99', min: 19.99, max: 24.99, src: 'gdc', verified: '2025-10-15', context: 'Upper mid. Requires clear scope and polish signal.' },
+  { range: '4.26—5.00', price: '$24.99—$34.99', min: 24.99, max: 34.99, src: 'gdc', verified: '2025-10-15', context: 'Premium indie. Above $25 trickier for unknown studios.' },
 ];
 var tierBody = document.getElementById('tier-body');
 tierData.forEach(function(t){
   var tr = document.createElement('tr');
   tr.className = 'tier-row';
   tr.style.cursor = 'pointer';
-  tr.innerHTML = '<td>' + t.range + '</td><td>' + t.price + '</td><td style="font-family:var(--mono);font-size:10px;color:var(--faint)">+</td>';
+  tr.innerHTML = '<td>' + t.range + '</td><td>' + t.price + srcTip(t.src, t.verified) + '</td><td style="font-family:var(--mono);font-size:10px;color:var(--faint)">+</td>';
   tr.addEventListener('click', function(){
     var next = tr.nextElementSibling;
     if (next && next.classList.contains('tier-context')) {
@@ -1614,11 +1661,11 @@ function updateVariables() {
 }
 
 var contentBands = [
-  { label: 'Under 5 hrs', min: 0, max: 4.99, price: '$10—$12' },
-  { label: '5—15 hrs', min: 5, max: 14.99, price: '~$15' },
-  { label: '15—30 hrs', min: 15, max: 29.99, price: '$18—$20' },
-  { label: '30—50 hrs', min: 30, max: 49.99, price: '$20—$25' },
-  { label: '50+ hrs (w/ replay)', min: 50, max: Infinity, price: '$25—$30' },
+  { label: 'Under 5 hrs', min: 0, max: 4.99, price: '$10—$12', src: 'zukowski', verified: '2025-06-01' },
+  { label: '5—15 hrs', min: 5, max: 14.99, price: '~$15', src: 'zukowski', verified: '2025-06-01' },
+  { label: '15—30 hrs', min: 15, max: 29.99, price: '$18—$20', src: 'zukowski', verified: '2025-06-01' },
+  { label: '30—50 hrs', min: 30, max: 49.99, price: '$20—$25', src: 'zukowski', verified: '2025-06-01' },
+  { label: '50+ hrs (w/ replay)', min: 50, max: Infinity, price: '$25—$30', src: 'zukowski', verified: '2025-06-01' },
 ];
 (function(){
   var tbody = document.getElementById('content-band-body');
@@ -1627,7 +1674,7 @@ var contentBands = [
     tr.className = 'content-band-row';
     tr.setAttribute('data-min', cb.min);
     tr.setAttribute('data-max', String(cb.max));
-    tr.innerHTML = '<td>' + cb.label + '</td><td>' + cb.price + '</td>';
+    tr.innerHTML = '<td>' + cb.label + '</td><td>' + cb.price + srcTip(cb.src, cb.verified) + '</td>';
     tbody.appendChild(tr);
   });
 })();
@@ -2080,24 +2127,24 @@ function updateEaCalc() {
 }
 
 // === REGIONAL + MENA ===
-var menaMultipliers = { fx: 1.00, ppp: 0.24, multivariable: 0.47 };
+var menaMultipliers = { fx: 1.00, ppp: 0.24, multivariable: 0.47, src: 'steamdb-matrix', verified: '2026-03-15' };
 
 var regionalData = [
-  { flag: '🇺🇸', region: 'United States', rec: 'Your base USD price', multiplier: 1.0, action: 'No', notes: 'Primary revenue market (50—60% of indie revenue)', badge: '' },
-  { flag: '🇪🇺', region: 'Western Europe', rec: '~1:1 with USD', multiplier: 1.0, action: 'Accept Steam default', notes: 'EUR 1:1 USD is convention.', badge: '' },
-  { flag: '🇵🇱', region: 'Poland (PLN)', rec: 'Steam suggestion ~20—30% high', multiplier: 0.775, action: 'Reduce 20—25%', notes: 'Currency shift since 2022.', badge: '<span class="badge badge-gold">Manual</span>' },
-  { flag: '🇧🇷', region: 'Brazil (BRL)', rec: 'Steam suggests ~50—70% below USD', multiplier: 0.45, action: 'Accept Steam default', notes: 'Huge player base. Price-sensitive.', badge: '' },
-  { flag: '🇦🇷', region: 'Argentina (ARS)', rec: 'Highly volatile.', multiplier: 0.25, action: 'Accept Steam default', notes: 'Hyperinflation market. Moved to USD billing Nov 2023.', badge: '' },
-  { flag: '🇷🇺', region: 'Russia/CIS', rec: 'Post-sanctions recommendations', multiplier: 0.35, action: 'Accept Steam default', notes: 'Low per-unit revenue.', badge: '' },
-  { flag: '🇮🇳', region: 'India', rec: 'Significantly below USD', multiplier: 0.35, action: 'Accept Steam default', notes: '10M+ Steam users.', badge: '' },
-  { flag: '🇨🇳', region: 'China', rec: '35—63% of USD price', multiplier: 0.50, action: 'Accept Steam default', notes: 'Follow Steam suggestion for indie.', badge: '' },
+  { flag: '🇺🇸', region: 'United States', rec: 'Your base USD price', multiplier: 1.0, action: 'No', notes: 'Primary revenue market (50—60% of indie revenue)', badge: '', src: 'steamworks', verified: '2026-03-15' },
+  { flag: '🇪🇺', region: 'Western Europe', rec: '~1:1 with USD', multiplier: 1.0, action: 'Accept Steam default', notes: 'EUR 1:1 USD is convention.', badge: '', src: 'steamworks', verified: '2026-03-15' },
+  { flag: '🇵🇱', region: 'Poland (PLN)', rec: 'Steam suggestion ~20—30% high', multiplier: 0.775, action: 'Reduce 20—25%', notes: 'Currency shift since 2022.', badge: '<span class="badge badge-gold">Manual</span>', src: 'steamworks', verified: '2026-03-15' },
+  { flag: '🇧🇷', region: 'Brazil (BRL)', rec: 'Steam suggests ~50—70% below USD', multiplier: 0.45, action: 'Accept Steam default', notes: 'Huge player base. Price-sensitive.', badge: '', src: 'steamworks', verified: '2026-03-15' },
+  { flag: '🇦🇷', region: 'Argentina (ARS)', rec: 'Highly volatile.', multiplier: 0.25, action: 'Accept Steam default', notes: 'Hyperinflation market. Moved to USD billing Nov 2023.', badge: '', src: 'steamworks', verified: '2026-03-15' },
+  { flag: '🇷🇺', region: 'Russia/CIS', rec: 'Post-sanctions recommendations', multiplier: 0.35, action: 'Accept Steam default', notes: 'Low per-unit revenue.', badge: '', src: 'steamworks', verified: '2026-03-15' },
+  { flag: '🇮🇳', region: 'India', rec: 'Significantly below USD', multiplier: 0.35, action: 'Accept Steam default', notes: '10M+ Steam users.', badge: '', src: 'steamworks', verified: '2026-03-15' },
+  { flag: '🇨🇳', region: 'China', rec: '35—63% of USD price', multiplier: 0.50, action: 'Accept Steam default', notes: 'Follow Steam suggestion for indie.', badge: '', src: 'steamworks', verified: '2026-03-15' },
 ];
 
 var gulfData = [
-  { flag: '🇸🇦', country: 'Saudi Arabia', currency: 'SAR', multiplier: 0.90, notes: 'Higher-GDP market; generally close to US equivalent.' },
-  { flag: '🇦🇪', country: 'UAE', currency: 'AED', multiplier: 0.90, notes: 'Higher-GDP market; priced independently from USD_MENA bloc.' },
-  { flag: '🇰🇼', country: 'Kuwait', currency: 'KWD', multiplier: 0.90, notes: 'Check against Steam Pricing Explorer for live rates.' },
-  { flag: '🇶🇦', country: 'Qatar', currency: 'QAR', multiplier: 0.90, notes: 'Priced independently; verify with live Steam data.' },
+  { flag: '🇸🇦', country: 'Saudi Arabia', currency: 'SAR', multiplier: 0.90, notes: 'Higher-GDP market; generally close to US equivalent.', src: 'steamworks-currencies', verified: '2026-03-15' },
+  { flag: '🇦🇪', country: 'UAE', currency: 'AED', multiplier: 0.90, notes: 'Higher-GDP market; priced independently from USD_MENA bloc.', src: 'steamworks-currencies', verified: '2026-03-15' },
+  { flag: '🇰🇼', country: 'Kuwait', currency: 'KWD', multiplier: 0.90, notes: 'Check against Steam Pricing Explorer for live rates.', src: 'steamworks-currencies', verified: '2026-03-15' },
+  { flag: '🇶🇦', country: 'Qatar', currency: 'QAR', multiplier: 0.90, notes: 'Priced independently; verify with live Steam data.', src: 'steamworks-currencies', verified: '2026-03-15' },
 ];
 
 function updateRegionalTable() {
@@ -2138,22 +2185,38 @@ function updateDlcTable() {
   }).join('');
 }
 
-// === SOURCES ===
-var sources = [
-  { name: 'GameDiscoverCo (Simon Carless)', finding: 'Median Steam top-50 launch price fell from $23.70 (Feb 2023) to $20.35 (Oct 2025). >$25 pricing increasingly difficult for new IP. Wishlist conversion benchmarks and EA revenue data.', url: 'https://newsletter.gamediscover.co/p/are-steam-game-prices-dropping-and' },
-  { name: 'Chris Zukowski — How To Market A Game', finding: 'Content-length pricing benchmarks, DLC pricing norms, and post-launch monitoring best practices for indie developers.', url: 'https://howtomarketagame.com/' },
-  { name: 'GamesRadar / GameDiscoverCo', finding: 'Secondary coverage of pricing trends. Includes Carless quote on >$25 difficulty.', url: 'https://www.gamesradar.com/games/the-median-price-of-best-selling-new-games-on-steam-has-dropped-in-the-past-2-years-research-finds-charging-usd25-is-getting-trickier-as-players-compare-value-to-the-usd10-usd15-indie-titles/' },
-  { name: 'GameDiscoverCo EA Research (2025)', finding: 'Only 20% of EA games generate more revenue in their first 30 days post-1.0 than in their first EA month.', url: 'https://wnhub.io/news/stores-and-publishing/item-49527' },
-  { name: 'GameDiscoverCo Wishlist Conversion', finding: 'Median wishlist-to-first-week-sales ratio: 0.15x (25k+ wishlist games). Games under $10 convert at higher rates.', url: 'https://automaton-media.com/en/news/steam-wishlist-to-sales-study-shows-how-genre-release-timing-and-reviews-affect-success-nsfw-games-show-unusually-high-conversion-rate/' },
-  { name: 'Steamworks Documentation', finding: 'Regional pricing tools, 2026 conversion method update, supported currencies. Revenue share tiering: 70% under $10M, 75% $10M—$50M, 80% above $50M. Refund rate guidelines.', url: 'https://partner.steamgames.com/doc/store/pricing' },
-  { name: 'Steamworks — Supported Currencies', finding: 'Full list of Steam-supported currencies and regional pricing buckets. USD_MENA bloc details, Gulf state local currency handling (SAR, AED, KWD, QAR priced independently).', url: 'https://partner.steamgames.com/doc/store/pricing/currencies' },
-  { name: 'SteamDB — March 2026 Pricing Matrix Update', finding: 'Valve\'s March 2026 pricing matrix revision — first update since 2022. Conversion methods: FX, PPP, Multi-variable. MENA-USD at ~47% of US price under multi-variable method at $59.99 tier.', url: 'https://steamdb.info/blog/valve-price-matrix-2026/' },
-  { name: 'Steam Storefront API', finding: 'Comp data can be auto-populated via the official Steam Storefront API. Launch price and content-hour figures require manual research (SteamDB, HowLongToBeat) as Steam does not expose historical pricing or playtime data publicly. See included steam-proxy.js.', url: 'https://wiki.teamfortress.com/wiki/User:RJackson/StorefrontAPI' },
-  { name: 'GameStudioUnlocked', finding: 'Full pricing methodology and context.', url: 'https://gamestudiounlocked.substack.com/' },
-];
-document.getElementById('sources-body').innerHTML = sources.map(function(s){
-  return '<div class="card"><h3>' + s.name + '</h3><p style="font-family:var(--sans);font-size:14px;margin-bottom:6px">' + s.finding + '</p><a href="' + s.url + '" target="_blank" class="source-link">' + s.url + '</a></div>';
-}).join('');
+// === SOURCES (generated from BENCHMARK_SOURCES — no hand-maintained list) ===
+// Inject provenance notes into static markup, kept DRY from BENCHMARK_SOURCES.
+(function(){
+  var map = [
+    ['wishlist-tiers-src', 'gdc-wishlist', '2025-06-01'],
+    ['demo-src', 'next-fest', '2025-06-01'],
+    ['ea-src', 'gdc-ea', '2025-06-01'],
+    ['refund-src', 'steamworks', '2026-03-15'],
+    ['regional-src', 'steamworks', '2026-03-15'],
+    ['mena-src', 'steamdb-matrix', '2026-03-15'],
+    ['gulf-src', 'steamworks-currencies', '2026-03-15']
+  ];
+  map.forEach(function(m){
+    var el = document.getElementById(m[0]);
+    if (el) el.innerHTML = srcLine(m[1], m[2]);
+  });
+})();
+
+function renderSources() {
+  var body = document.getElementById('sources-body');
+  if (!body) return;
+  var html = '';
+  if (daysSince(VERIFICATION_DATE) > 180) {
+    html += '<div class="card" style="border-left:3px solid var(--gold);background:rgba(195,165,95,0.08)"><h3 style="color:#7a5e1a">\u26A0 Benchmarks due for review</h3><p style="font-family:var(--sans);font-size:14px;color:#7a5e1a">This benchmark set was last fully reviewed on ' + VERIFICATION_DATE + ' \u2014 more than six months ago. Confirm live figures before final pricing decisions.</p></div>';
+  }
+  html += '<div class="card"><p class="muted">Benchmark dataset last fully reviewed on <strong>' + VERIFICATION_DATE + '</strong>.</p></div>';
+  BENCHMARK_SOURCES.forEach(function(s){
+    html += '<div class="card"><h3>' + s.name + '</h3><p style="font-family:var(--sans);font-size:14px;margin-bottom:6px">' + s.finding + '</p><a href="' + s.url + '" target="_blank" class="source-link">' + s.url + '</a></div>';
+  });
+  body.innerHTML = html;
+}
+renderSources();
 
 // === INIT ===
 updateCompStats();
