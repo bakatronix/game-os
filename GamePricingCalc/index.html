@@ -1516,6 +1516,9 @@ function updateCompStats() {
 for (var i = 0; i < 3; i++) addCompRow();
 
 // === FOUR VARIABLES ===
+// Price bands are half-open [min, max) for tiers 0-3 and [min, max] for tier 4,
+// so a boundary price ($9.99, $14.99, $19.99, $24.99) maps to exactly one tier.
+// The displayed price labels are unchanged; min/max are internal comparison bounds.
 var tierData = [
   { range: '1.00—2.00', price: '$4.99—$9.99', min: 4.99, max: 9.99, context: 'Budget / experimental. High volume play.' },
   { range: '2.01—3.00', price: '$9.99—$14.99', min: 9.99, max: 14.99, context: 'Lower mid-tier. Solid indie. Genre median for casual-adjacent.' },
@@ -1550,6 +1553,14 @@ function getTier(score) {
   if (score <= 3.75) return { price: tierData[2].price, idx: 2, min: tierData[2].min, max: tierData[2].max };
   if (score <= 4.25) return { price: tierData[3].price, idx: 3, min: tierData[3].min, max: tierData[3].max };
   return { price: tierData[4].price, idx: 4, min: tierData[4].min, max: tierData[4].max };
+}
+
+// Half-open tier band gap: how far a launch price sits below/above the tier's
+// [min, max) band (tier 4 inclusive). Gap is 0 when the price is inside the band.
+function priceBandGap(lp, tier) {
+  var belowGap = lp < tier.min ? (tier.min - lp) / tier.min : 0;
+  var aboveGap = (tier.idx === 4 ? lp > tier.max : lp >= tier.max) ? (lp - tier.max) / tier.max : 0;
+  return { below: belowGap, above: aboveGap };
 }
 function updateVariables() {
   var weights = [0.25, 0.30, 0.25, 0.20];
@@ -1855,43 +1866,53 @@ function updateDemoStats() {
 }
 
 // === WISHLIST ===
-function getWishlistConversion(wishlistCount, launchPrice) {
+function getWishlistConversion(wishlistCount) {
   var rate;
   if (wishlistCount < 5000) rate = 0.15;
   else if (wishlistCount <= 25000) rate = 0.18;
   else if (wishlistCount <= 100000) rate = 0.21;
   else rate = 0.25;
-  if (launchPrice > 10) rate *= 0.70;
   return rate;
 }
+
+// Community signal factors — composed multiplicatively so a neutral (1.00)
+// signal never dilutes a positive or negative one. Magnitudes preserved.
+var COMMUNITY_FOLLOWER_HEALTHY = 1.10;   // +10% (follower ratio 7-20x)
+var COMMUNITY_FOLLOWER_LOWINTENT = 0.75; // -25% (follower ratio > 35x)
+var COMMUNITY_DISCORD_HIGH = 1.15;       // +15%
+var COMMUNITY_DISCORD_LOW = 0.85;        // -15%
+var COMMUNITY_SOURCE_ORGANIC = 1.15;     // +15%
+var COMMUNITY_SOURCE_PAID = 0.75;        // -25%
+
 function getCommunityScore() {
   var wishlistCount = parseInt(document.getElementById('wishlist-count').value) || 0;
   var followerCount = parseInt(document.getElementById('follower-count').value) || 0;
   var discordActivity = document.getElementById('discord-activity').value;
   var wishlistSource = document.getElementById('wishlist-source').value;
 
-  var factors = [];
+  var multiplier = 1.0;
   var breakdown = [];
 
   if (followerCount > 0 && wishlistCount > 0) {
     var ratio = wishlistCount / followerCount;
-    var fv;
-    if (ratio >= 7 && ratio <= 20) { fv = 1.10; breakdown.push('Follower ratio: ' + ratio.toFixed(1) + 'x — healthy range (+10%)'); }
-    else if (ratio > 35) { fv = 0.75; breakdown.push('Follower ratio: ' + ratio.toFixed(1) + 'x — wishlists may include low-intent adds (−25%)'); }
-    else if ((ratio >= 3 && ratio < 7) || (ratio > 20 && ratio <= 35)) { fv = 1.00; breakdown.push('Follower ratio: ' + ratio.toFixed(1) + 'x — neutral (0%)'); }
-    else { fv = 1.00; breakdown.push('Follower ratio: ' + ratio.toFixed(1) + 'x — under-converted (0%)'); }
-    factors.push(fv);
+    if (ratio >= 7 && ratio <= 20) { multiplier *= COMMUNITY_FOLLOWER_HEALTHY; breakdown.push('Follower ratio: ' + ratio.toFixed(1) + 'x — healthy range (+10%)'); }
+    else if (ratio > 35) { multiplier *= COMMUNITY_FOLLOWER_LOWINTENT; breakdown.push('Follower ratio: ' + ratio.toFixed(1) + 'x — wishlists may include low-intent adds (−25%)'); }
+    else if ((ratio >= 3 && ratio < 7) || (ratio > 20 && ratio <= 35)) { breakdown.push('Follower ratio: ' + ratio.toFixed(1) + 'x — neutral (0%)'); }
+    else { breakdown.push('Follower ratio: ' + ratio.toFixed(1) + 'x — under-converted (0%)'); }
+  } else {
+    breakdown.push('Follower ratio: skipped (no follower data)');
   }
 
-  if (discordActivity === 'high') { factors.push(1.15); breakdown.push('Discord: High (+15%)'); }
-  else if (discordActivity === 'moderate') { factors.push(1.00); breakdown.push('Discord: Moderate (0%)'); }
-  else if (discordActivity === 'low') { factors.push(0.85); breakdown.push('Discord: Low (−15%)'); }
+  if (discordActivity === 'high') { multiplier *= COMMUNITY_DISCORD_HIGH; breakdown.push('Discord: High (+15%)'); }
+  else if (discordActivity === 'moderate') { breakdown.push('Discord: Moderate (0%)'); }
+  else if (discordActivity === 'low') { multiplier *= COMMUNITY_DISCORD_LOW; breakdown.push('Discord: Low (−15%)'); }
+  else { breakdown.push('Discord: skipped (no data)'); }
 
-  if (wishlistSource === 'organic') { factors.push(1.15); breakdown.push('Source: Mostly organic (+15%)'); }
-  else if (wishlistSource === 'mixed') { factors.push(1.00); breakdown.push('Source: Mixed (0%)'); }
-  else if (wishlistSource === 'paid') { factors.push(0.75); breakdown.push('Source: Mostly paid/spike (−25%)'); }
+  if (wishlistSource === 'organic') { multiplier *= COMMUNITY_SOURCE_ORGANIC; breakdown.push('Source: Mostly organic (+15%)'); }
+  else if (wishlistSource === 'mixed') { breakdown.push('Source: Mixed (0%)'); }
+  else if (wishlistSource === 'paid') { multiplier *= COMMUNITY_SOURCE_PAID; breakdown.push('Source: Mostly paid/spike (−25%)'); }
+  else { breakdown.push('Source: skipped (no data)'); }
 
-  var multiplier = factors.length > 0 ? factors.reduce(function(s,f){return s+f;}, 0) / factors.length : 1.0;
   return { multiplier: multiplier, breakdown: breakdown };
 }
 
@@ -1969,7 +1990,7 @@ function fmtMoney(v) { return '$' + v.toLocaleString(undefined, { minimumFractio
 function computeWishlistScenarios(count, lp, devShare) {
   var demoConvRate = getDemoConversionRate();
   var hasDemoData = (getDemoExists() === 'yes' && demoConvRate > 0);
-  var baseRate = hasDemoData ? (demoConvRate / 100) : getWishlistConversion(count, 0);
+  var baseRate = hasDemoData ? (demoConvRate / 100) : getWishlistConversion(count);
   var pricePenalty = lp > 10 ? 0.70 : 1.0;
   var community = getCommunityScore();
   var demo = getDemoHealthScore();
@@ -2177,10 +2198,9 @@ function computeReconciliation() {
 
   // #1 — Required Launch Price vs Recommended Tier
   if (lp > 0 && tier) {
-    var belowGap = tier.min > lp ? (tier.min - lp) / tier.min : 0;
-    var aboveGap = lp > tier.max ? (lp - tier.max) / tier.max : 0;
-    if (belowGap > 0.15 || aboveGap > 0.15) {
-      var dir = lp > tier.max ? 'above' : 'below';
+    var gap = priceBandGap(lp, tier);
+    if (gap.below > 0.15 || gap.above > 0.15) {
+      var dir = gap.above > 0 ? 'above' : 'below';
       var unitDetail = '';
       if (devCost > 0) {
         unitDetail = ' At $' + lp.toFixed(2) + ' you need to sell about ' + Math.ceil(be.blendedUnits).toLocaleString() + ' units to recoup your $' + devCost.toLocaleString() + ' development cost' + (fwUnits > 0 ? ', versus ' + fwUnits.toLocaleString() + ' units implied by your first-week estimate (' + (be.blendedUnits / fwUnits).toFixed(1) + 'x).' : '.');
