@@ -390,7 +390,7 @@
   </div>
 </header>
 
-<div class="stepper" id="stepper-desktop" aria-label="Progress">
+<div class="stepper" id="stepper-desktop" role="list" aria-label="Progress">
   <button class="stepper-step active" data-step="0" data-tab="profile"><span class="dot">0</span>Profile</button>
   <span class="stepper-divider"></span>
   <button class="stepper-step" data-step="1" data-tab="comp"><span class="dot">1</span>Comp</button>
@@ -575,19 +575,19 @@
     <!-- Stat grid — brand guide pattern -->
     <div class="stat-grid">
       <div class="stat-cell">
-        <div class="stat-value" id="stat-median" style="color:var(--purple)">—</div>
+        <div class="stat-value" id="stat-median" aria-live="polite" style="color:var(--purple)">—</div>
         <div class="stat-label">Median Launch Price</div>
       </div>
       <div class="stat-cell">
-        <div class="stat-value" id="stat-avg" style="color:var(--gold)">—</div>
+        <div class="stat-value" id="stat-avg" aria-live="polite" style="color:var(--gold)">—</div>
         <div class="stat-label">Average Launch Price</div>
       </div>
       <div class="stat-cell">
-        <div class="stat-value" id="stat-min" style="color:var(--teal)">—</div>
+        <div class="stat-value" id="stat-min" aria-live="polite" style="color:var(--teal)">—</div>
         <div class="stat-label">Lowest (Floor)</div>
       </div>
       <div class="stat-cell">
-        <div class="stat-value" id="stat-max" style="color:var(--coral)">—</div>
+        <div class="stat-value" id="stat-max" aria-live="polite" style="color:var(--coral)">—</div>
         <div class="stat-label">Highest (Ceiling)</div>
       </div>
     </div>
@@ -646,27 +646,27 @@
     <div class="grid-2">
       <div class="card">
         <div class="slider-group">
-          <div class="slider-header"><label>1. Genre Norms</label><span class="score" id="v1-score">3</span></div>
+          <div class="slider-header"><label for="v1-slider">1. Genre Norms</label><span class="score" id="v1-score">3</span></div>
           <div class="slider-desc">What does your genre typically charge?</div>
-          <input type="range" min="1" max="5" value="3" step="1" id="v1-slider" oninput="updateVariables()">
+          <input type="range" min="1" max="5" value="3" step="1" id="v1-slider" aria-label="Genre Norms" aria-valuetext="3 of 5" oninput="updateVariables()">
           <div class="slider-weight">Weight: 25% &nbsp; Weighted: <span id="v1-weighted">0.75</span></div>
         </div>
         <div class="slider-group">
-          <div class="slider-header"><label>2. Perceived Scope &amp; Polish</label><span class="score" id="v2-score">3</span></div>
+          <div class="slider-header"><label for="v2-slider">2. Perceived Scope &amp; Polish</label><span class="score" id="v2-score">3</span></div>
           <div class="slider-desc">Does the game look and feel like a $10, $20 or $30 product?</div>
-          <input type="range" min="1" max="5" value="3" step="1" id="v2-slider" oninput="updateVariables()">
+          <input type="range" min="1" max="5" value="3" step="1" id="v2-slider" aria-label="Perceived Scope and Polish" aria-valuetext="3 of 5" oninput="updateVariables()">
           <div class="slider-weight">Weight: 30% &nbsp; Weighted: <span id="v2-weighted">0.90</span></div>
         </div>
         <div class="slider-group">
-          <div class="slider-header"><label>3. Audience Price Sensitivity</label><span class="score" id="v3-score">2</span></div>
+          <div class="slider-header"><label for="v3-slider">3. Audience Price Sensitivity</label><span class="score" id="v3-score">2</span></div>
           <div class="slider-desc">How price-sensitive is your target player?</div>
-          <input type="range" min="1" max="5" value="2" step="1" id="v3-slider" oninput="updateVariables()">
+          <input type="range" min="1" max="5" value="2" step="1" id="v3-slider" aria-label="Audience Price Sensitivity" aria-valuetext="2 of 5" oninput="updateVariables()">
           <div class="slider-weight">Weight: 25% &nbsp; Weighted: <span id="v3-weighted">0.50</span></div>
         </div>
         <div class="slider-group">
-          <div class="slider-header"><label>4. Positioning Intent</label><span class="score" id="v4-score">4</span></div>
+          <div class="slider-header"><label for="v4-slider">4. Positioning Intent</label><span class="score" id="v4-score">4</span></div>
           <div class="slider-desc">Accessible entry point or premium indie?</div>
-          <input type="range" min="1" max="5" value="4" step="1" id="v4-slider" oninput="updateVariables()">
+          <input type="range" min="1" max="5" value="4" step="1" id="v4-slider" aria-label="Positioning Intent" aria-valuetext="4 of 5" oninput="updateVariables()">
           <div class="slider-weight">Weight: 20% &nbsp; Weighted: <span id="v4-weighted">0.80</span></div>
         </div>
       </div>
@@ -674,7 +674,7 @@
         <div class="card score-display">
           <div class="stat-label">Total Weighted Score (max 5.00)</div>
           <div class="big-score" id="total-score" style="color:var(--purple)">2.95</div>
-          <div class="tier-result" id="tier-result">Recommended: <span>$9.99—$14.99</span></div>
+          <div class="tier-result" id="tier-result" aria-live="polite">Recommended: <span>$9.99—$14.99</span></div>
         </div>
         <div class="card" style="overflow-x:auto">
           <h3>Score-to-Tier Mapping</h3>
@@ -711,19 +711,19 @@
     <p class="subtitle">
       Steam's algorithm is built around discounting. A 20%+ discount triggers wishlist notification emails. Build the buffer in from day one.
     </p>
-    <div class="reconcile-banner" id="price-tier-conflict-banner"></div>
+    <div class="reconcile-banner" id="price-tier-conflict-banner" aria-live="polite" aria-atomic="true"></div>
 
     <div class="grid-2">
       <div class="card">
         <h3>Your Inputs</h3>
         <div style="margin-bottom:14px">
           <label class="stat-label">Target Sale Price (USD)</label>
-          <input type="number" id="target-sale-price" value="14.99" step="0.01" min="0.99" oninput="validatePricingInputs(); updateAllLinked()">
+          <input type="number" id="target-sale-price" value="14.99" step="0.01" min="0.99" oninput="updateAllLinked()">
           <div class="input-warning" id="warn-target-price">Price cannot be negative.</div>
         </div>
         <div style="margin-bottom:14px">
           <label class="stat-label">Desired Minimum Discount Depth (%)</label>
-          <input type="number" id="discount-depth" value="30" step="1" min="0" max="100" oninput="validatePricingInputs(); updateAllLinked()">
+          <input type="number" id="discount-depth" value="30" step="1" min="0" max="100" oninput="updateAllLinked()">
           <div class="input-warning" id="warn-discount">Must be between 0% and 100%.</div>
         </div>
         <div style="margin-bottom:14px">
@@ -747,7 +747,7 @@
       </div>
       <div class="card">
         <h3>Calculated Outputs</h3>
-        <div id="pricing-outputs"></div>
+        <div id="pricing-outputs" aria-live="polite" aria-atomic="true"></div>
       </div>
     </div>
 
@@ -848,7 +848,7 @@
       </div>
       <div class="card">
         <h3>Estimated Results</h3>
-        <div id="wishlist-outputs"></div>
+        <div id="wishlist-outputs" aria-live="polite" aria-atomic="true"></div>
       </div>
     </div>
   </section>
@@ -992,7 +992,7 @@
         </div>
         <div class="input-warning" id="warn-ea-discount">Must be between 0% and 50%.</div>
       </div>
-      <div id="ea-calc-outputs"></div>
+      <div id="ea-calc-outputs" aria-live="polite" aria-atomic="true"></div>
     </div>
   </section>
 
@@ -1138,7 +1138,7 @@
     </div>
     <div class="import-error" id="import-error"></div>
     <div class="share-feedback" id="share-feedback"></div>
-    <div id="summary-content"></div>
+    <div id="summary-content" aria-live="polite"></div>
   </section>
 </main>
 
@@ -1265,6 +1265,11 @@
   .scenario-table .scenario-actions { display: flex; gap: 4px; margin-top: 4px; }
   .scenario-table td.scenario-best { background: rgba(42,143,118,0.12); color: #1a6e5a; font-weight: 600; }
   .scenario-table td.scenario-worst { background: rgba(184,90,58,0.10); color: #8b3a22; font-weight: 600; }
+  .scenario-table td.scenario-best::before { content: "\25B2 "; }
+  .scenario-table td.scenario-worst::before { content: "\25BC "; }
+  /* === ACCESSIBILITY === */
+  input:focus-visible, select:focus-visible, button:focus-visible, .tier-row:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .tier-row[role="button"]:focus-visible td { background: rgba(195,165,95,0.06); }
 </style>
 
 <script>
@@ -1319,20 +1324,56 @@ function daysSince(dateStr) {
   return Math.round((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));
 }
 
+// Programmatically associate each stat-label with its adjacent form control.
+function associateLabels() {
+  document.querySelectorAll('label.stat-label').forEach(function(lbl){
+    if (lbl.getAttribute('for')) return;
+    if (lbl.querySelector('input, select, textarea')) return;
+    var sib = lbl.nextElementSibling;
+    if (sib && (sib.tagName === 'INPUT' || sib.tagName === 'SELECT' || sib.tagName === 'TEXTAREA') && sib.id) {
+      lbl.setAttribute('for', sib.id);
+    }
+  });
+}
+
 function switchTab(tabName) {
-  document.querySelectorAll('nav button').forEach(function(b){b.classList.remove('active');});
+  document.querySelectorAll('nav button').forEach(function(b){ b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
   var navBtn = document.querySelector('nav button[data-tab="' + tabName + '"]');
-  if (navBtn) navBtn.classList.add('active');
+  if (navBtn) { navBtn.classList.add('active'); navBtn.setAttribute('aria-selected', 'true'); }
   var tabEl = document.getElementById('tab-' + tabName);
   if (tabEl) tabEl.classList.add('active');
   var sel = document.querySelector('.nav-select');
   if (sel) sel.value = tabName;
   if (tabName === 'wishlist') updateWishlist();
 }
-document.querySelectorAll('nav button').forEach(function(btn){
-  btn.addEventListener('click', function(){switchTab(btn.dataset.tab);});
-});
+(function(){
+  var nav = document.getElementById('tab-nav');
+  if (!nav) return;
+  nav.setAttribute('role', 'tablist');
+  nav.setAttribute('aria-label', 'Sections');
+  var buttons = Array.prototype.slice.call(nav.querySelectorAll('button'));
+  buttons.forEach(function(btn){
+    btn.setAttribute('role', 'tab');
+    btn.setAttribute('aria-selected', btn.classList.contains('active') ? 'true' : 'false');
+    if (btn.dataset.tab) btn.setAttribute('aria-controls', 'tab-' + btn.dataset.tab);
+    btn.addEventListener('click', function(){ switchTab(btn.dataset.tab); });
+  });
+  nav.addEventListener('keydown', function(e){
+    var idx = buttons.indexOf(document.activeElement);
+    if (idx === -1) return;
+    var newIdx = null;
+    if (e.key === 'ArrowRight') newIdx = (idx + 1) % buttons.length;
+    else if (e.key === 'ArrowLeft') newIdx = (idx - 1 + buttons.length) % buttons.length;
+    else if (e.key === 'Home') newIdx = 0;
+    else if (e.key === 'End') newIdx = buttons.length - 1;
+    if (newIdx != null) {
+      e.preventDefault();
+      buttons[newIdx].focus();
+      switchTab(buttons[newIdx].dataset.tab);
+    }
+  });
+})();
 
 function getLaunchPrice() {
   var target = parseFloat(document.getElementById('target-sale-price').value);
@@ -1694,15 +1735,15 @@ function addCompRow(title, launch, current, quality, reception, hours) {
   compRowCount++;
   var tr = document.createElement('tr');
   tr.innerHTML =
-    '<td><input type="text" value="' + escapeHtml(title) + '" placeholder="Game title" class="comp-title"><span class="steam-badge" style="display:none">Steam</span></td>' +
-    '<td><div class="steam-row"><input type="text" placeholder="URL or App ID" class="comp-appid"><button class="fetch-btn" type="button">Fetch</button></div><div class="fetch-status"></div></td>' +
+    '<td><input type="text" value="' + escapeHtml(title) + '" placeholder="Game title" class="comp-title" aria-label="Game title"><span class="steam-badge" style="display:none">Steam</span></td>' +
+    '<td><div class="steam-row"><input type="text" placeholder="URL or App ID" class="comp-appid" aria-label="Steam App ID or URL"><button class="fetch-btn" type="button">Fetch</button></div><div class="fetch-status"></div></td>' +
     '<td></td>' +
-    '<td><input type="number" value="' + launch + '" step="0.01" min="0" placeholder="0.00" class="comp-launch" oninput="this.removeAttribute(\'data-fetched\'); updateCompStats()"></td>' +
-    '<td><input type="number" value="' + current + '" step="0.01" min="0" placeholder="0.00" class="comp-current"></td>' +
-    '<td><input type="number" value="" step="0.01" min="0" placeholder="0.00" class="comp-historical" readonly></td>' +
-    '<td><input type="text" value="" placeholder="e.g. 15 Mar 2024" class="comp-release-date" readonly><div class="genres-tags"></div></td>' +
-    '<td><select class="comp-quality"><option' + (quality==='Better'?' selected':'') + '>Better</option><option' + (quality==='Equal'?' selected':'') + '>Equal</option><option' + (quality==='Worse'?' selected':'') + '>Worse</option></select></td>' +
-    '<td><select class="comp-reception"><option' + (reception==='Positive'?' selected':'') + '>Positive</option><option' + (reception==='Mixed'?' selected':'') + '>Mixed</option><option' + (reception==='Negative'?' selected':'') + '>Negative</option></select><span class="reception-auto-note"></span></td>' +
+    '<td><input type="number" value="' + launch + '" step="0.01" min="0" placeholder="0.00" class="comp-launch" aria-label="Launch price (USD)" oninput="this.removeAttribute(\'data-fetched\'); updateCompStats()"></td>' +
+    '<td><input type="number" value="' + current + '" step="0.01" min="0" placeholder="0.00" class="comp-current" aria-label="Current price (USD)"></td>' +
+    '<td><input type="number" value="" step="0.01" min="0" placeholder="0.00" class="comp-historical" aria-label="Historical low (USD)" readonly></td>' +
+    '<td><input type="text" value="" placeholder="e.g. 15 Mar 2024" class="comp-release-date" aria-label="Release date" readonly><div class="genres-tags"></div></td>' +
+    '<td><select class="comp-quality" aria-label="Quality vs. mine"><option' + (quality==='Better'?' selected':'') + '>Better</option><option' + (quality==='Equal'?' selected':'') + '>Equal</option><option' + (quality==='Worse'?' selected':'') + '>Worse</option></select></td>' +
+    '<td><select class="comp-reception" aria-label="Community reception"><option' + (reception==='Positive'?' selected':'') + '>Positive</option><option' + (reception==='Mixed'?' selected':'') + '>Mixed</option><option' + (reception==='Negative'?' selected':'') + '>Negative</option></select><span class="reception-auto-note"></span></td>' +
     '<td><input type="number" value="' + hours + '" step="0.5" min="0" placeholder="0" class="comp-hours"></td>' +
     '<td><button class="btn-ghost row-del" onclick="this.closest(\'tr\').remove(); compRowCount--; updateCompStats(); scheduleAutosave();">' + '✕' + '</button></td>';
   tr.querySelector('.fetch-btn').addEventListener('click', function() {
@@ -1820,19 +1861,29 @@ tierData.forEach(function(t){
   var tr = document.createElement('tr');
   tr.className = 'tier-row';
   tr.style.cursor = 'pointer';
+  tr.setAttribute('role', 'button');
+  tr.setAttribute('tabindex', '0');
+  tr.setAttribute('aria-expanded', 'false');
+  tr.setAttribute('aria-label', 'Tier ' + t.range + ', ' + t.price + ' — toggle details');
   tr.innerHTML = '<td>' + t.range + '</td><td>' + t.price + srcTip(t.src, t.verified) + '</td><td style="font-family:var(--mono);font-size:10px;color:var(--faint)">+</td>';
-  tr.addEventListener('click', function(){
+  function toggle() {
     var next = tr.nextElementSibling;
     if (next && next.classList.contains('tier-context')) {
       next.remove();
       tr.querySelector('td:last-child').textContent = '+';
+      tr.setAttribute('aria-expanded', 'false');
     } else {
       var ctx = document.createElement('tr');
       ctx.className = 'tier-context';
       ctx.innerHTML = '<td colspan="3" style="font-family:var(--sans);font-size:12px;color:var(--mid);padding:6px 12px 10px 12px;background:rgba(195,165,95,0.04);border-bottom:1px solid var(--border)">' + t.context + '</td>';
       tr.parentNode.insertBefore(ctx, tr.nextSibling);
       tr.querySelector('td:last-child').textContent = '\u2212';
+      tr.setAttribute('aria-expanded', 'true');
     }
+  }
+  tr.addEventListener('click', toggle);
+  tr.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
   });
   tierBody.appendChild(tr);
 });
@@ -1851,14 +1902,23 @@ function priceBandGap(lp, tier) {
   var aboveGap = (tier.idx === 4 ? lp > tier.max : lp >= tier.max) ? (lp - tier.max) / tier.max : 0;
   return { below: belowGap, above: aboveGap };
 }
+var sliderValueText = {
+  v1: ['1 of 5 — low-priced genre', '2 of 5 — below genre average', '3 of 5 — mid-priced genre', '4 of 5 — above genre average', '5 of 5 — high-priced genre'],
+  v2: ['1 of 5 — looks like a $10 product', '2 of 5 — looks like a $15 product', '3 of 5 — looks like a $20 product', '4 of 5 — looks like a $25 product', '5 of 5 — looks like a $30 product'],
+  v3: ['1 of 5 — very price-sensitive audience', '2 of 5 — fairly price-sensitive audience', '3 of 5 — moderately price-sensitive audience', '4 of 5 — low price sensitivity', '5 of 5 — very low price sensitivity'],
+  v4: ['1 of 5 — accessible entry point', '2 of 5 — budget positioning', '3 of 5 — mid positioning', '4 of 5 — premium indie positioning', '5 of 5 — luxury indie positioning']
+};
+
 function updateVariables() {
   var weights = [0.25, 0.30, 0.25, 0.20];
   var total = 0;
   for (var i = 1; i <= 4; i++) {
-    var val = parseInt(document.getElementById('v'+i+'-slider').value);
+    var slider = document.getElementById('v'+i+'-slider');
+    var val = parseInt(slider.value);
     document.getElementById('v'+i+'-score').textContent = val;
     var weighted = val * weights[i-1];
     document.getElementById('v'+i+'-weighted').textContent = weighted.toFixed(2);
+    slider.setAttribute('aria-valuetext', sliderValueText['v'+i][val-1]);
     total += weighted;
   }
   document.getElementById('total-score').textContent = total.toFixed(2);
@@ -2429,6 +2489,7 @@ function renderSources() {
 renderSources();
 
 // === INIT ===
+associateLabels();
 updateCompStats();
 updatePricing();
 updateRegionalTable();
@@ -2930,8 +2991,9 @@ function updateStepper() {
   var dots = document.querySelectorAll('.stepper-step');
   for (var i = 0; i < dots.length; i++) {
     dots[i].classList.remove('active','done');
+    dots[i].removeAttribute('aria-current');
     if (i < cur) dots[i].classList.add('done');
-    else if (i === cur) dots[i].classList.add('active');
+    else if (i === cur) { dots[i].classList.add('active'); dots[i].setAttribute('aria-current', 'step'); }
     var dotSpan = dots[i].querySelector('.dot');
     if (completedSteps[stepOrder[i]]) dotSpan.innerHTML = '&#10003;';
     else dotSpan.textContent = (i + 1);
@@ -3112,7 +3174,8 @@ function renameScenario(i) {
   var label = input.value.replace(/^\s+|\s+$/g, '');
   window.pinnedScenarios[i].label = label || currentLaunchLabel();
   scheduleAutosave();
-  buildSummary();
+  // No re-render: the input already shows the typed value, so rebuilding the
+  // summary here would destroy the user's caret/focus mid-edit.
 }
 
 function restorePinnedScenarios(state) {
