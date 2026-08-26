@@ -626,6 +626,11 @@
         <button class="btn" id="fetch-all-rows">Fetch All</button>
         <button class="btn" id="export-csv">Download CSV</button>
       </div>
+      <div id="batch-progress" style="display:none;margin-top:10px;align-items:center;gap:10px">
+        <span class="muted" id="batch-progress-text">Fetching…</span>
+        <button class="btn-ghost" id="batch-cancel-btn" onclick="cancelFetchAll()">Cancel</button>
+      </div>
+      <div id="batch-summary" style="display:none;margin-top:10px"></div>
       <p class="muted" style="margin-top:10px;font-size:12px"><strong>Data provenance:</strong> Title, current price, release date, genres, and review summary are fetched from Steam. Launch price and historical low are fetched from IsThereAnyDeal price history when your proxy is configured — otherwise they stay manual. Quality, reception override, and content hours are always manual. Spot-check fetched launch prices against SteamDB before final pricing decisions.</p>
     </div>
   </section>
@@ -1233,6 +1238,7 @@
 window.manualFields = {};
 window.acknowledgements = {};
 window.pinnedScenarios = [];
+window.fetchCache = {};
 
 // === BENCHMARK PROVENANCE ===
 // Last full review of the benchmark dataset. Backdate this past ~6 months
@@ -1388,6 +1394,149 @@ function mapReception(desc, positive, negative) {
   }
   return null;
 }
+// === FETCH CACHE (in-memory, persisted via state layer, 24h TTL) ===
+var FETCH_CACHE_TTL = 24 * 60 * 60 * 1000;
+
+function cacheGet(appId) {
+  var e = window.fetchCache[appId];
+  if (e && e.data && (Date.now() - e.fetchedAt) < FETCH_CACHE_TTL) return e.data;
+  return null;
+}
+function cacheSet(appId, data) {
+  window.fetchCache[appId] = { data: data, fetchedAt: Date.now() };
+}
+function pruneFetchCache() {
+  var now = Date.now();
+  for (var id in window.fetchCache) {
+    if (now - window.fetchCache[id].fetchedAt >= FETCH_CACHE_TTL) delete window.fetchCache[id];
+  }
+}
+
+// === RETRY / BACKOFF ===
+function sleep(ms) { return new Promise(function(r){ setTimeout(r, ms); }); }
+function backoffMs(attempt) { return 500 * Math.pow(2, attempt - 1) + Math.floor(Math.random() * 250); }
+async function fetchWithRetry(url, signal, onRetry) {
+  var attempt = 0;
+  while (true) {
+    attempt++;
+    if (signal && signal.aborted) throw new Error('Aborted');
+    var resp;
+    try {
+      resp = await fetch(url, signal ? { signal: signal } : undefined);
+    } catch (err) {
+      if (signal && signal.aborted) throw new Error('Aborted');
+      if (attempt < 3) { if (onRetry) onRetry(attempt); await sleep(backoffMs(attempt)); continue; }
+      throw err;
+    }
+    if (resp.ok) return resp;
+    if ((resp.status === 429 || resp.status >= 500) && attempt < 3) {
+      if (onRetry) onRetry(attempt);
+      await sleep(backoffMs(attempt));
+      continue;
+    }
+    throw new Error('HTTP ' + resp.status);
+  }
+}
+
+function toNum(v) {
+  var n = Number(v);
+  return (v != null && v !== '' && !isNaN(n)) ? n : null;
+}
+
+// === ROW FETCH (validated, partial-tolerant) ===
+async function fetchRowData(appId, row, signal) {
+  var base = steamProxyUrl.replace(/\/+$/, '').replace(/\?.*$/, '');
+  var detailsUrl = base + '?appid=' + appId;
+  var reviewsUrl = base + '?appid=' + appId + '&type=reviews';
+  var phUrl = base + '?appid=' + appId + '&type=pricehistory';
+  var result = { fetched: true };
+
+  var detailsResp = await fetchWithRetry(detailsUrl, signal, function(a){ showRowStatus(row, 'Retrying (' + a + '/3)\u2026', 'error'); });
+  var data = await detailsResp.json();
+  var gameData = data && data[appId];
+  if (!gameData || !gameData.success) throw new Error('App ID not found');
+  var d = gameData.data || {};
+  if (typeof d.name === 'string' && d.name) result.title = d.name;
+  var cur = d.price_overview ? toNum(d.price_overview.final) : null;
+  if (cur != null) {
+    result.currentPrice = cur.toFixed(2);
+    result.discountPercent = toNum(d.price_overview.discount_percent) || 0;
+  }
+  if (d.release_date && typeof d.release_date.date === 'string' && d.release_date.date) result.releaseDate = d.release_date.date;
+  if (Array.isArray(d.genres) && d.genres.length) {
+    var g = d.genres.map(function(x){ return x && x.description; }).filter(Boolean);
+    if (g.length) result.genres = g.join(', ');
+  }
+
+  try {
+    var revResp = await fetchWithRetry(reviewsUrl, signal, function(a){ showRowStatus(row, 'Retrying reviews (' + a + '/3)\u2026', 'error'); });
+    var revData = await revResp.json();
+    if (revData && revData.query_summary) {
+      var qs = revData.query_summary;
+      var tp = toNum(qs.total_positive), tn = toNum(qs.total_negative);
+      if (tp != null && tn != null) result.totalReviews = (tp || 0) + (tn || 0);
+      var reception = mapReception(qs.review_score_desc, qs.total_positive, qs.total_negative);
+      if (reception) result.reception = reception;
+    }
+  } catch (e) { /* reviews unavailable */ }
+
+  try {
+    var phResp = await fetchWithRetry(phUrl, signal, function(a){ showRowStatus(row, 'Retrying price history (' + a + '/3)\u2026', 'error'); });
+    var phData = await phResp.json();
+    if (phData && typeof phData === 'object' && ('launchPrice' in phData || 'historicalLow' in phData)) {
+      var hl = toNum(phData.historicalLow); if (hl != null && hl > 0) result.historicalLow = hl.toFixed(2);
+      var lp = toNum(phData.launchPrice); if (lp != null && lp > 0) result.launchPrice = lp.toFixed(2);
+    }
+  } catch (e) { /* price history unavailable */ }
+
+  return result;
+}
+
+function applyRowData(row, data) {
+  if (data.title) {
+    var ti = row.querySelector('.comp-title');
+    ti.value = data.title; ti.dataset.fetched = 'true';
+  }
+  if (data.currentPrice) {
+    row.querySelector('.comp-current').value = data.currentPrice;
+    if (data.discountPercent > 0) row.querySelector('.comp-launch').placeholder = 'On sale (-' + data.discountPercent + '%)';
+  } else if (data.fetched) {
+    row.querySelector('.comp-current').placeholder = 'Free / no price data';
+  }
+  if (data.releaseDate) {
+    var de = row.querySelector('.comp-release-date');
+    de.value = data.releaseDate; de.dataset.fetched = 'true';
+  }
+  if (data.genres) row.querySelector('.genres-tags').textContent = data.genres;
+  if (data.totalReviews != null) row.setAttribute('data-total-reviews', data.totalReviews);
+  if (data.reception) {
+    row.querySelector('.comp-reception').value = data.reception.value;
+    row.querySelector('.reception-auto-note').textContent = 'Auto from Steam (' + data.reception.label + '). Override if needed.';
+    row.querySelector('.comp-reception').dataset.autoSuggested = 'true';
+  } else {
+    row.querySelector('.reception-auto-note').textContent = 'Review data unavailable \u2014 set manually.';
+  }
+  if (data.historicalLow) {
+    var hli = row.querySelector('.comp-historical');
+    hli.value = data.historicalLow; hli.dataset.fetched = 'true';
+  }
+  if (data.launchPrice) {
+    var li = row.querySelector('.comp-launch');
+    var auto = li.dataset.fetched === 'true';
+    if (!(li.value !== '' && !auto)) { li.value = data.launchPrice; li.dataset.fetched = 'true'; }
+  }
+  row.querySelector('.steam-badge').style.display = 'inline-block';
+  row.dataset.fetched = 'true';
+}
+
+function fetchErrorReason(err) {
+  if (!err) return 'unknown error';
+  if (err.message === 'Aborted') return 'cancelled';
+  if (err.message === 'App ID not found') return 'App ID not found';
+  if (err.message && err.message.indexOf('HTTP') === 0) return err.message + ' after retries';
+  return err.message || 'network error';
+}
+
 async function fetchSteamData(appId, row) {
   if (!steamProxyUrl) { showRowStatus(row, 'Configure proxy URL first', 'error'); return; }
   var fetchBtn = row.querySelector('.fetch-btn');
@@ -1397,98 +1546,109 @@ async function fetchSteamData(appId, row) {
   fetchBtn.textContent = '...';
   if (statusEl) { statusEl.textContent = ''; statusEl.classList.remove('error', 'ok'); }
   try {
-    // Build clean base URL (strip any trailing path/params from the saved proxy URL)
-    var base = steamProxyUrl.replace(/\/+$/, '').replace(/\?.*$/, '');
-    var detailsUrl = base + '?appid=' + appId;
-    var reviewsUrl = base + '?appid=' + appId + '&type=reviews';
-
-    var resp = await fetch(detailsUrl);
-    if (!resp.ok) throw new Error('Proxy returned ' + resp.status);
-    var data = await resp.json();
-    var gameData = data[appId];
-    if (!gameData || !gameData.success) throw new Error('App ID not found');
-    var d = gameData.data;
-    var titleInput = row.querySelector('.comp-title');
-    titleInput.value = d.name || '';
-    titleInput.dataset.fetched = 'true';
-    if (d.price_overview) {
-      row.querySelector('.comp-current').value = (d.price_overview.final / 100).toFixed(2);
-      if (d.price_overview.discount_percent > 0) {
-        row.querySelector('.comp-launch').placeholder = 'On sale (-' + d.price_overview.discount_percent + '%)';
-      }
-    } else {
-      row.querySelector('.comp-current').placeholder = 'Free / no price data';
-    }
-    var dateEl = row.querySelector('.comp-release-date');
-    if (d.release_date && d.release_date.date) {
-      dateEl.value = d.release_date.date;
-      dateEl.dataset.fetched = 'true';
-    }
-    if (d.genres && d.genres.length > 0) {
-      row.querySelector('.genres-tags').textContent = d.genres.map(function(g){return g.description;}).join(', ');
-    }
-
-    // Fetch reviews endpoint for accurate Reception data
-    var receptionSet = false;
-    try {
-      var revResp = await fetch(reviewsUrl);
-      if (revResp.ok) {
-        var revData = await revResp.json();
-        if (revData && revData.query_summary) {
-          var qs = revData.query_summary;
-          row.setAttribute('data-total-reviews', (qs.total_positive || 0) + (qs.total_negative || 0));
-          var result = mapReception(qs.review_score_desc, qs.total_positive, qs.total_negative);
-          if (result) {
-            row.querySelector('.comp-reception').value = result.value;
-            row.querySelector('.reception-auto-note').textContent = 'Auto from Steam (' + result.label + '). Override if needed.';
-            row.querySelector('.comp-reception').dataset.autoSuggested = 'true';
-            receptionSet = true;
-          }
-        }
-      }
-    } catch (e) { /* reviews lookup failed, fall through */ }
-    if (!receptionSet) {
-      row.querySelector('.reception-auto-note').textContent = 'Review data unavailable — set manually.';
-    }
-
-    // Fetch price history from IsThereAnyDeal (launch price + historical low).
-    // Degrades silently: if the proxy has no pricehistory route or ITAD key is
-    // missing, the launch price stays manual — never guessed from current price.
-    var launchInput = row.querySelector('.comp-launch');
-    try {
-      var phUrl = base + '?appid=' + appId + '&type=pricehistory';
-      var phResp = await fetch(phUrl);
-      if (phResp.ok) {
-        var phData = await phResp.json();
-        if (phData && typeof phData === 'object' && ('launchPrice' in phData || 'historicalLow' in phData)) {
-          var histLowInput = row.querySelector('.comp-historical');
-          if (phData.historicalLow != null && histLowInput) {
-            histLowInput.value = Number(phData.historicalLow).toFixed(2);
-            histLowInput.dataset.fetched = 'true';
-          }
-          var launchWasAutoFilled = launchInput.dataset.fetched === 'true';
-          var launchHasTypedValue = launchInput.value !== '' && !launchWasAutoFilled;
-          if (!launchHasTypedValue && phData.launchPrice != null) {
-            launchInput.value = Number(phData.launchPrice).toFixed(2);
-            launchInput.dataset.fetched = 'true';
-          }
-        }
-      }
-    } catch (e) { /* price history unavailable — leave launch price manual */ }
-
-    row.querySelector('.steam-badge').style.display = 'inline-block';
-    row.dataset.fetched = 'true';
+    var data = cacheGet(appId);
+    if (!data) { data = await fetchRowData(appId, row, null); cacheSet(appId, data); }
+    applyRowData(row, data);
     showRowStatus(row, 'Fetched from Steam', 'ok');
     updateCompStats();
     refreshDerivedDefaults();
     scheduleAutosave();
   } catch (err) {
-    showRowStatus(row, 'Could not fetch — check App ID or enter manually', 'error');
+    showRowStatus(row, 'Could not fetch (' + fetchErrorReason(err) + ') \u2014 enter manually', 'error');
   } finally {
     fetchBtn.disabled = false;
     fetchBtn.classList.remove('fetching');
     fetchBtn.textContent = 'Fetch';
   }
+}
+
+// === BATCH FETCH (bounded concurrency + progress + cancel) ===
+var fetchBatch = { cancelled: false, running: false, total: 0, done: 0, succeeded: 0, failed: [], abort: null };
+
+function showBatchProgress(on) {
+  var el = document.getElementById('batch-progress');
+  if (el) el.style.display = on ? 'flex' : 'none';
+}
+function updateBatchProgress() {
+  var el = document.getElementById('batch-progress-text');
+  if (el) el.textContent = 'Fetching ' + fetchBatch.done + ' of ' + fetchBatch.total + '...';
+}
+function cancelFetchAll() {
+  fetchBatch.cancelled = true;
+  if (fetchBatch.abort) fetchBatch.abort.abort();
+}
+function showBatchSummary() {
+  var el = document.getElementById('batch-summary');
+  if (!el) return;
+  var failed = fetchBatch.failed;
+  var msg = (fetchBatch.cancelled ? 'Batch cancelled after ' + fetchBatch.done + ' of ' + fetchBatch.total + '. ' : 'Batch complete: ') + fetchBatch.succeeded + ' succeeded, ' + failed.length + ' failed.';
+  if (failed.length) msg += ' Manual entry needed for: ' + failed.join(', ') + '.';
+  el.style.display = 'block';
+  el.innerHTML = '<div class="muted" style="font-size:12px">' + msg + '</div>';
+}
+
+async function fetchOneInBatch(t, signal) {
+  try {
+    var data = cacheGet(t.appId);
+    if (!data) { data = await fetchRowData(t.appId, t.row, signal); cacheSet(t.appId, data); }
+    applyRowData(t.row, data);
+    showRowStatus(t.row, 'Fetched from Steam', 'ok');
+    fetchBatch.succeeded++;
+  } catch (err) {
+    fetchBatch.failed.push(t.appId);
+    if (fetchBatch.cancelled) showRowStatus(t.row, 'Cancelled', 'error');
+    else showRowStatus(t.row, 'Could not fetch (' + fetchErrorReason(err) + ') \u2014 enter manually', 'error');
+  } finally {
+    fetchBatch.done++;
+    updateBatchProgress();
+    updateCompStats();
+    refreshDerivedDefaults();
+    scheduleAutosave();
+  }
+}
+
+async function fetchAllRows() {
+  if (fetchBatch.running) return;
+  var targets = [];
+  document.querySelectorAll('#comp-tbody tr').forEach(function(row){
+    var appId = extractAppId(row.querySelector('.comp-appid').value);
+    if (appId) targets.push({ appId: appId, row: row });
+  });
+  if (targets.length === 0) return;
+
+  fetchBatch.running = true;
+  fetchBatch.cancelled = false;
+  fetchBatch.total = targets.length;
+  fetchBatch.done = 0;
+  fetchBatch.succeeded = 0;
+  fetchBatch.failed = [];
+  fetchBatch.abort = new AbortController();
+  var signal = fetchBatch.abort.signal;
+  var summaryEl = document.getElementById('batch-summary');
+  if (summaryEl) summaryEl.style.display = 'none';
+  showBatchProgress(true);
+  updateBatchProgress();
+
+  var limit = 3;
+  var index = 0;
+  var active = 0;
+
+  await new Promise(function(resolve){
+    function next() {
+      if (fetchBatch.cancelled) { if (active === 0) resolve(); return; }
+      while (active < limit && index < targets.length) {
+        var t = targets[index++];
+        active++;
+        fetchOneInBatch(t, signal).then(function(){ active--; next(); }, function(){ active--; next(); });
+      }
+      if (active === 0 && index >= targets.length) resolve();
+    }
+    next();
+  });
+
+  fetchBatch.running = false;
+  showBatchProgress(false);
+  showBatchSummary();
 }
 function showRowStatus(row, msg, type) {
   var statusEl = row.querySelector('.fetch-status');
@@ -1520,13 +1680,7 @@ function addCompRow(title, launch, current, quality, reception, hours) {
   compTbody.appendChild(tr);
 }
 document.getElementById('add-comp-row').addEventListener('click', function(){addCompRow();});
-document.getElementById('fetch-all-rows').addEventListener('click', async function(){
-  var rows = document.querySelectorAll('#comp-tbody tr');
-  for (var i = 0; i < rows.length; i++) {
-    var appId = extractAppId(rows[i].querySelector('.comp-appid').value);
-    if (appId) await fetchSteamData(appId, rows[i]);
-  }
-});
+document.getElementById('fetch-all-rows').addEventListener('click', function(){ fetchAllRows(); });
 
 // Delegated listener: ensure updateCompStats fires on every launch price change
 compTbody.addEventListener('input', function(e) {
@@ -3170,7 +3324,7 @@ var PERSIST_SCHEMA = 1;
 var autosaveTimer = null;
 
 function serialiseState() {
-  var state = { schema: PERSIST_SCHEMA, fields: {}, radios: {}, compRows: [], manualFields: {}, acknowledgements: window.acknowledgements || {}, pinnedScenarios: window.pinnedScenarios || [], proxyUrl: steamProxyUrl, visitedSteps: visitedSteps, completedSteps: completedSteps };
+  var state = { schema: PERSIST_SCHEMA, fields: {}, radios: {}, compRows: [], manualFields: {}, acknowledgements: window.acknowledgements || {}, pinnedScenarios: window.pinnedScenarios || [], fetchCache: window.fetchCache || {}, proxyUrl: steamProxyUrl, visitedSteps: visitedSteps, completedSteps: completedSteps };
 
   document.querySelectorAll('input[id], select[id], textarea[id]').forEach(function(el){
     if (el.id === 'steam-proxy-url' || el.type === 'file') return;
@@ -3253,6 +3407,8 @@ function restoreState(state) {
 
   window.manualFields = state.manualFields || {};
   window.acknowledgements = state.acknowledgements || {};
+  window.fetchCache = state.fetchCache || {};
+  pruneFetchCache();
   visitedSteps = state.visitedSteps || {};
   completedSteps = state.completedSteps || {};
 
@@ -3402,6 +3558,7 @@ function copyShareableLink() {
   try {
     var shareState = serialiseState();
     delete shareState.pinnedScenarios; // keep the link compact — pins live in JSON export
+    delete shareState.fetchCache; // cache is a session optimisation, not workbook state
     var encoded = b64urlEncode(JSON.stringify(shareState));
     if (encoded.length > 8000) {
       showShareFeedback('This workbook is too large for a link \u2014 use Save workbook (.json) instead.', true);
