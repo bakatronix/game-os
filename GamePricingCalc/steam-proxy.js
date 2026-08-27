@@ -12,7 +12,7 @@
  *   2. Paste this file, Save and Deploy
  *   3. Add the IsThereAnyDeal API key as a Worker secret named ITAD_API_KEY:
  *        Worker → Settings → Variables & Secrets → Add Secret → name: ITAD_API_KEY
- *      Get a key at https://isthereanydeal.com/api/ (free tier, rate-limited).
+ *      Get a key at https://isthereanydeal.com/apps/my/ (register an app; free).
  *   4. Copy the worker URL into the dashboard's Proxy URL field.
  *
  * NOTE: The price-history route only works once ITAD_API_KEY is configured.
@@ -63,10 +63,15 @@ async function handleRequest(request) {
 }
 
 /**
- * Fetch price history from IsThereAnyDeal and return a normalised shape.
- * Steam's shop id on IsThereAnyDeal is 61. The plain id for a Steam app is
- * its appid (numeric). Field names below match the v01 API — verify against
- * https://apidocs.isthereanydeal.com/ if the API surface changes.
+ * Fetch price history from IsThereAnyDeal (API v2) and return a normalised shape.
+ * Steam's shop id on IsThereAnyDeal is 61. Prices are returned in major units
+ * (e.g. 19.99) via `amount`. The dashboard only reads `launchPrice` and
+ * `historicalLow`.
+ *
+ * Flow:
+ *   1. Look up the ITAD game id from the Steam appid (GET /games/lookup/v1).
+ *   2. Historical low on Steam (POST /games/storelow/v2?shops=61).
+ *   3. Launch price = earliest Steam full price (GET /games/history/v2?shops=61).
  */
 async function fetchPriceHistory(appid) {
   const key = ITAD_API_KEY
@@ -74,38 +79,54 @@ async function fetchPriceHistory(appid) {
     return json({ error: 'IsThereAnyDeal API key not configured (ITAD_API_KEY secret)' }, 502)
   }
 
-  const base = 'https://api.isthereanydeal.com/v01/game'
-  const qs = `key=${encodeURIComponent(key)}&plains=${encodeURIComponent(appid)}&shops=61`
+  const base = 'https://api.isthereanydeal.com'
+  const auth = `key=${encodeURIComponent(key)}`
+  const STEAM_SHOP = 61
 
   try {
-    // 1. Current price
-    const pricesResp = await fetch(`${base}/prices/?${qs}`)
-    const prices = pricesResp.ok ? await pricesResp.json() : null
+    // 1. Resolve Steam appid -> ITAD game id (UUID)
+    const lookupResp = await fetch(`${base}/games/lookup/v1?appid=${encodeURIComponent(appid)}&${auth}`)
+    if (!lookupResp.ok) return json({ error: `ITAD lookup returned ${lookupResp.status}` }, 502)
+    const lookup = await lookupResp.json()
+    if (!lookup || !lookup.found || !lookup.game || !lookup.game.id) {
+      return json({ error: 'Game not found on IsThereAnyDeal' }, 404)
+    }
+    const gameId = lookup.game.id
 
-    // 2. Historical low
-    const lowResp = await fetch(`${base}/lowest/?${qs}`)
-    const low = lowResp.ok ? await lowResp.json() : null
+    // 2. Historical low on Steam (shop 61)
+    let historicalLow = null
+    const lowResp = await fetch(`${base}/games/storelow/v2?shops=${STEAM_SHOP}&${auth}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify([gameId]),
+    })
+    if (lowResp.ok) {
+      const lows = await lowResp.json()
+      const group = lows && lows[0]
+      const steamLow = group && Array.isArray(group.lows)
+        ? group.lows.find(l => l.shop && l.shop.id === STEAM_SHOP)
+        : null
+      if (steamLow && steamLow.price && steamLow.price.amount) historicalLow = steamLow.price.amount
+    }
 
-    // 3. Launch price = earliest recorded price
-    const histResp = await fetch(`${base}/history/?${qs}`)
-    const hist = histResp.ok ? await histResp.json() : null
-
-    const steamPrice = prices && prices.data && prices.data.prices
-      ? prices.data.prices.find(p => p.shop && p.shop.id === 'steam')
-      : null
-    const steamLow = low && low.data && low.data.lows
-      ? low.data.lows.find(l => l.shop && l.shop.id === 'steam')
-      : null
-    const history = (hist && hist.data && hist.data.history) || []
-    const launchEntry = history.length ? history[0] : null
-
-    const currency = (prices && prices['.meta'] && prices['.meta'].currency) || 'USD'
+    // 3. Launch price = earliest recorded Steam full (regular) price
+    //    History log is newest-first, so the earliest is the last element.
+    let launchPrice = null
+    const histResp = await fetch(`${base}/games/history/v2?id=${encodeURIComponent(gameId)}&shops=${STEAM_SHOP}&since=2010-01-01&${auth}`)
+    if (histResp.ok) {
+      const history = await histResp.json()
+      if (Array.isArray(history) && history.length) {
+        const earliest = history[history.length - 1]
+        const reg = earliest && earliest.deal && earliest.deal.regular
+        if (reg && reg.amount) launchPrice = reg.amount
+      }
+    }
 
     return json({
-      launchPrice: launchEntry ? launchEntry.price : (steamPrice ? steamPrice.price_old : null),
-      historicalLow: steamLow ? steamLow.price : null,
-      currentPrice: steamPrice ? steamPrice.price_new : null,
-      currency: currency,
+      launchPrice: launchPrice,
+      historicalLow: historicalLow,
+      currentPrice: null,
+      currency: 'USD',
     })
   } catch (err) {
     return json({ error: 'Failed to reach IsThereAnyDeal' }, 502)
