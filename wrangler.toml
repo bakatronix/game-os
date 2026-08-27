@@ -1,0 +1,3 @@
+name = "gpi"
+main = "GamePricingCalc/steam-proxy.js"
+compatibility_date = "2026-08-27"
