@@ -32,7 +32,6 @@ a:hover { color: var(--accent-gold-ink); }
   border: 0;
   margin: 0;
 }
-
 .app-header { background: var(--surface-page); }
 .app-header .accent-rule { margin-top: 12px; }
 
@@ -72,19 +71,16 @@ a:hover { color: var(--accent-gold-ink); }
 .page-head .gos-heading { max-width: 760px; }
 .heading-label { margin-bottom: 8px; }
 
-/* ---- Filter bar (one row above the charts) ---- */
-
-.filter-bar { margin: 0; }
-.gos-input.static { cursor: default; min-width: 140px; }
-.push-right { margin-left: auto; }
-
-/* ---- Gap-grids: the gap is the border ---- */
-
-.kpi-grid { grid-template-columns: repeat(4, 1fr); }
+/* ---- Gap-grid: the gap is the border ---- */
 
 .module-grid {
+  display: grid;
   grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
 }
+.module-grid > * { background: var(--surface-card); }
 
 .support-grid {
   display: grid;
@@ -97,7 +93,53 @@ a:hover { color: var(--accent-gold-ink); }
 
 .gos-card { padding: var(--space-5); }
 .gos-card > h3 { margin: 4px 0 0; }
-.chart-body { margin-top: 16px; }
+
+.module-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+.module-head h3 { margin: 4px 0 0; }
+.module-q { display: block; margin-top: 8px; }
+
+/* ---- Module metrics (gap-grid inside a card) ---- */
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  margin-top: 16px;
+}
+.metric-item {
+  background: var(--surface-card);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.metric-label {
+  font: 400 12px/16px var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.metric-value {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 26px;
+  color: var(--ink);
+  font-variant-numeric: lining-nums tabular-nums;
+}
+.metric-value.empty { color: var(--ink-muted); }
+
+.module-spark { margin-top: 16px; }
+.module-spark .gos-spark { display: block; height: 40px; width: auto; overflow: visible; }
+.gos-spark .line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.gos-spark .dot { stroke: var(--surface-card); stroke-width: 2; }
 
 .card-actions {
   display: flex;
@@ -107,39 +149,13 @@ a:hover { color: var(--accent-gold-ink); }
   flex-wrap: wrap;
 }
 
-.module-card { padding: var(--space-5); }
-.module-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 12px;
+.card-note {
+  font: 400 11px/16px var(--font-mono);
+  color: var(--ink-muted);
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 0.5px solid var(--border);
 }
-.module-head h3 { margin: 4px 0 0; }
-.module-card .d { margin-top: 12px; }
-
-/* ---- KPI tile deltas ---- */
-
-.gos-kpi .d { gap: 6px; flex-wrap: wrap; }
-
-/* ---- Charts ---- */
-
-.gos-chart-svg, .gos-chart svg { display: block; width: 100%; height: auto; overflow: visible; }
-.gos-chart .line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
-.gos-chart .bench { fill: none; stroke-width: 1.5; stroke-dasharray: 4 4; stroke: var(--data-other); }
-.gos-chart .dot { stroke: var(--surface-card); stroke-width: 2; }
-.gos-chart .grid { stroke: var(--gridline); stroke-width: 1; }
-.gos-chart .axis { fill: var(--ink-muted); font: 400 11px var(--font-mono); }
-.gos-chart .lbl { fill: var(--ink-secondary); font: 500 12px var(--font-sans); }
-.gos-chart .val { fill: var(--ink); font: 500 12px var(--font-sans); font-variant-numeric: tabular-nums; }
-
-[data-chart] { position: relative; }
-.chart-toolbar { display: flex; justify-content: flex-end; margin-bottom: 8px; }
-.chart-meta { display: block; margin-top: 12px; }
-.chart-table { margin-top: 16px; }
-
-table.gos-table { width: 100%; }
-table.gos-table th.num, table.gos-table td.num { text-align: right; }
-.table-meta { margin-top: 8px; }
 
 /* ---- Watching panel ---- */
 
@@ -163,6 +179,7 @@ table.gos-table th.num, table.gos-table td.num { text-align: right; }
 
 /* ---- Detail ---- */
 
+.detail-badge { display: inline-block; }
 .detail-intro, .settings-intro {
   font-size: 18px;
   line-height: 28px;
@@ -178,6 +195,7 @@ table.gos-table th.num, table.gos-table td.num { text-align: right; }
   align-items: start;
 }
 
+.chart-body { margin-top: 16px; }
 .iframe-wrapper { padding: 0; border: 1px solid var(--border); }
 .iframe-wrapper iframe { display: block; width: 100%; height: 640px; border: 0; background: var(--surface-muted); }
 .iframe-note {
@@ -235,7 +253,6 @@ table.gos-table th.num, table.gos-table td.num { text-align: right; }
 /* ---- Responsive ---- */
 
 @media (max-width: 960px) {
-  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
   .module-grid { grid-template-columns: 1fr; }
   .support-grid, .detail-layout { grid-template-columns: 1fr; }
 }
@@ -245,7 +262,5 @@ table.gos-table th.num, table.gos-table td.num { text-align: right; }
   .app-shell { padding: 0 16px; }
   .page-head { flex-direction: column; }
   .header-row { flex-wrap: wrap; }
-  .kpi-grid { grid-template-columns: 1fr; }
   .iframe-wrapper iframe { height: 480px; }
-  .push-right { margin-left: 0; }
 }
