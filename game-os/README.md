@@ -28,7 +28,9 @@ Game OS does **not** rebuild the three tools — it wraps, links, and summarizes
 game-os/
   index.html
   assets/
-    styles.css
+    tokens.css        (copied from Design System/design-system/tokens.css)
+    components.css    (copied from Design System/design-system/components.css)
+    styles.css        (shell + page layout, built on the tokens)
     app.js
     logo.svg
   README.md
@@ -36,10 +38,24 @@ game-os/
 
 No frameworks, no build step. Vanilla HTML, CSS, JavaScript.
 
-- **index.html** — Shell with sidebar, top bar, and content area.
-- **styles.css** — All visual styling matching the Llama & Griffin brand system.
-- **app.js** — Hash-based routing, all demo data in a single `MODULES` object, settings via localStorage.
-- **logo.svg** — Wordmark logo.
+- **index.html** — App shell: 3px top bar, brand lockup, `NavTabs` navigation, content area.
+- **tokens.css** — Design-system tokens (colour, type, spacing, radius, border). Generated from `Design System/design-system/tokens.json`; do not edit by hand.
+- **components.css** — Design-system component classes (`.gos-*`). Copied from the design system.
+- **styles.css** — Shell and page layout only. Never hard-codes a colour, font or spacing a token covers.
+- **app.js** — Hash-based routing, all demo data in a single `MODULES` object, settings via localStorage. Renders using the `.gos-*` component classes.
+- **logo.svg** — Brand wordmark (ink text + gold chevrons).
+
+### Design system
+
+All UI follows the Game OS design system in `../Design System/design-system/`.
+Read its `README.md` before changing a screen. Rules in short:
+
+- Light (cream) is the default theme; dark is opt-in via `data-theme="dark"` on `<html>`.
+- Use the CSS variables in `tokens.css` — never hard-code a hex, font or spacing.
+- Charts take `--data-1` … `--data-6` in order, never cycled. Gold (`--accent-gold`) is
+  never a data colour. Status colours always ship with a glyph and a word.
+- Card titles are claims ("Is the price right?"), every number carries a unit and a period,
+  estimates get an `Est.` prefix, and demo data carries a persistent `Demo data` badge.
 
 ---
 

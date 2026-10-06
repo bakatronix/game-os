@@ -1,0 +1,80 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=IBM+Plex+Mono:wght@400&family=Playfair+Display:ital,wght@0,700;1,700&display=swap');
+
+/* Game OS components — plain CSS on the token variables */
+body { margin: 0; background: var(--surface-page); color: var(--ink); font-family: var(--font-sans); font-size: 14px; line-height: 20px; }
+.gos-pad { padding: 16px; }
+
+/* Section heading: 4 chevrons + roman title + italic gold kicker */
+.gos-heading { display: flex; flex-direction: column; gap: 0; }
+.gos-chevrons { display: flex; gap: 4px; margin-bottom: 12px; }
+.gos-chevrons i { width: 0; height: 0; border-top: 5px solid transparent; border-bottom: 5px solid transparent; border-left: 8px solid var(--accent-gold); }
+.gos-heading h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 40px; line-height: 44px; color: var(--ink); }
+.gos-heading em { font-family: var(--font-display); font-style: italic; font-weight: 700; font-size: 40px; line-height: 44px; color: var(--accent-gold-ink); }
+.gos-label { font-family: var(--font-mono); font-size: 12px; line-height: 16px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-muted); }
+.gos-meta { font-family: var(--font-mono); font-size: 11px; line-height: 16px; color: var(--ink-muted); }
+
+/* Gap-grid: the gap is the border */
+.gos-grid { display: grid; gap: 1px; background: var(--border); border: 1px solid var(--border); }
+.gos-grid > * { background: var(--surface-card); }
+
+/* Card */
+.gos-card { background: var(--surface-card); border: 1px solid var(--border); padding: 24px; }
+.gos-card h3 { margin: 0 0 4px; font-family: var(--font-display); font-size: 20px; line-height: 26px; font-weight: 700; color: var(--ink); }
+.gos-card .gos-meta { display: block; margin-top: 12px; }
+
+/* KPI tile */
+.gos-kpi { padding: 24px; display: flex; flex-direction: column; gap: 8px; }
+.gos-kpi .v { font-family: var(--font-display); font-weight: 700; font-size: 36px; line-height: 40px; color: var(--ink); font-variant-numeric: lining-nums tabular-nums; }
+.gos-kpi .d { font-family: var(--font-mono); font-size: 12px; line-height: 16px; display: flex; gap: 6px; align-items: center; color: var(--ink-muted); }
+.gos-up { color: var(--status-healthy); }
+.gos-down { color: var(--status-concern); }
+
+/* Filter bar */
+.gos-filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; }
+.gos-field { display: flex; flex-direction: column; gap: 4px; }
+.gos-input { font: 500 14px/20px var(--font-sans); color: var(--ink); background: var(--surface-muted); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px 12px; min-width: 120px; display: flex; justify-content: space-between; gap: 12px; }
+.gos-input:focus-visible, .gos-btn:focus-visible { outline: 2px solid var(--accent-gold); outline-offset: 2px; }
+.gos-chip { font: 500 13px/18px var(--font-sans); padding: 6px 12px; border-radius: var(--radius-pill); border: 1px solid var(--border); background: var(--surface-card); color: var(--ink-secondary); }
+.gos-chip[aria-pressed="true"] { background: var(--ink); color: var(--surface-card); border-color: var(--ink); }
+.gos-btn { font: 500 14px/20px var(--font-sans); padding: 8px 16px; border-radius: var(--radius-sm); border: 1px solid var(--ink); background: var(--ink); color: var(--surface-card); cursor: pointer; }
+.gos-btn.ghost { background: transparent; color: var(--ink); border-color: var(--border); }
+
+/* Status badge */
+.gos-badge { display: inline-flex; align-items: center; gap: 6px; font: 500 12px/16px var(--font-sans); padding: 4px 10px; border-radius: var(--radius-pill); }
+.gos-badge.healthy { color: var(--status-healthy); background: var(--status-healthy-bg); }
+.gos-badge.watch { color: var(--status-watch); background: var(--status-watch-bg); }
+.gos-badge.concern { color: var(--status-concern); background: var(--status-concern-bg); }
+.gos-badge.demo { color: var(--accent-gold-ink); background: transparent; border: 1px solid var(--accent-gold); }
+
+/* Charts */
+.gos-chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.gos-chart .grid { stroke: var(--gridline); stroke-width: 1; }
+.gos-chart .axis { fill: var(--ink-muted); font: 400 11px var(--font-mono); }
+.gos-chart .lbl { fill: var(--ink-secondary); font: 500 12px var(--font-sans); }
+.gos-chart .val { fill: var(--ink); font: 500 12px var(--font-sans); font-variant-numeric: tabular-nums; }
+.s1 { stroke: var(--data-1); } .f1 { fill: var(--data-1); }
+.s2 { stroke: var(--data-2); } .f2 { fill: var(--data-2); }
+.s3 { stroke: var(--data-3); } .f3 { fill: var(--data-3); }
+.s4 { stroke: var(--data-4); } .f4 { fill: var(--data-4); }
+.s5 { stroke: var(--data-5); } .f5 { fill: var(--data-5); }
+.s6 { stroke: var(--data-6); } .f6 { fill: var(--data-6); }
+.so { stroke: var(--data-other); } .fo { fill: var(--data-other); }
+.gos-chart .line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.gos-chart .bench { fill: none; stroke-width: 1.5; stroke-dasharray: 4 4; }
+.gos-chart .dot { stroke: var(--surface-card); stroke-width: 2; }
+.gos-legend { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 12px; font: 400 12px/16px var(--font-sans); color: var(--ink-secondary); }
+.gos-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.gos-legend i { width: 12px; height: 2px; display: inline-block; }
+
+/* Table */
+.gos-table { width: 100%; border-collapse: collapse; font: 500 14px/20px var(--font-sans); }
+.gos-table th { text-align: left; font: 400 11px/16px var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-muted); background: var(--surface-muted); padding: 8px 12px; border-bottom: 1px solid var(--border); }
+.gos-table td { padding: 10px 12px; border-bottom: .5px solid var(--border); color: var(--ink); }
+.gos-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.gos-table tbody tr:hover td { background: var(--surface-muted); }
+
+/* Tabs / nav */
+.gos-tabs { display: flex; gap: 24px; border-bottom: .5px solid var(--border); }
+.gos-tabs a { font: 500 14px/20px var(--font-sans); color: var(--ink-muted); text-decoration: none; padding: 10px 0; border-bottom: 1.5px solid transparent; margin-bottom: -1px; }
+.gos-tabs a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--accent-gold); }
+.gos-topbar { height: 3px; background: var(--topbar); }
