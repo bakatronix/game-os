@@ -6,8 +6,9 @@
      Community -> Chicken Brûlée · Pricing -> Comp Analysis / SEB ·
      PMF -> MTG PMF Analyzer. Game OS does not rebuild them.
 
-     Styling follows the Game OS design system
-     (../Design System/design-system). All figures are demo data.
+     Styling follows the Game OS Sandstone design system
+     (../Design System/design-system). Single theme (sand).
+     All figures are demo data.
      ============================================================ */
 
   var MODULES = {
@@ -15,7 +16,6 @@
       name: 'Community',
       toolName: 'Chicken Brûlée',
       url: 'https://llamagriffin.com/game-os/chicken-brulee/',
-      label: '01 — COMMUNITY',
       cxoQuestion: 'Are players engaging?',
       description:
         'Is the playtest community giving useful, directional feedback? Chicken Brûlée scans your Discord playtest channels for recurring patterns, onboarding friction, and flagged comments that need operator attention.',
@@ -42,7 +42,6 @@
       name: 'Pricing',
       toolName: 'Comp Analysis / SEB',
       url: 'https://llamagriffin.com/game-os/price-calc/',
-      label: '02 — PRICING',
       cxoQuestion: 'Is the price right?',
       description:
         'Is our launch price, discount plan, and regional strategy defensible? SEB is the full indie pricing workbook: comparable-game research, four-variable pricing score, score-to-tier mapping, and discount staircase planning.',
@@ -70,7 +69,6 @@
       name: 'PMF',
       toolName: 'MTG PMF Analyzer',
       url: 'https://llamagriffin.com/game-os/PMF',
-      label: '03 — PMF',
       cxoQuestion: 'Are we hitting product-market fit?',
       description:
         '30 days in, is this game showing PMF signals, and where is the weakness? The MTG PMF Analyzer evaluates three lens scores (acquisition, engagement, satisfaction) on Steam-native public data, with confidence bands and moat features like refund-window playtime analysis.',
@@ -153,44 +151,52 @@
   }
 
   /* ============================================================
-     Sparklines — design system marks: single series = data-1,
-     straight 2px line (no spline), bars with radius on the data end.
+     Sparklines — Sandstone marks: data-1 only, monotone-ish straight
+     2.5px line with a marker on every point (2px sand ring); bars
+     follow the same single-series treatment.
      ============================================================ */
 
   function sparkLine(values) {
-    var W = 140,
-      H = 40,
-      pad = 4;
+    var W = 150,
+      H = 44,
+      pad = 6;
     var min = Math.min.apply(null, values);
     var max = Math.max.apply(null, values);
     var range = max - min || 1;
-    var pts = values
-      .map(function (v, i) {
-        var x = (i / (values.length - 1)) * (W - pad * 2) + pad;
-        var y = H - pad - ((v - min) / range) * (H - pad * 2);
-        return x.toFixed(1) + ',' + y.toFixed(1);
+    var pts = values.map(function (v, i) {
+      var x = (i / (values.length - 1)) * (W - pad * 2) + pad;
+      var y = H - pad - ((v - min) / range) * (H - pad * 2);
+      return [x.toFixed(1), y.toFixed(1)];
+    });
+    var path = pts
+      .map(function (p, i) {
+        return (i === 0 ? 'M' : 'L') + p[0] + ',' + p[1];
       })
       .join(' ');
-    var last = pts.split(' ').pop().split(',');
+    var dots = pts
+      .map(function (p) {
+        return '<circle class="dot f1" cx="' + p[0] + '" cy="' + p[1] + '" r="3.5"/>';
+      })
+      .join('');
     return (
       '<svg class="gos-spark" viewBox="0 0 ' + W + ' ' + H + '" aria-hidden="true">' +
-      '<polyline class="line s1" points="' + pts + '"/>' +
-      '<circle class="dot f1" cx="' + last[0] + '" cy="' + last[1] + '" r="4"/>' +
+      '<path class="line s1" d="' + path + '"/>' +
+      dots +
       '</svg>'
     );
   }
 
   function sparkBars(values) {
-    var W = 140,
-      H = 40,
+    var W = 150,
+      H = 44,
       gap = 4,
-      barW = 12;
+      barW = 14;
     var max = Math.max.apply(null, values) || 1;
     var bars = values
       .map(function (v, i) {
-        var h = Math.max(2, (v / max) * H);
+        var h = Math.max(3, (v / max) * (H - 4));
         var x = i * (barW + gap);
-        return '<rect class="f1" x="' + x + '" y="' + (H - h).toFixed(1) + '" width="' + barW + '" height="' + h.toFixed(1) + '" rx="2"/>';
+        return '<rect class="f1" x="' + x + '" y="' + (H - h).toFixed(1) + '" width="' + barW + '" height="' + h.toFixed(1) + '" rx="3"/>';
       })
       .join('');
     return '<svg class="gos-spark" viewBox="0 0 ' + (values.length * (barW + gap) - gap) + ' ' + H + '" aria-hidden="true">' + bars + '</svg>';
@@ -207,19 +213,14 @@
 
   function statusBadge(kind, label) {
     var glyphMap = { healthy: '\u25CF', watch: '\u25B2', concern: '\u25A0', demo: '' };
-    return '<span class="gos-badge ' + kind + '">' + (glyphMap[kind] ? glyphMap[kind] + ' ' : '') + escapeHtml(label) + '</span>';
+    return '<span class="ss-badge ' + kind + '">' + (glyphMap[kind] ? glyphMap[kind] + ' ' : '') + escapeHtml(label) + '</span>';
   }
 
-  function sectionHeading(label, title, kicker, right) {
+  function pageHeader(kicker, page, right) {
     return (
-      '<div class="page-head">' +
-      '<div class="gos-heading">' +
-      '<div class="gos-chevrons" aria-hidden="true"><i></i><i></i><i></i><i></i></div>' +
-      '<div class="gos-label heading-label">' + escapeHtml(label) + '</div>' +
-      '<h1>' + escapeHtml(title) + '</h1>' +
-      '<em>' + escapeHtml(kicker) + '</em>' +
-      '</div>' +
-      (right || '') +
+      '<div class="ss-header-row">' +
+      '<h1 class="ss-header"><span class="k">' + escapeHtml(kicker) + '</span><span class="p">' + escapeHtml(page) + '</span></h1>' +
+      '<div class="header-right">' + (right || '') + '</div>' +
       '</div>'
     );
   }
@@ -248,25 +249,27 @@
      ============================================================ */
 
   function renderOverview() {
+    var s = loadSettings();
+    var kicker = 'Game OS \u00b7 ' + (s.gameTitle || 'Demo Game');
+
     var tiles = MODULE_KEYS.map(function (key) {
       var m = MODULES[key];
       var url = getModuleUrl(key);
       var kind = m.status === 'nodata' ? 'demo' : m.status;
       return (
-        '<div class="gos-card module-card">' +
+        '<div class="ss-card">' +
         '<div class="module-head">' +
         '<div>' +
-        '<div class="gos-label">' + m.label + '</div>' +
         '<h3>' + escapeHtml(m.name) + ' \u2014 ' + escapeHtml(m.toolName) + '</h3>' +
-        '<div class="gos-meta module-q">' + escapeHtml(m.cxoQuestion) + '</div>' +
+        '<div class="module-q">' + escapeHtml(m.cxoQuestion) + '</div>' +
         '</div>' +
         statusBadge(kind, m.statusLabel) +
         '</div>' +
         '<div class="metrics-grid">' + renderMetrics(m.metrics) + '</div>' +
         moduleSpark(key) +
         '<div class="card-actions">' +
-        '<a class="gos-btn ghost" href="' + url + '" target="_blank" rel="noopener">Open module \u2192</a>' +
-        '<a href="#/' + key + '">Detail page \u2192</a>' +
+        '<a class="ss-btn" href="' + url + '" target="_blank" rel="noopener">Open module \u2192</a>' +
+        '<a class="ss-btn ghost" href="#/' + key + '">Detail page \u2192</a>' +
         '</div>' +
         '<div class="card-note">' + escapeHtml(m.detailNote) + '</div>' +
         '</div>'
@@ -274,9 +277,9 @@
     }).join('');
 
     return (
-      sectionHeading('00 — DASHBOARD', 'Studio health, one screen.', 'Read it before you spend.', statusBadge('demo', 'Demo data')) +
+      pageHeader(kicker, 'Studio Health', '<span class="ss-demo">Demo data</span>') +
       '<div class="module-grid">' + tiles + '</div>' +
-      '<div class="gos-card watching-panel">' +
+      '<div class="ss-card watching-panel">' +
       '<h3>What Game OS is watching for you</h3>' +
       '<div class="watching-list">' +
       '<div class="watching-item"><span class="watching-module">Community:</span> Is the playtest community giving useful, directional feedback that surfaces systemic issues before launch?</div>' +
@@ -291,19 +294,20 @@
   function renderDetailPage(key) {
     var m = MODULES[key];
     var url = getModuleUrl(key);
+    var s = loadSettings();
+    var kicker = 'Game OS \u00b7 ' + (s.gameTitle || 'Demo Game');
     var badge = statusBadge(m.status === 'nodata' ? 'demo' : m.status, m.statusLabel);
-    var title = m.name + '.';
     return (
-      sectionHeading(m.label, title, m.cxoQuestion) +
-      '<span class="detail-badge">' + badge + '</span>' +
+      pageHeader(kicker, m.name) +
+      '<div>' + badge + '</div>' +
       '<p class="detail-intro">' + escapeHtml(m.description) + '</p>' +
-      '<div><a class="gos-btn" href="' + url + '" target="_blank" rel="noopener">Open ' + escapeHtml(m.toolName) + ' in full \u2192</a></div>' +
+      '<div><a class="ss-btn" href="' + url + '" target="_blank" rel="noopener">Open ' + escapeHtml(m.toolName) + ' in full \u2192</a></div>' +
       '<div class="detail-layout">' +
       '<div>' +
-      '<div class="gos-card">' +
-      '<div class="gos-label">EMBEDDED TOOL</div>' +
+      '<div class="ss-card">' +
       '<h3>' + escapeHtml(m.toolName) + '</h3>' +
-      '<div class="chart-body iframe-wrapper">' +
+      '<div class="ss-meta">Embedded live tool</div>' +
+      '<div class="iframe-wrapper ss-chart">' +
       '<iframe src="' + url + '" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" loading="lazy" title="' + escapeHtml(m.toolName) + '"></iframe>' +
       '<div class="iframe-note">Some tools require sign-in and may not load fully here. Use \u201cOpen in full\u201d for the complete experience.</div>' +
       '</div>' +
@@ -315,7 +319,7 @@
       '</div>' +
       '</div>' +
       '</div>' +
-      '<div class="gos-card key-readings">' +
+      '<div class="ss-card key-readings">' +
       '<h3>Key readings</h3>' +
       '<ul>' + m.keyReadings.map(function (r) { return '<li>' + escapeHtml(r) + '</li>'; }).join('') + '</ul>' +
       '</div>' +
@@ -325,13 +329,14 @@
 
   function renderSettings() {
     var s = loadSettings();
+    var kicker = 'Game OS \u00b7 ' + (s.gameTitle || 'Demo Game');
 
     var moduleFields = MODULE_KEYS.map(function (key) {
       var m = MODULES[key];
       var url = s.moduleUrls[key] || DEFAULT_MODULE_URLS[key];
       return (
         '<div class="form-group">' +
-        '<label class="gos-label" for="url-' + key + '">' + escapeHtml(m.name) + ' (' + escapeHtml(m.toolName) + ') URL</label>' +
+        '<label class="ss-field-label" for="url-' + key + '">' + escapeHtml(m.name) + ' (' + escapeHtml(m.toolName) + ') URL</label>' +
         '<input class="form-input" type="text" id="url-' + key + '" value="' + escapeHtml(url) + '">' +
         '<span class="form-help">Live tool URL. Change only if the tool moves.</span>' +
         '</div>'
@@ -339,34 +344,36 @@
     }).join('');
 
     return (
-      sectionHeading('04 — SETTINGS', 'Studio profile.', 'stored in this browser.') +
+      pageHeader(kicker, 'Settings') +
       '<p class="settings-intro">Configure your studio profile and module data sources. All settings are stored locally in your browser.</p>' +
-      '<div class="gos-card">' +
+      '<div class="ss-card">' +
       '<h3>Studio profile</h3>' +
       '<div class="form-body">' +
-      '<div class="form-group"><label class="gos-label" for="studioName">Studio name</label>' +
+      '<div class="form-group"><label class="ss-field-label" for="studioName">Studio name</label>' +
       '<input class="form-input" type="text" id="studioName" value="' + escapeHtml(s.studioName) + '" placeholder="Enter studio name"></div>' +
-      '<div class="form-group"><label class="gos-label" for="gameTitle">Primary game title</label>' +
+      '<div class="form-group"><label class="ss-field-label" for="gameTitle">Primary game title</label>' +
       '<input class="form-input" type="text" id="gameTitle" value="' + escapeHtml(s.gameTitle) + '"></div>' +
-      '<div class="form-group"><label class="gos-label" for="steamAppId">Steam AppID (optional)</label>' +
+      '<div class="form-group"><label class="ss-field-label" for="steamAppId">Steam AppID (optional)</label>' +
       '<input class="form-input" type="text" id="steamAppId" value="' + escapeHtml(s.steamAppId) + '" placeholder="e.g. 1234560"></div>' +
-      '<div class="form-group"><label class="gos-label" for="discordNickname">Discord server nickname (display only)</label>' +
+      '<div class="form-group"><label class="ss-field-label" for="discordNickname">Discord server nickname (display only)</label>' +
       '<input class="form-input" type="text" id="discordNickname" value="' + escapeHtml(s.discordNickname) + '" placeholder="e.g. MyStudio Playtest"></div>' +
       '</div>' +
       '</div>' +
-      '<div class="gos-card">' +
+      '<div class="ss-card">' +
       '<h3>Module data sources</h3>' +
       '<div class="form-body">' + moduleFields + '</div>' +
       '</div>' +
-      '<div><button class="gos-btn ghost" id="btnReset">Reset to defaults</button></div>'
+      '<div><button class="ss-btn ghost" id="btnReset">Reset to defaults</button></div>'
     );
   }
 
   function renderAbout() {
+    var s = loadSettings();
+    var kicker = 'Game OS \u00b7 ' + (s.gameTitle || 'Demo Game');
     return (
-      sectionHeading('05 — ABOUT', 'Game OS.', 'the operator surface.') +
+      pageHeader(kicker, 'About') +
       '<p class="about-para">Game OS is a Llama &amp; Griffin operator surface for indie studio executives. It answers three CXO-level questions on one screen:</p>' +
-      '<div class="gos-card">' +
+      '<div class="ss-card">' +
       '<div class="watching-list">' +
       '<div class="watching-item"><span class="watching-module">Are players engaging?</span> \u2014 community and playtest signal (Chicken Br\u00fbl\u00e9e).</div>' +
       '<div class="watching-item"><span class="watching-module">Is the price right?</span> \u2014 pricing, discount, wishlist, and regional strategy (Comp Analysis / SEB).</div>' +
@@ -374,9 +381,9 @@
       '</div>' +
       '</div>' +
       '<p class="about-para">Each module links out to a live Llama &amp; Griffin tool that does the actual analysis. Game OS wraps, links, and summarizes so you can scan the studio\u2019s health in one view.</p>' +
-      '<div class="support-grid">' +
-      '<div class="gos-card about-section"><h3>Credits</h3><p class="about-credits">Abbas Saleem Khan, Sebastian Cardoso, Jay Rooney.</p></div>' +
-      '<div class="gos-card about-section"><h3>Links</h3><div class="about-links">' +
+      '<div class="detail-layout">' +
+      '<div class="ss-card about-section"><h3>Credits</h3><p class="about-credits">Abbas Saleem Khan, Sebastian Cardoso, Jay Rooney.</p></div>' +
+      '<div class="ss-card about-section"><h3>Links</h3><div class="about-links">' +
       '<a href="https://llamagriffin.com" target="_blank" rel="noopener">llamagriffin.com</a>' +
       '<a href="https://recognizingpatterns.substack.com" target="_blank" rel="noopener">recognizingpatterns.substack.com</a>' +
       '<a href="https://cal.com/llamagriffin/30min" target="_blank" rel="noopener">Book a conversation</a>' +

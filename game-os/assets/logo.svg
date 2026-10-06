@@ -1,7 +1,5 @@
-<svg width="140" height="24" viewBox="0 0 140 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <g transform="translate(0 7)">
-    <path d="M0 0 L5 5 L0 10" stroke="#c3a55f" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M6 0 L11 5 L6 10" stroke="#c3a55f" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-  </g>
-  <text x="20" y="18" font-family="'Playfair Display', Georgia, serif" font-size="18" font-weight="700" fill="#232323" letter-spacing="-0.01em">Game OS</text>
+<svg width="150" height="30" viewBox="0 0 150 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="4" width="6" height="22" rx="2" fill="#3b8d83"/>
+  <rect x="8" y="4" width="6" height="22" rx="2" fill="#e3683f"/>
+  <text x="24" y="23" font-family="'Archivo', 'Arial Black', system-ui, sans-serif" font-size="18" font-weight="800" letter-spacing="-0.01em" fill="#2f2a20">GAME OS</text>
 </svg>
