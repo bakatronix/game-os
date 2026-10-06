@@ -6,16 +6,20 @@
       name: 'Community',
       toolName: 'Chicken Brûlée',
       url: 'https://llamagriffin.com/game-os/chicken-brulee/',
-      cxoQuestion: 'Are players engaging? — community and playtest signal.',
+      cxoQuestion: 'Are players engaging?',
+      kicker: 'before you ship the wrong loop.',
+      label: '01 — COMMUNITY',
       description:
         'Is the playtest community giving useful, directional feedback? Chicken Brûlée scans your Discord playtest channels for recurring patterns, onboarding friction, and flagged comments that need operator attention.',
       status: 'watch',
       statusLabel: 'Watch',
+      delta: { dir: 'down', text: '+3.1 pts', note: 'onboarding-flagged' },
       metrics: [
         { label: 'Contributors (7d)', value: '12' },
         { label: 'New observations', value: '34' },
-        { label: 'Onboarding-flagged comments', value: '41%' },
+        { label: 'Onboarding-flagged', value: '41%' },
       ],
+      chart: { type: 'bars', values: [8, 12, 10, 14, 11, 12, 9], title: 'Weekly observations', source: 'Source: Chicken Brûlée · demo data · weekly totals' },
       detailNote:
         'Early-game clarity remains the dominant issue: first-quest, healing depletion, XP pacing.',
       keyReadings: [
@@ -31,16 +35,20 @@
       name: 'Pricing',
       toolName: 'Comp Analysis / SEB',
       url: 'https://llamagriffin.com/game-os/price-calc/',
-      cxoQuestion: 'Is the price right? — pricing, discount, wishlist, and regional strategy.',
+      cxoQuestion: 'Is the price right?',
+      kicker: 'before you discount.',
+      label: '02 — PRICING',
       description:
         'Is our launch price, discount plan, and regional strategy defensible? SEB is the full indie pricing workbook: comparable-game research, four-variable pricing score, score-to-tier mapping, and discount staircase planning.',
       status: 'healthy',
       statusLabel: 'Healthy',
+      delta: { dir: 'up', text: '+6%', note: 'net vs prior period' },
       metrics: [
         { label: 'Required launch price', value: '$21.41' },
         { label: 'Wishlist → Week 1 est.', value: '630 units' },
         { label: 'Net revenue Week 1', value: '$9,443.70' },
       ],
+      chart: { type: 'line', values: [18, 19, 19.5, 20, 20.8, 21, 21.4], title: 'Recommended price by stage', source: 'Source: SEB workbook · demo data · four-variable score' },
       detailNote:
         'Discount staircase built to 20%+ from first seasonal sale to trigger wishlist emails.',
       keyReadings: [
@@ -57,17 +65,21 @@
       name: 'PMF',
       toolName: 'MTG PMF Analyzer',
       url: 'https://llamagriffin.com/game-os/PMF',
-      cxoQuestion: 'Are we hitting product-market fit? — post-launch 30-day PMF signal.',
+      cxoQuestion: 'Are we hitting product-market fit?',
+      kicker: '30 days after launch.',
+      label: '03 — PMF',
       description:
         '30 days in, is this game showing PMF signals, and where is the weakness? The MTG PMF Analyzer evaluates three lens scores (acquisition, engagement, satisfaction) on Steam-native public data, with confidence bands and moat features like refund-window playtime analysis.',
       status: 'nodata',
       statusLabel: 'No data',
+      delta: null,
       metrics: [
         { label: 'Days since launch', value: '\u2014' },
         { label: 'Acquisition lens', value: '\u2014' },
         { label: 'Engagement lens', value: '\u2014' },
         { label: 'Satisfaction lens', value: '\u2014' },
       ],
+      chart: null,
       detailNote: 'Connect a Steam AppID to start the 30-day PMF window.',
       keyReadings: [
         'Three lens scores (acquisition, engagement, satisfaction) with confidence bands — no single headline number.',
@@ -80,6 +92,8 @@
         'MTG PMF Analyzer provides three independent lens scores (acquisition, engagement, satisfaction), each with its own confidence band. There is no single headline number — a game can score high on acquisition but low on satisfaction. The refund-window playtime analysis is a moat feature that surfaces whether players are quitting before Steam’s two-hour refund window closes. Update-cadence overlays help you connect development velocity to review-score trajectory.',
     },
   };
+
+  const MODULE_KEYS = ['community', 'pricing', 'pmf'];
 
   const DEFAULT_MODULE_URLS = {
     community: 'https://llamagriffin.com/game-os/chicken-brulee/',
@@ -123,77 +137,76 @@
     return s.moduleUrls[moduleKey] || DEFAULT_MODULE_URLS[moduleKey];
   }
 
-  /* ---- Sparklines ---- */
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
 
-  function sparklineSVG(data, width, height, color) {
+  /* ---- Chart marks (design system: straight 2px lines, data-* slots) ---- */
+
+  function lineChartSVG(data, width, height, seriesClass) {
     if (!data || data.length < 2) return '';
     var min = Math.min.apply(null, data);
     var max = Math.max.apply(null, data);
     var range = max - min || 1;
-    var points = data
-      .map(function (v, i) {
-        var x = (i / (data.length - 1)) * width;
-        var y = height - ((v - min) / range) * (height - 4) - 2;
-        return x.toFixed(1) + ',' + y.toFixed(1);
-      })
-      .join(' ');
+    var pad = 4;
+    var pts = data.map(function (v, i) {
+      var x = (i / (data.length - 1)) * (width - pad * 2) + pad;
+      var y = height - pad - ((v - min) / range) * (height - pad * 2);
+      return x.toFixed(1) + ',' + y.toFixed(1);
+    });
+    var last = pts[pts.length - 1].split(',');
     return (
-      '<svg width="' +
-      width +
-      '" height="' +
-      height +
-      '" class="sparkline" fill="none" xmlns="http://www.w3.org/2000/svg">' +
-      '<polyline points="' +
-      points +
-      '" stroke="' +
-      color +
-      '" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '<svg viewBox="0 0 ' + width + ' ' + height + '" class="gos-chart-svg" role="img" aria-hidden="true">' +
+      '<polyline class="line ' + seriesClass + '" points="' + pts.join(' ') + '"/>' +
+      '<circle class="dot ' + seriesClass.replace('s', 'f') + '" cx="' + last[0] + '" cy="' + last[1] + '" r="4"/>' +
       '</svg>'
     );
   }
 
-  function barsSVG(values, width, height, color) {
-    if (!values || values.length === 0) return '';
+  function barChartSVG(values, seriesClass) {
+    if (!values || !values.length) return '';
     var max = Math.max.apply(null, values) || 1;
-    var barCount = values.length;
-    var gap = 2;
-    var barWidth = (width - gap * (barCount - 1)) / barCount;
+    var count = values.length;
+    var barW = 10;
+    var gap = 4;
+    var width = count * barW + (count - 1) * gap;
+    var height = 40;
     var bars = values
       .map(function (v, i) {
-        var barH = Math.max(2, (v / max) * height);
-        var x = i * (barWidth + gap);
-        var y = height - barH;
-        return (
-          '<rect x="' +
-          x.toFixed(1) +
-          '" y="' +
-          y.toFixed(1) +
-          '" width="' +
-          barWidth.toFixed(1) +
-          '" height="' +
-          barH.toFixed(1) +
-          '" rx="1" fill="' +
-          color +
-          '" opacity="0.85"/>'
-        );
+        var h = Math.max(2, (v / max) * height);
+        var x = i * (barW + gap);
+        var y = height - h;
+        return '<rect class="' + seriesClass.replace('s', 'f') + '" x="' + x + '" y="' + y.toFixed(1) + '" width="' + barW + '" height="' + h.toFixed(1) + '" rx="2"/>';
       })
       .join('');
-    return (
-      '<svg width="' +
-      width +
-      '" height="' +
-      height +
-      '" class="sparkline" xmlns="http://www.w3.org/2000/svg">' +
-      bars +
-      '</svg>'
-    );
+    return '<svg viewBox="0 0 ' + width + ' ' + height + '" class="gos-chart-svg" role="img" aria-hidden="true">' + bars + '</svg>';
   }
 
-  /* ---- Render helpers ---- */
+  /* ---- Component helpers ---- */
 
-  function statusPillByKey(key) {
+  function statusBadge(key) {
     var m = MODULES[key];
-    return '<span class="status-pill ' + m.status + '">' + m.statusLabel + '</span>';
+    var glyph = m.status === 'healthy' ? '\u25CF ' : m.status === 'watch' ? '\u25B2 ' : '\u25A0 ';
+    var cls = m.status === 'healthy' ? 'healthy' : m.status === 'watch' ? 'watch' : m.status === 'nodata' ? 'demo' : 'concern';
+    return '<span class="gos-badge ' + cls + '">' + glyph + m.statusLabel + '</span>';
+  }
+
+  function sectionHeading(label, title, kicker, rightBadge) {
+    return (
+      '<div class="page-head">' +
+      '<div class="gos-heading">' +
+      '<div class="gos-chevrons" aria-hidden="true"><i></i><i></i><i></i><i></i></div>' +
+      '<div class="gos-label" style="margin-bottom:8px">' + label + '</div>' +
+      '<h1>' + title + '</h1>' +
+      '<em>' + kicker + '</em>' +
+      '</div>' +
+      (rightBadge || '') +
+      '</div>'
+    );
   }
 
   function renderMetrics(metrics) {
@@ -202,95 +215,73 @@
         var cls = m.value === '\u2014' ? 'metric-value empty' : 'metric-value';
         return (
           '<div class="metric-item">' +
-          '<span class="metric-label">' +
-          m.label +
-          '</span>' +
-          '<span class="' +
-          cls +
-          '">' +
-          m.value +
-          '</span>' +
+          '<span class="metric-label">' + m.label + '</span>' +
+          '<span class="' + cls + '">' + m.value + '</span>' +
           '</div>'
         );
       })
       .join('');
   }
 
+  function tileChart(chart) {
+    if (!chart) return '';
+    var svg = chart.type === 'bars' ? barChartSVG(chart.values, 's1') : lineChartSVG(chart.values, 120, 40, 's1');
+    return (
+      '<div class="tile-chart" style="margin-top:16px">' +
+      svg +
+      '<span class="gos-meta" style="display:block;margin-top:12px">' + chart.source + '</span>' +
+      '</div>'
+    );
+  }
+
+  function deltaLine(delta) {
+    if (!delta) return '';
+    var cls = delta.dir === 'up' ? 'gos-up' : 'gos-down';
+    var arrow = delta.dir === 'up' ? '\u25B2 ' : '\u25BC ';
+    return '<div class="d"><span class="' + cls + '">' + arrow + delta.text + '</span><span>' + delta.note + '</span></div>';
+  }
+
   /* ---- Page renderers ---- */
 
   function renderOverview() {
-    var tiles = ['community', 'pricing', 'pmf']
+    var tiles = MODULE_KEYS
       .map(function (key) {
         var m = MODULES[key];
         var url = getModuleUrl(key);
-        var spark = '';
-        if (key === 'community') {
-          spark = barsSVG([8, 12, 10, 14, 11, 12, 9], 120, 28, '#d9803a');
-        } else if (key === 'pricing') {
-          spark = sparklineSVG([18, 19, 19.5, 20, 20.8, 21, 21.4], 120, 28, '#4bb58a');
-        } else if (key === 'pmf') {
-          spark = '';
-        }
         return (
-          '<div class="card">' +
-          '<div class="card-header">' +
+          '<div class="gos-card">' +
+          '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">' +
           '<div>' +
-          '<div class="card-title">' +
-          m.name +
-          ' \u2014 ' +
-          m.toolName +
+          '<div class="gos-label">' + m.label + '</div>' +
+          '<h3 style="margin-top:4px">' + m.name + ' \u2014 ' + m.toolName + '</h3>' +
           '</div>' +
-          '<div class="card-subtitle">' +
-          m.cxoQuestion +
+          statusBadge(key) +
           '</div>' +
-          '</div>' +
-          statusPillByKey(key) +
-          '</div>' +
-          '<div class="metrics-grid">' +
-          renderMetrics(m.metrics) +
-          '</div>' +
-          spark +
+          '<div class="gos-meta" style="display:block;margin-top:8px">' + m.cxoQuestion + '</div>' +
+          deltaLine(m.delta) +
+          '<div class="metrics-grid">' + renderMetrics(m.metrics) + '</div>' +
+          tileChart(m.chart) +
           '<div class="card-actions">' +
-          '<a class="card-link" href="' +
-          url +
-          '" target="_blank" rel="noopener">Open module \u2192</a>' +
-          '<a class="card-link internal" href="#/' +
-          key +
-          '">Detail page \u2192</a>' +
+          '<a class="gos-btn ghost" href="' + url + '" target="_blank" rel="noopener">Open module \u2192</a>' +
+          '<a href="#/' + key + '">Detail page \u2192</a>' +
           '</div>' +
-          '<div class="card-note">' +
-          m.detailNote +
-          '</div>' +
+          '<div class="card-note">' + m.detailNote + '</div>' +
           '</div>'
         );
       })
       .join('');
 
     return (
-      '<div class="overview-page">' +
-      '<h1>Dashboard</h1>' +
-      '<div class="breadcrumb">Overview</div>' +
-      '<div class="tile-grid">' +
-      tiles +
-      '</div>' +
-      '<div class="watching-panel">' +
+      sectionHeading('00 — DASHBOARD', 'Studio health, one screen.', 'Read it before you spend.', '<span class="gos-badge demo">Demo data</span>') +
+      '<div class="tile-grid">' + tiles + '</div>' +
+      '<div class="gos-card watching-panel">' +
       '<h3>What Game OS is watching for you</h3>' +
-      '<div class="watching-list">' +
-      '<div class="watching-item">' +
-      '<span class="watching-chevron">\u203A</span>' +
-      '<span><span class="watching-module">Community:</span> Is the playtest community giving useful, directional feedback that surfaces systemic issues before launch?</span>' +
-      '</div>' +
-      '<div class="watching-item">' +
-      '<span class="watching-chevron">\u203A</span>' +
-      '<span><span class="watching-module">Pricing:</span> Is your launch price, discount plan, and regional strategy defensible against comparable titles in the same genre and scope?</span>' +
-      '</div>' +
-      '<div class="watching-item">' +
-      '<span class="watching-chevron">\u203A</span>' +
-      '<span><span class="watching-module">PMF:</span> 30 days post-launch, are acquisition, engagement, and satisfaction signals pointing toward product-market fit?</span>' +
-      '</div>' +
+      '<div class="watching-list" style="margin-top:16px">' +
+      '<div class="watching-item"><span class="watching-chevron">\u203A</span><span><span class="watching-module">Community:</span> Is the playtest community giving useful, directional feedback that surfaces systemic issues before launch?</span></div>' +
+      '<div class="watching-item"><span class="watching-chevron">\u203A</span><span><span class="watching-module">Pricing:</span> Is your launch price, discount plan, and regional strategy defensible against comparable titles in the same genre and scope?</span></div>' +
+      '<div class="watching-item"><span class="watching-chevron">\u203A</span><span><span class="watching-module">PMF:</span> 30 days post-launch, are acquisition, engagement, and satisfaction signals pointing toward product-market fit?</span></div>' +
       '</div>' +
       '<div class="sync-note">Last synced: 2m ago (demo)</div>' +
-      '</div>' +
       '</div>'
     );
   }
@@ -298,54 +289,38 @@
   function renderDetailPage(key) {
     var m = MODULES[key];
     var url = getModuleUrl(key);
+    var chartBlock = '';
+    if (m.chart) {
+      var svg = m.chart.type === 'bars' ? barChartSVG(m.chart.values, 's1') : lineChartSVG(m.chart.values, 640, 160, 's1');
+      chartBlock =
+        '<div class="gos-card gos-chart">' +
+        '<div class="gos-label">' + m.label + '</div>' +
+        '<h3>' + m.chart.title + '</h3>' +
+        '<div style="margin-top:16px">' + svg + '</div>' +
+        '<span class="gos-meta" style="display:block;margin-top:12px">' + m.chart.source + '</span>' +
+        '</div>';
+    }
     return (
-      '<div class="detail-page">' +
-      '<div class="breadcrumb"><a href="#/overview">Overview</a> / ' +
-      m.name +
-      '</div>' +
-      '<h1>' +
-      m.name +
-      ' \u2014 ' +
-      m.toolName +
-      '</h1>' +
-      '<p class="detail-intro">' +
-      m.description +
-      '</p>' +
-      '<a class="btn-open-full" href="' +
-      url +
-      '" target="_blank" rel="noopener">' +
-      '<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M12 8.5V13H3V4H7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 2H14V7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 2L7.5 8.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
-      'Open ' +
-      m.toolName +
-      ' in full' +
-      '</a>' +
+      sectionHeading(m.label, m.name + '.', m.kicker, statusBadge(key)) +
+      '<p class="detail-intro">' + m.description + '</p>' +
+      '<div><a class="gos-btn" href="' + url + '" target="_blank" rel="noopener">Open ' + m.toolName + ' in full \u2192</a></div>' +
       '<div class="detail-layout">' +
       '<div>' +
-      '<div class="iframe-wrapper">' +
-      '<iframe src="' +
-      url +
-      '" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" loading="lazy"></iframe>' +
+      chartBlock +
+      '<div class="iframe-wrapper" style="margin-top:16px">' +
+      '<iframe src="' + url + '" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" loading="lazy"></iframe>' +
       '<div class="iframe-note">Some tools require sign-in and may not load fully here. Use "Open in full" for the complete experience.</div>' +
       '</div>' +
       '<div class="collapsible">' +
       '<button class="collapsible-toggle" onclick="this.classList.toggle(\'open\'); this.nextElementSibling.classList.toggle(\'open\')">' +
       '<span class="arrow">\u203A</span> How to read this' +
       '</button>' +
-      '<div class="collapsible-content">' +
-      m.howToRead +
+      '<div class="collapsible-content">' + m.howToRead + '</div>' +
       '</div>' +
       '</div>' +
-      '</div>' +
-      '<div class="key-readings">' +
-      '<h4>Key readings</h4>' +
-      '<ul>' +
-      m.keyReadings
-        .map(function (r) {
-          return '<li>' + r + '</li>';
-        })
-        .join('') +
-      '</ul>' +
-      '</div>' +
+      '<div class="gos-card key-readings">' +
+      '<h3>Key readings</h3>' +
+      '<ul>' + m.keyReadings.map(function (r) { return '<li>' + r + '</li>'; }).join('') + '</ul>' +
       '</div>' +
       '</div>'
     );
@@ -353,26 +328,15 @@
 
   function renderSettings() {
     var s = loadSettings();
-    var moduleKeys = ['community', 'pricing', 'pmf'];
 
-    var moduleFields = moduleKeys
+    var moduleFields = MODULE_KEYS
       .map(function (key) {
         var m = MODULES[key];
         var url = s.moduleUrls[key] || DEFAULT_MODULE_URLS[key];
         return (
           '<div class="form-group">' +
-          '<label class="form-label" for="url-' +
-          key +
-          '">' +
-          m.name +
-          ' (' +
-          m.toolName +
-          ') URL</label>' +
-          '<input class="form-input" type="text" id="url-' +
-          key +
-          '" value="' +
-          escapeHtml(url) +
-          '">' +
+          '<label class="gos-label" for="url-' + key + '">' + m.name + ' (' + m.toolName + ') URL</label>' +
+          '<input class="form-input" type="text" id="url-' + key + '" value="' + escapeHtml(url) + '">' +
           '<span class="form-help">Live tool URL. Change only if the tool moves.</span>' +
           '</div>'
         );
@@ -380,89 +344,62 @@
       .join('');
 
     return (
-      '<div class="settings-page">' +
-      '<div class="breadcrumb"><a href="#/overview">Overview</a> / Settings</div>' +
-      '<h1>Settings</h1>' +
+      sectionHeading('04 — SETTINGS', 'Studio profile.', 'stored in this browser.') +
       '<p class="settings-intro">Configure your studio profile and module data sources. All settings are stored locally in your browser.</p>' +
-      '<div class="settings-section">' +
+      '<div class="gos-card">' +
       '<h3>Studio Profile</h3>' +
+      '<div style="margin-top:16px">' +
       '<div class="form-group">' +
-      '<label class="form-label" for="studioName">Studio Name</label>' +
-      '<input class="form-input" type="text" id="studioName" value="' +
-      escapeHtml(s.studioName) +
-      '" placeholder="Enter studio name">' +
-      '</div>' +
-      '<div class="form-group">' +
-      '<label class="form-label" for="gameTitle">Primary Game Title</label>' +
-      '<input class="form-input" type="text" id="gameTitle" value="' +
-      escapeHtml(s.gameTitle) +
-      '">' +
+      '<label class="gos-label" for="studioName">Studio Name</label>' +
+      '<input class="form-input" type="text" id="studioName" value="' + escapeHtml(s.studioName) + '" placeholder="Enter studio name">' +
       '</div>' +
       '<div class="form-group">' +
-      '<label class="form-label" for="steamAppId">Steam AppID (optional)</label>' +
-      '<input class="form-input" type="text" id="steamAppId" value="' +
-      escapeHtml(s.steamAppId) +
-      '" placeholder="e.g. 1234560">' +
+      '<label class="gos-label" for="gameTitle">Primary Game Title</label>' +
+      '<input class="form-input" type="text" id="gameTitle" value="' + escapeHtml(s.gameTitle) + '">' +
       '</div>' +
       '<div class="form-group">' +
-      '<label class="form-label" for="discordNickname">Discord Server Nickname (display only)</label>' +
-      '<input class="form-input" type="text" id="discordNickname" value="' +
-      escapeHtml(s.discordNickname) +
-      '" placeholder="e.g. MyStudio Playtest">' +
+      '<label class="gos-label" for="steamAppId">Steam AppID (optional)</label>' +
+      '<input class="form-input" type="text" id="steamAppId" value="' + escapeHtml(s.steamAppId) + '" placeholder="e.g. 1234560">' +
+      '</div>' +
+      '<div class="form-group">' +
+      '<label class="gos-label" for="discordNickname">Discord Server Nickname (display only)</label>' +
+      '<input class="form-input" type="text" id="discordNickname" value="' + escapeHtml(s.discordNickname) + '" placeholder="e.g. MyStudio Playtest">' +
       '</div>' +
       '</div>' +
-      '<div class="settings-section">' +
+      '</div>' +
+      '<div class="gos-card">' +
       '<h3>Module Data Sources</h3>' +
-      moduleFields +
+      '<div style="margin-top:16px">' + moduleFields + '</div>' +
       '</div>' +
-      '<button class="btn-reset" id="btnReset">Reset to Defaults</button>' +
-      '</div>'
+      '<div><button class="gos-btn ghost" id="btnReset">Reset to Defaults</button></div>'
     );
   }
 
   function renderAbout() {
     return (
-      '<div class="about-page">' +
-      '<div class="breadcrumb"><a href="#/overview">Overview</a> / About</div>' +
-      '<h1>About Game OS</h1>' +
+      sectionHeading('05 — ABOUT', 'Game OS.', 'the operator surface.') +
       '<p class="about-para">Game OS is a Llama &amp; Griffin operator surface for indie studio executives. It answers three CXO-level questions on one screen:</p>' +
-      '<div class="watching-list" style="margin-bottom:20px;">' +
-      '<div class="watching-item">' +
-      '<span class="watching-chevron">\u203A</span>' +
-      '<span><span class="watching-module">Are players engaging?</span> \u2014 community and playtest signal (Chicken Br\u00fbl\u00e9e).</span>' +
-      '</div>' +
-      '<div class="watching-item">' +
-      '<span class="watching-chevron">\u203A</span>' +
-      '<span><span class="watching-module">Is the price right?</span> \u2014 pricing, discount, wishlist, and regional strategy (Comp Analysis / SEB).</span>' +
-      '</div>' +
-      '<div class="watching-item">' +
-      '<span class="watching-chevron">\u203A</span>' +
-      '<span><span class="watching-module">Are we hitting product-market fit?</span> \u2014 post-launch 30-day PMF signal (MTG PMF Analyzer).</span>' +
+      '<div class="gos-card">' +
+      '<div class="watching-list">' +
+      '<div class="watching-item"><span class="watching-chevron">\u203A</span><span><span class="watching-module">Are players engaging?</span> \u2014 community and playtest signal (Chicken Br\u00fbl\u00e9e).</span></div>' +
+      '<div class="watching-item"><span class="watching-chevron">\u203A</span><span><span class="watching-module">Is the price right?</span> \u2014 pricing, discount, wishlist, and regional strategy (Comp Analysis / SEB).</span></div>' +
+      '<div class="watching-item"><span class="watching-chevron">\u203A</span><span><span class="watching-module">Are we hitting product-market fit?</span> \u2014 post-launch 30-day PMF signal (MTG PMF Analyzer).</span></div>' +
       '</div>' +
       '</div>' +
       '<p class="about-para">Each module links out to a live Llama &amp; Griffin tool that does the actual analysis. Game OS wraps, links, and summarizes so you can scan the studio\u2019s health in one view.</p>' +
-      '<div class="about-section">' +
+      '<div class="gos-card about-section">' +
       '<h3>Credits</h3>' +
       '<p class="about-credits">Abbas Saleem Khan, Sebastian Cardoso, Jay Rooney.</p>' +
       '</div>' +
-      '<div class="about-section">' +
+      '<div class="gos-card about-section">' +
       '<h3>Links</h3>' +
       '<div class="about-links">' +
       '<a href="https://llamagriffin.com" target="_blank" rel="noopener">llamagriffin.com</a>' +
       '<a href="https://recognizingpatterns.substack.com" target="_blank" rel="noopener">recognizingpatterns.substack.com</a>' +
       '<a href="https://cal.com/llamagriffin/30min" target="_blank" rel="noopener">Book a Conversation</a>' +
       '</div>' +
-      '</div>' +
       '</div>'
     );
-  }
-
-  function escapeHtml(str) {
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
   }
 
   /* ---- Router ---- */
@@ -495,16 +432,17 @@
     }
 
     updateActiveNav(hash);
+    window.scrollTo(0, 0);
   }
 
   function updateActiveNav(current) {
-    var items = document.querySelectorAll('.nav-item');
+    var items = document.querySelectorAll('#appNav a');
     items.forEach(function (item) {
-      var route = item.getAttribute('data-route');
-      if (route === current) {
-        item.classList.add('active');
+      var r = item.getAttribute('data-route');
+      if (r === current) {
+        item.setAttribute('aria-current', 'page');
       } else {
-        item.classList.remove('active');
+        item.removeAttribute('aria-current');
       }
     });
   }
@@ -513,7 +451,7 @@
 
   function bindSettingsEvents() {
     var inputs = ['studioName', 'gameTitle', 'steamAppId', 'discordNickname'];
-    var urlKeys = ['community', 'pricing', 'pmf'];
+    var urlKeys = MODULE_KEYS;
 
     function collectAndSave() {
       var s = loadSettings();
