@@ -10,6 +10,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/migrate.ts",
     "setup": "node scripts/setup.mjs",
+    "oauth": "node scripts/oauth.mjs",
     "dns:plan": "node scripts/dns-cloudflare.mjs --dry-run",
     "dns:apply": "node scripts/dns-cloudflare.mjs",
     "verify": "node scripts/verify.mjs"
