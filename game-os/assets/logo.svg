@@ -1,5 +1,5 @@
 <svg width="150" height="30" viewBox="0 0 150 30" fill="none" xmlns="http://www.w3.org/2000/svg">
   <rect x="0" y="4" width="6" height="22" rx="2" fill="#3b8d83"/>
   <rect x="8" y="4" width="6" height="22" rx="2" fill="#e3683f"/>
-  <text x="24" y="23" font-family="'Archivo', 'Arial Black', system-ui, sans-serif" font-size="18" font-weight="800" letter-spacing="-0.01em" fill="#2f2a20">GAME OS</text>
+  <text x="24" y="23" font-family="'Archivo', 'Arial Black', system-ui, sans-serif" font-size="18" font-weight="800" letter-spacing="-0.01em" fill="#000000">GAME OS</text>
 </svg>
