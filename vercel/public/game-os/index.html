@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game OS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Source+Sans+3:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/tokens.css?v=5">
+  <link rel="stylesheet" href="assets/components.css?v=5">
+  <link rel="stylesheet" href="assets/styles.css?v=6">
+</head>
+<body>
+  <header class="app-header">
+    <div class="app-shell">
+      <div class="header-row">
+        <a href="#/overview" class="brand-lockup" aria-label="Game OS home">
+          <img src="assets/logo.svg?v=6" alt="Game OS" class="brand-logo">
+        </a>
+        <div class="header-right">
+          <a href="https://discord.gg/DgnZ8WnDRn" target="_blank" rel="noopener" class="ss-btn ghost">Join our Discord</a>
+        </div>
+      </div>
+      <nav class="ss-tabs app-nav" id="appNav">
+        <a href="#/overview" data-route="overview">Overview</a>
+        <a href="#/community" data-route="community">Community</a>
+        <a href="#/pricing" data-route="pricing">Pricing</a>
+        <a href="#/pmf" data-route="pmf">PMF</a>
+        <a href="#/settings" data-route="settings">Settings</a>
+        <a href="#/about" data-route="about">About</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="content" id="content"></main>
+
+  <script src="assets/app.js?v=5"></script>
+</body>
+</html>
