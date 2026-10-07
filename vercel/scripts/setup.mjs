@@ -74,12 +74,15 @@ async function main() {
     ["DATABASE_URL", "Neon/Vercel Postgres connection string"],
     ["AUTH_SECRET", "run `npx auth secret` to generate one"],
     ["AUTH_URL", "public URL, e.g. https://llamagriffin.com"],
-    ["AUTH_GOOGLE_ID", "Google OAuth client id"],
-    ["AUTH_GOOGLE_SECRET", "Google OAuth client secret"],
-    ["AUTH_DISCORD_ID", "Discord OAuth client id"],
-    ["AUTH_DISCORD_SECRET", "Discord OAuth client secret"],
   ];
-  const optional = [["ITAD_API_KEY", "IsThereAnyDeal key (price history) — optional"]];
+  // OAuth + extras are optional for a first deploy — add them any time.
+  const optional = [
+    ["AUTH_GOOGLE_ID", "Google OAuth client id — optional"],
+    ["AUTH_GOOGLE_SECRET", "Google OAuth client secret — optional"],
+    ["AUTH_DISCORD_ID", "Discord OAuth client id — optional"],
+    ["AUTH_DISCORD_SECRET", "Discord OAuth client secret — optional"],
+    ["ITAD_API_KEY", "IsThereAnyDeal key (price history) — optional"],
+  ];
 
   const collected = {};
   for (const [key, hint] of required) {

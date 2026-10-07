@@ -7,7 +7,12 @@ export default auth((req) => {
   const { pathname } = req.nextUrl;
   const isLoggedIn = !!req.auth;
 
-  if (pathname.startsWith("/game-os") && !isLoggedIn) {
+  // Gate the dashboard landing only. Individual tools (price-calc,
+  // chicken-brulee, PMF) and the seismic mockflow stay publicly reachable
+  // for now — tighten later via the app registry.
+  const isDashboard = pathname === "/game-os" || pathname === "/game-os/";
+
+  if (isDashboard && !isLoggedIn) {
     const url = new URL("/login", req.nextUrl.origin);
     url.searchParams.set("callbackUrl", pathname);
     return Response.redirect(url);
@@ -17,5 +22,5 @@ export default auth((req) => {
 });
 
 export const config = {
-  matcher: ["/game-os/:path*"],
+  matcher: ["/game-os", "/game-os/"],
 };
