@@ -8,7 +8,11 @@
     "start": "next start",
     "lint": "next lint",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "tsx scripts/migrate.ts"
+    "db:migrate": "tsx scripts/migrate.ts",
+    "setup": "node scripts/setup.mjs",
+    "dns:plan": "node scripts/dns-cloudflare.mjs --dry-run",
+    "dns:apply": "node scripts/dns-cloudflare.mjs",
+    "verify": "node scripts/verify.mjs"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.7.4",
