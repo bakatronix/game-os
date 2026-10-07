@@ -22,6 +22,7 @@ import {
   run,
   hasCommand,
 } from "./lib.mjs";
+import { execSync } from "node:child_process";
 
 import { appendFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -64,26 +65,43 @@ async function main() {
 
   step(2, 3, "Push to Vercel");
   const vc = hasCommand("vercel") ? "vercel" : "npx --yes vercel";
+  const push = (name, value, target) => {
+    // `vercel env add/update NAME target` reads the value from stdin.
+    const cmd = `${vc} env add ${name} ${target}`;
+    const upd = `${vc} env update ${name} ${target}`;
+    try {
+      execSync(cmd, {
+        cwd: VERCEL_DIR,
+        input: value,
+        stdio: ["pipe", "ignore", "ignore"],
+      });
+      return true;
+    } catch {
+      try {
+        execSync(upd, {
+          cwd: VERCEL_DIR,
+          input: value,
+          stdio: ["pipe", "ignore", "ignore"],
+        });
+        return true;
+      } catch {
+        return false;
+      }
+    }
+  };
+
   for (const [k, v] of [
     ["AUTH_GOOGLE_ID", gid],
     ["AUTH_GOOGLE_SECRET", gsec],
     ["AUTH_DISCORD_ID", did],
     ["AUTH_DISCORD_SECRET", dsec],
   ]) {
+    let anyFail = false;
     for (const target of ["production", "preview", "development"]) {
-      const runEnv = { cwd: VERCEL_DIR, env: { ...process.env, [k]: v }, quiet: true };
-      try {
-        run(`${vc} env add ${k} ${target}`, runEnv);
-      } catch {
-        // Already exists — update it instead.
-        try {
-          run(`${vc} env update ${k} ${target}`, runEnv);
-        } catch {
-          info(`${k} ${target}: add+update both failed — set it in the dashboard`);
-        }
-      }
+      if (!push(k, v, target)) anyFail = true;
     }
-    ok(`${k} pushed`);
+    if (anyFail) fail(`${k}: some targets failed`);
+    else ok(`${k} pushed (production/preview/development)`);
   }
 
   step(3, 3, "Redeploy");
