@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Terms of Service — Chicken Brûlée</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css?v=2">
+</head>
+<body>
+<div class="wrap" style="padding:60px 24px;max-width:760px">
+<h1>Terms of Service</h1>
+<p style="color:var(--text-mut);font-size:14px;margin-bottom:30px">Last updated: 23 July 2026</p>
+
+<h2>1. Acceptance of Terms</h2>
+<p>By using Chicken Brûlée ("the Service"), you agree to these Terms of Service. If you do not agree, do not use the Service. The Service is provided on an "as is" and "as available" basis. The Service is currently in active development and features, functionality, and these terms may change at any time without prior notice.</p>
+
+<h2>2. Description of Service</h2>
+<p>Chicken Brûlée is a Discord playtest feedback scanner. Users provide a Discord bot token with read-only permissions. The Service reads publicly visible messages from Discord channels that the user's bot has been invited to, classifies them, and presents an analytics dashboard.</p>
+
+<h2>3. User Responsibilities</h2>
+<p>You are responsible for:</p>
+<ul>
+  <li>Creating and managing your own Discord bot with the minimum required permissions (Read Messages, Read Message History).</li>
+  <li>Ensuring your bot token is kept secure. The Service stores your token encrypted at rest and never exposes it to other users.</li>
+  <li>Complying with Discord's Terms of Service and Developer Terms when using the Service.</li>
+  <li>Ensuring you have the right to scan the Discord channels you configure. The Service does not verify channel ownership or membership beyond what Discord's API enforces.</li>
+  <li>Not using the Service to harass, spam, or violate the privacy of Discord server members.</li>
+</ul>
+
+<h2>4. Data Handling</h2>
+<p>The Service only accesses publicly visible Discord channel messages via the Discord API using the bot token you provide. The Service does not access private messages, direct messages, or any Discord data outside the channels you explicitly configure.</p>
+<p>Scanned message data is stored securely in a database with Row-Level Security, ensuring each user can only access their own data. Bot tokens are stored with encryption at rest.</p>
+<p>You may delete your account and all associated data at any time by contacting the Service administrator. Upon deletion, all your scanned data and bot credentials are permanently removed.</p>
+
+<h2>5. Intellectual Property</h2>
+<p>The Service's code, design, and generated analytics are the intellectual property of the Service provider. Discord message content scanned by the Service remains the property of the original authors. The Service does not claim ownership over any user data or scanned Discord content.</p>
+
+<h2>6. Limitation of Liability</h2>
+<p>The Service is provided for informational purposes only. The provider makes no warranties regarding the accuracy, completeness, or usefulness of the analytics generated. The provider shall not be liable for any damages arising from the use or inability to use the Service, including but not limited to direct, indirect, incidental, or consequential damages.</p>
+
+<h2>7. Governing Law</h2>
+<p>These Terms shall be governed by and construed in accordance with the laws of Malta. Any disputes arising from these Terms or the use of the Service shall be subject to the exclusive jurisdiction of the courts of Malta. Users within the European Economic Area are additionally protected by the General Data Protection Regulation (GDPR).</p>
+
+<h2>8. Changes to Terms</h2>
+<p>The Service provider reserves the right to modify these Terms at any time. Continued use of the Service after changes constitutes acceptance of the new Terms. Users will be notified of material changes where reasonably possible.</p>
+
+<h2>9. Contact</h2>
+<p>For questions about these Terms, contact the Service administrator through the Service's hosting platform or the GitHub repository associated with the Service.</p>
+
+<p style="margin-top:40px;font-family:var(--font-mono);font-size:11px;color:var(--text-fnt)">Chicken Brûlée · Discord Playtest Scanner · Work in Progress</p>
+</div>
+</body>
+</html>
