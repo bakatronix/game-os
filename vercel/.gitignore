@@ -9,3 +9,8 @@ next-env.d.ts
 
 .agents/
 skills-lock.json
+
+tests/.auth/
+test-results/
+playwright-report/
+.playwright/

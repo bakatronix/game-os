@@ -13,7 +13,13 @@
     "oauth": "node scripts/oauth.mjs",
     "dns:plan": "node scripts/dns-cloudflare.mjs --dry-run",
     "dns:apply": "node scripts/dns-cloudflare.mjs",
-    "verify": "node scripts/verify.mjs"
+    "verify": "node scripts/verify.mjs",
+    "worker:deploy": "node scripts/worker-deploy.mjs",
+    "test": "node tests/run-all.mjs",
+    "test:health": "node tests/agent-health.mjs",
+    "test:oauth": "node tests/agent-oauth.mjs",
+    "test:browser": "playwright test",
+    "test:session": "node tests/save-session.mjs"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.7.4",
@@ -26,6 +32,7 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.0",
     "@types/node": "^22.10.7",
     "@types/react": "^19.0.7",
     "@types/react-dom": "^19.0.3",
