@@ -107,6 +107,33 @@ async function main() {
       "gameLink" TEXT,
       "createdAt" TIMESTAMP NOT NULL DEFAULT now()
     )`,
+    `CREATE TABLE IF NOT EXISTS "design_partner" (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      "userId" TEXT REFERENCES "user"(id) ON DELETE SET NULL,
+      "studioName" TEXT NOT NULL,
+      contact TEXT,
+      game TEXT,
+      "steamPageUrl" TEXT,
+      "devStage" TEXT,
+      "recruitedVia" TEXT,
+      "dateJoined" TIMESTAMP DEFAULT now(),
+      "toolsUsed" TEXT,
+      "quotePermission" TEXT DEFAULT 'n',
+      status TEXT DEFAULT 'active',
+      validating TEXT,
+      "createdAt" TIMESTAMP NOT NULL DEFAULT now()
+    )`,
+    `CREATE TABLE IF NOT EXISTS "discord_snapshot" (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      "snapshotDate" TIMESTAMP NOT NULL DEFAULT now(),
+      "memberCount" INTEGER,
+      "newJoins" INTEGER,
+      leaves INTEGER,
+      "activeMembers" INTEGER,
+      "messagesCount" INTEGER,
+      "playNightAttendance" INTEGER,
+      granularity TEXT DEFAULT 'daily'
+    )`,
     // Seed the app registry with the tools we serve today (public-first).
     `INSERT INTO "app" (id, name, path, access, version, "sortOrder") VALUES
       ('dashboard', 'Dashboard', '/game-os', 'authenticated', '1', 0),

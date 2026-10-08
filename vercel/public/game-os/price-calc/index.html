@@ -530,6 +530,7 @@
     .nav-select { width: 100%; }
   }
 </style>
+<script src="/track.js" data-tool="price-calc" data-version="1"></script>
 </head>
 <body>
 
@@ -4603,6 +4604,63 @@ function runSelfTest() {
 }
 
 if (location.search && location.search.indexOf('selftest=1') !== -1) { runSelfTest(); }
+</script>
+<script>
+/* Game OS instrumentation — price-calc journey (Jay's spec):
+   inputs_entered -> result_viewed -> result_actioned, plus output_action. */
+(function () {
+  if (typeof window.gosTrack !== 'function') return;
+  var startedAt = Date.now();
+  var S = { entered: false, viewed: false, actioned: false };
+
+  function once(key, fn) { if (!S[key]) { S[key] = true; fn(); } }
+  function on(target, type, fn) {
+    document.addEventListener(type, function (e) {
+      if (!target || target.contains(e.target)) fn(e);
+    }, true);
+  }
+
+  // inputs_entered — first meaningful input anywhere in the form
+  on(document, 'change', function () {
+    once('entered', function () { window.gosTrack('inputs_entered', {}); });
+  });
+  on(document, 'input', function () {
+    once('entered', function () { window.gosTrack('inputs_entered', {}); });
+  });
+
+  // result_viewed — the first time a pricing result is rendered
+  var mo = new MutationObserver(function () {
+    var out = document.getElementById('pricing-outputs');
+    if (out && out.textContent && out.textContent.trim().length > 40) {
+      once('viewed', function () {
+        window.gosTrack('journey_step', { step_name: 'result_viewed', step_index: 2 });
+        window.gosTrack('result_viewed', {});
+        window.gosTrack('journey_complete', { duration_seconds: Math.round((Date.now() - startedAt) / 1000) });
+      });
+    }
+  });
+  mo.observe(document.body, { childList: true, subtree: true });
+
+  // result_actioned + output_action — PDF, share link, workbook save
+  var pdf = document.getElementById('pdf-btn');
+  if (pdf) pdf.addEventListener('click', function () {
+    once('actioned', function () { window.gosTrack('result_actioned', {}); });
+    window.gosTrack('output_action', { action: 'export' });
+  });
+  var link = document.getElementById('copy-link-btn');
+  if (link) link.addEventListener('click', function () {
+    once('actioned', function () { window.gosTrack('result_actioned', {}); });
+    window.gosTrack('output_action', { action: 'share' });
+  });
+  var save = document.getElementById('save-workbook-btn');
+  if (save) save.addEventListener('click', function () {
+    once('actioned', function () { window.gosTrack('result_actioned', {}); });
+    window.gosTrack('output_action', { action: 'save' });
+  });
+
+  // tool_session_start + return_session signal
+  window.gosTrack('tool_session_start', { entry_source: document.referrer || null });
+})();
 </script>
 </body>
 </html>
