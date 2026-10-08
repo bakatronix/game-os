@@ -79,6 +79,8 @@ export const studios = pgTable("studio", {
   ownerId: text("ownerId")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
+  // A personal studio is auto-created for solo users; it is not a "team".
+  isPersonal: integer("isPersonal").notNull().default(0),
   createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
 });
 
@@ -98,6 +100,20 @@ export const memberships = pgTable(
     pk: primaryKey({ columns: [m.studioId, m.userId] }),
   }),
 );
+
+export const invitations = pgTable("invitation", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  studioId: uuid("studioId")
+    .notNull()
+    .references(() => studios.id, { onDelete: "cascade" }),
+  email: text("email").notNull(),
+  role: text("role").notNull().default("viewer"), // viewer | editor | owner
+  token: text("token").notNull().unique(),
+  invitedBy: text("invitedBy").references(() => users.id, { onDelete: "set null" }),
+  status: text("status").notNull().default("pending"), // pending | accepted | revoked
+  expiresAt: timestamp("expiresAt", { mode: "date" }),
+  createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
+});
 
 export const games = pgTable("game", {
   id: uuid("id").primaryKey().defaultRandom(),

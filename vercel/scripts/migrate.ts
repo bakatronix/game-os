@@ -59,11 +59,23 @@ async function main() {
       "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
       PRIMARY KEY ("studioId", "userId")
     )`,
+    `ALTER TABLE "studio" ADD COLUMN IF NOT EXISTS "isPersonal" INTEGER NOT NULL DEFAULT 0`,
     `CREATE TABLE IF NOT EXISTS "game" (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       "studioId" UUID NOT NULL REFERENCES "studio"(id) ON DELETE CASCADE,
       title TEXT NOT NULL,
       "steamAppId" TEXT,
+      "createdAt" TIMESTAMP NOT NULL DEFAULT now()
+    )`,
+    `CREATE TABLE IF NOT EXISTS "invitation" (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      "studioId" UUID NOT NULL REFERENCES "studio"(id) ON DELETE CASCADE,
+      email TEXT NOT NULL,
+      role TEXT NOT NULL DEFAULT 'viewer',
+      token TEXT NOT NULL UNIQUE,
+      "invitedBy" TEXT REFERENCES "user"(id) ON DELETE SET NULL,
+      status TEXT NOT NULL DEFAULT 'pending',
+      "expiresAt" TIMESTAMP,
       "createdAt" TIMESTAMP NOT NULL DEFAULT now()
     )`,
     `CREATE TABLE IF NOT EXISTS "app" (
