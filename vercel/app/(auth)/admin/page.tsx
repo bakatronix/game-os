@@ -4,7 +4,11 @@ import { auth } from "@/auth";
 import { getDb } from "@/db";
 import { apps, games, memberships, studios, users } from "@/db/schema";
 import { eq, asc, and } from "drizzle-orm";
-import { hasStudioRole } from "@/lib/studio";
+import {
+  hasStudioRole,
+  createInvitation,
+  getInvitationsForStudio,
+} from "@/lib/studio";
 import GosShell from "@/components/GosShell";
 
 export default async function AdminPage() {
@@ -43,6 +47,8 @@ export default async function AdminPage() {
     .select()
     .from(games)
     .where(eq(games.studioId, studioId));
+
+  const pendingInvites = await getInvitationsForStudio(studioId);
 
   return (
     <GosShell title="Admin" active="admin">
@@ -105,6 +111,66 @@ export default async function AdminPage() {
             )}
           </div>
         ))}
+
+        {canAdmin && (
+          <form
+            action={async (formData: FormData) => {
+              "use server";
+              const email = String(formData.get("email") || "").trim();
+              const role = String(formData.get("role") || "viewer");
+              if (email) {
+                await createInvitation(
+                  studioId,
+                  email,
+                  role,
+                  session!.user.id,
+                );
+              }
+              revalidatePath("/admin");
+            }}
+            style={{ marginTop: 16, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "flex-end" }}
+          >
+            <div className="gos-field" style={{ marginBottom: 0 }}>
+              <label className="gos-label">Invite by email</label>
+              <input
+                className="gos-input"
+                type="email"
+                name="email"
+                placeholder="teammate@studio.com"
+                required
+              />
+            </div>
+            <select name="role" className="gos-input" style={{ maxWidth: 120 }}>
+              <option value="viewer">viewer</option>
+              <option value="editor">editor</option>
+              <option value="owner">owner</option>
+            </select>
+            <button className="gos-btn" type="submit">
+              Send invite
+            </button>
+          </form>
+        )}
+
+        {pendingInvites.length > 0 && (
+          <div style={{ marginTop: 16 }}>
+            <div className="gos-label">Pending invitations</div>
+            {pendingInvites.map((inv) => (
+              <div className="gos-row" key={inv.id}>
+                <span>
+                  {inv.email} <span className="gos-muted">as {inv.role}</span>
+                </span>
+                <span style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <code className="gos-muted" style={{ fontSize: 12 }}>
+                    /invite/{inv.token.slice(0, 10)}…
+                  </code>
+                  <a className="gos-btn ghost" href={`/invite/${inv.token}`}>
+                    Open link
+                  </a>
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="gos-card">
