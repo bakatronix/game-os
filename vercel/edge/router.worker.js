@@ -22,10 +22,14 @@ export default {
 
     const routeApi = (env.ROUTE_API ?? "true") === "true";
 
+    // App pages served by the Next.js app (not the marketing site).
+    const APP_PREFIXES = ["/login", "/account", "/admin", "/invite", "/_next"];
+
     const toVercel =
       path === "/game-os" ||
       path.startsWith("/game-os/") ||
-      (routeApi && (path === "/api" || path.startsWith("/api/")));
+      (routeApi && (path === "/api" || path.startsWith("/api/"))) ||
+      APP_PREFIXES.some((p) => path === p || path.startsWith(p + "/"));
 
     if (toVercel) {
       const origin = env.VERCEL_ORIGIN;
