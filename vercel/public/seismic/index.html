@@ -64,5 +64,47 @@ mc.innerHTML += '<p>' + (typeof THESIS !== 'undefined' ? '✓ THESIS OK' : '✗ 
 <script>
 mc.innerHTML += '<p>' + (typeof navigate !== 'undefined' ? '✓ app.js OK' : '✗ app.js FAILED') + '</p>';
 </script>
+<script>
+/* Game OS instrumentation — seismic journey:
+   stage_entered -> tool_opened -> gate_decision -> thesis_revised */
+(function () {
+  if (typeof window.gosTrack !== 'function') return;
+  window.gosTrack('tool_session_start', { entry_source: document.referrer || null });
+
+  if (typeof window.navigateStage === 'function') {
+    var origStage = window.navigateStage;
+    window.navigateStage = function (stage) {
+      window.gosTrack('journey_step', { step_name: 'stage_entered', step_index: 1, stage: stage });
+      return origStage.apply(this, arguments);
+    };
+  }
+  if (typeof window.navigate === 'function') {
+    var origNav = window.navigate;
+    window.navigate = function (screen) {
+      window.gosTrack('journey_step', { step_name: 'tool_opened', step_index: 2, screen: screen });
+      return origNav.apply(this, arguments);
+    };
+  }
+  if (typeof window.handleGateDecision === 'function') {
+    var origGate = window.handleGateDecision;
+    window.handleGateDecision = function (stage, decision) {
+      window.gosTrack('gate_decision', { stage: stage, decision: decision });
+      if (decision === 'revise') {
+        window.gosTrack('thesis_revised', { stage: stage });
+      }
+      window.gosTrack('journey_complete', { stage: stage, decision: decision });
+      return origGate.apply(this, arguments);
+    };
+  }
+  if (typeof window.handleTerminalGate === 'function') {
+    var origTerm = window.handleTerminalGate;
+    window.handleTerminalGate = function (decision) {
+      window.gosTrack('gate_decision', { stage: 8, decision: decision, terminal: true });
+      window.gosTrack('journey_complete', { stage: 8, decision: decision, terminal: true });
+      return origTerm.apply(this, arguments);
+    };
+  }
+})();
+</script>
 </body>
 </html>

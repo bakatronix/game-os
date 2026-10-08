@@ -13,6 +13,57 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="assets/app.js?v=4"></script>
 <script src="/track.js" data-tool="chicken-brulee" data-version="1"></script>
+<script>
+/* Game OS instrumentation — chicken-brulee journey:
+   config_saved -> scan_run -> observations_reviewed */
+(function () {
+  if (typeof window.gosTrack !== 'function') return;
+  var startedAt = Date.now();
+  var S = { config: false, scan: false, viewed: false };
+
+  // config_saved — detect the bot_configs write (update/insert)
+  document.addEventListener('click', function (e) {
+    var t = (e.target && e.target.textContent || '').toLowerCase();
+    if (/save|connect/.test(t) && !S.config) {
+      S.config = true;
+      window.gosTrack('journey_step', { step_name: 'config_saved', step_index: 1 });
+    }
+  }, true);
+
+  // scan_run — Scan Now button; observations_reviewed when the dashboard fills
+  document.addEventListener('click', function (e) {
+    var id = e.target && e.target.id;
+    if (id === 'btnScan' && !S.scan) {
+      S.scan = true;
+      window.gosTrack('journey_step', { step_name: 'scan_run', step_index: 2 });
+    }
+  }, true);
+
+  var mo = new MutationObserver(function () {
+    var root = document.getElementById('app-root');
+    var txt = root && root.textContent || '';
+    if (txt.indexOf('classified messages') !== -1 && /\d/.test(txt)) {
+      if (!S.viewed) {
+        S.viewed = true;
+        window.gosTrack('journey_step', { step_name: 'observations_reviewed', step_index: 3 });
+        window.gosTrack('journey_complete', { duration_seconds: Math.round((Date.now() - startedAt) / 1000) });
+      }
+    }
+  });
+  mo.observe(document.body, { childList: true, subtree: true });
+
+  document.addEventListener('click', function (e) {
+    var t = (e.target && e.target.textContent || '').toLowerCase();
+    if (/export|download|share|copy/.test(t) && S.viewed) {
+      window.gosTrack('output_action', {
+        action: /export|download/.test(t) ? 'export' : (/share/.test(t) ? 'share' : 'copy'),
+      });
+    }
+  }, true);
+
+  window.gosTrack('tool_session_start', { entry_source: document.referrer || null });
+})();
+</script>
 </head>
 <body>
 <div id="app-root"></div>

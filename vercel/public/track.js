@@ -92,6 +92,22 @@
     schedule();
   }
 
+  // return_session — detect a prior visit for this browser
+  try {
+    var visits = parseInt(localStorage.getItem("gos_visits") || "0", 10);
+    var last = parseInt(localStorage.getItem("gos_last_seen") || "0", 10);
+    if (visits >= 1) {
+      track("return_session", {
+        session_number: visits + 1,
+        days_since_last: last ? Math.round((Date.now() - last) / 864e5) : null,
+      });
+    }
+    localStorage.setItem("gos_visits", String(visits + 1));
+    localStorage.setItem("gos_last_seen", String(Date.now()));
+  } catch (e) {
+    /* storage blocked — skip */
+  }
+
   // page_view on load
   track("page_view", { path: location.pathname });
   window.addEventListener("visibilitychange", function () {
