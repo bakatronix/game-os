@@ -55,6 +55,29 @@ async function head(url) {
   }
 }
 
+/** Fetch forcing the name to an IP (bypasses stale local resolver cache). */
+function headVia(url, ip) {
+  try {
+    const out = execSync(
+      `curl -sI -m 20 --resolve "${new URL(url).hostname}:443:${ip}" "${url}"`,
+      { stdio: ["ignore", "pipe", "pipe"] },
+    ).toString();
+    const h = (name) => {
+      const m = out.match(new RegExp(`^${name}:\\s*(.+)$`, "im"));
+      return m ? m[1].trim() : "";
+    };
+    const statusM = out.match(/^HTTP\/[\d.]+ (\d+)/m);
+    return {
+      status: statusM ? Number(statusM[1]) : 0,
+      server: h("server"),
+      vercel: h("x-vercel-id"),
+      cfRay: h("cf-ray"),
+    };
+  } catch {
+    return { status: 0, server: "", vercel: "", cfRay: "" };
+  }
+}
+
 const results = [];
 function record(label, pass, detail) {
   results.push({ label, pass, detail });
@@ -86,25 +109,31 @@ async function main() {
     onCloudflare ? ns.split("\n")[0] : "still GoDaddy — cutover not done",
   );
 
+  // Resolve the apex to its current IP (authoritative via DoH) so checks are
+  // not fooled by a stale local resolver cache.
+  const apexIpMatch = (await doh(DOMAIN, "A")).match(/[\d.]+/);
+  const apexIp = apexIpMatch ? apexIpMatch[0] : "68.65.120.165";
+  info(`apex -> ${apexIp} (bypassing local DNS cache)`);
+
   // 2 — site paths still on Namecheap
   console.log("\nMarketing site + content (must stay on Namecheap)");
   const paths = ["/", "/Data/Index/", "/press/"];
   for (const p of paths) {
-    const r = await head(`https://${DOMAIN}${p}`);
-    const code = r.status ?? "ERR";
+    const r = headVia(`https://${DOMAIN}${p}`, apexIp);
+    const code = r.status ?? 0;
     record(
       `${p}`,
       code === 200 || code === 301 || code === 302,
-      `${code}${r.vercel ? " (VERCEL!)" : ""}`,
+      `${code || "ERR"}${r.vercel ? " (VERCEL!)" : ""}`,
     );
   }
 
   // 3 — game-os served by Vercel
   console.log("\nGame OS (target: Vercel)");
-  const g = await head(`https://${DOMAIN}/game-os/`);
-  const code = g.status ?? "ERR";
+  const g = headVia(`https://${DOMAIN}/game-os/`, apexIp);
+  const code = g.status ?? 0;
   const viaVercel = !!g.vercel || /vercel/i.test(g.server);
-  record("/game-os/ reachable", code === 200 || code === 307 || code === 302, `${code}`);
+  record("/game-os/ reachable", code === 200 || code === 307 || code === 308 || code === 302, `${code || "ERR"}`);
   record(
     "/game-os/ served by Vercel",
     viaVercel,
@@ -118,7 +147,7 @@ async function main() {
     const d = await head(`https://${env.VERCEL_ORIGIN}/game-os/`);
     record(
       `${env.VERCEL_ORIGIN}/game-os/`,
-      d.status === 200 || d.status === 307,
+      [200, 307, 308, 302].includes(d.status ?? 0),
       `${d.status ?? "ERR"}`,
     );
   }

@@ -10,9 +10,9 @@
  *   everything   -> Namecheap origin (68.65.120.165)
  *
  * Config via Worker env vars:
- *   VERCEL_ORIGIN   e.g. "game-os-xxxx.vercel.app"  (no scheme)
+ *   VERCEL_ORIGIN    e.g. "game-os-xxxx.vercel.app"  (no scheme)
  *   NAMECHEAP_ORIGIN e.g. "68.65.120.165"
- *   ROUTE_API       "true" | "false"  (default true)
+ *   ROUTE_API        "true" | "false"  (default true)
  */
 
 export default {
@@ -27,24 +27,43 @@ export default {
       path.startsWith("/game-os/") ||
       (routeApi && (path === "/api" || path.startsWith("/api/")));
 
-    const origin = toVercel ? env.VERCEL_ORIGIN : env.NAMECHEAP_ORIGIN;
-    if (!origin) {
-      return new Response("Edge router misconfigured (missing origin)", {
-        status: 500,
-      });
+    if (toVercel) {
+      const origin = env.VERCEL_ORIGIN;
+      if (!origin) return misconfigured();
+      // Vercel only accepts its own host. Rewrite Host to the Vercel host and
+      // pass the public host via X-Forwarded-Host so Auth.js (AUTH_URL=
+      // https://llamagriffin.com, trust host) builds correct public URLs.
+      const target = new URL(request.url);
+      target.protocol = "https:";
+      target.hostname = origin.replace(/^https?:\/\//, "");
+      const proxied = new Request(target.toString(), request);
+      proxied.headers.set("Host", target.host);
+      proxied.headers.set("X-Forwarded-Host", url.host);
+      proxied.headers.set("X-Forwarded-Proto", "https");
+      return fetch(proxied, { redirect: "manual" });
     }
 
-    // Rewrite the request to the chosen origin, preserving method/body/headers.
-    const target = new URL(request.url);
-    target.protocol = "https:";
-    target.hostname = origin.replace(/^https?:\/\//, "");
-
-    const proxied = new Request(target.toString(), request);
-    // Host header must be the origin's host, not llamagriffin.com.
-    proxied.headers.set("Host", target.host);
-    // Tell Vercel which public host this came in as (for OAuth/cookie origin).
+    // Everything else -> the Namecheap origin. Connect to the origin IP while
+    // presenting SNI/Host as llamagriffin.com (its TLS cert is valid only for
+    // that name). resolveOverride avoids looping back through the proxy.
+    const originIp = env.NAMECHEAP_ORIGIN;
+    if (!originIp) return misconfigured();
+    const proxied = new Request(request);
+    proxied.headers.set("Host", url.host);
     proxied.headers.set("X-Forwarded-Host", url.host);
-
-    return fetch(proxied);
+    proxied.headers.set("X-Forwarded-Proto", "https");
+    return fetch(request.url, {
+      method: request.method,
+      headers: proxied.headers,
+      body: request.body,
+      redirect: "manual",
+      cf: { resolveOverride: originIp, cacheEverything: false },
+    });
   },
 };
+
+function misconfigured() {
+  return new Response("Edge router misconfigured (missing origin)", {
+    status: 500,
+  });
+}
