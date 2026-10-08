@@ -22,8 +22,16 @@ export default {
 
     const routeApi = (env.ROUTE_API ?? "true") === "true";
 
-    // App pages served by the Next.js app (not the marketing site).
-    const APP_PREFIXES = ["/login", "/account", "/admin", "/invite", "/_next"];
+    // App pages + tools served by the Next.js app (not the marketing site).
+    const APP_PREFIXES = [
+      "/login",
+      "/account",
+      "/admin",
+      "/invite",
+      "/_next",
+      "/seismic",
+      "/track.js",
+    ];
 
     const toVercel =
       path === "/game-os" ||
