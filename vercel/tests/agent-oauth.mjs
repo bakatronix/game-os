@@ -52,6 +52,19 @@ describe("Google OAuth mechanics", (t) => {
     assert([302, 303, 307].includes(r.status), `status ${r.status}`);
     assert(/accounts\.google\.com/.test(r.location), `provider redirect (${r.location})`);
   });
+  t.it("signin issues a PKCE code_verifier cookie scoped to the public domain", async () => {
+    const { token, jar } = await getCsrf();
+    const r = await http(`${BASE}/api/auth/signin/google`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded", Cookie: jar.map((c) => c.split(";")[0]).join("; ") },
+      body: `csrfToken=${encodeURIComponent(token)}&callbackUrl=${encodeURIComponent(BASE + "/game-os")}`,
+    });
+    const cookies = r.setCookie || [];
+    const pkce = cookies.find((c) => /pkce\.code_verifier/.test(c));
+    assert(pkce, "pkce.code_verifier cookie set");
+    const apex = "." + new URL(BASE).hostname.split(".").slice(-2).join(".");
+    assert(new RegExp(`Domain=${apex.replace(".", "\\.")}`, "i").test(pkce), `cookie domain is ${apex} (got ${pkce})`);
+  });
   t.it("google redirect carries the correct client_id + redirect_uri", async () => {
     const { token, jar } = await getCsrf();
     const r = await http(`${BASE}/api/auth/signin/google`, {

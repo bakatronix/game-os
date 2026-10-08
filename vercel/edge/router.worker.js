@@ -42,17 +42,31 @@ export default {
     if (toVercel) {
       const origin = env.VERCEL_ORIGIN;
       if (!origin) return misconfigured();
-      // Vercel only accepts its own host. Rewrite Host to the Vercel host and
-      // pass the public host via X-Forwarded-Host so Auth.js (AUTH_URL=
-      // https://llamagriffin.com, trust host) builds correct public URLs.
+      // Vercel only accepts its own host, so we rewrite Host to the Vercel
+      // host. Next.js Server Actions additionally compare x-forwarded-host
+      // with the Origin header and abort on mismatch — so Origin/Referer and
+      // x-forwarded-host must ALL be the Vercel host. Public URLs are still
+      // correct because Auth.js uses AUTH_URL=https://llamagriffin.com.
       const target = new URL(request.url);
       target.protocol = "https:";
       target.hostname = origin.replace(/^https?:\/\//, "");
       const proxied = new Request(target.toString(), request);
       proxied.headers.set("Host", target.host);
-      proxied.headers.set("X-Forwarded-Host", url.host);
+      proxied.headers.set("X-Forwarded-Host", target.host);
       proxied.headers.set("X-Forwarded-Proto", "https");
-      return fetch(proxied, { redirect: "manual" });
+
+      const originHeader = request.headers.get("Origin");
+      if (originHeader) proxied.headers.set("Origin", `https://${target.host}`);
+      const referer = request.headers.get("Referer");
+      if (referer) {
+        try {
+          const r = new URL(referer);
+          r.host = target.host;
+          proxied.headers.set("Referer", r.toString());
+        } catch {}
+      }
+      const res = await fetch(proxied, { redirect: "manual" });
+      return rewriteUpstream(res, target.host, url.host);
     }
 
     // Everything else -> the Namecheap origin. Connect to the origin IP while
@@ -77,5 +91,44 @@ export default {
 function misconfigured() {
   return new Response("Edge router misconfigured (missing origin)", {
     status: 500,
+  });
+}
+
+/**
+ * Rewrite the upstream (Vercel host) response so it behaves as if it came from
+ * the public host (llamagriffin.com):
+ *  - Location headers -> public host
+ *  - Set-Cookie: strip __Host- / __Secure- prefixes (invalid once we add a
+ *    Domain) and set Domain=.llamagriffin.com so the browser sends them back
+ *    to the proxied app on every request (PKCE/CSRF/session cookies).
+ */
+function rewriteUpstream(res, fromHost, toHost) {
+  const headers = new Headers(res.headers);
+
+  const loc = headers.get("Location");
+  if (loc && loc.includes(fromHost)) {
+    headers.set("Location", loc.replaceAll(fromHost, toHost));
+  }
+
+  const cookies = res.headers.getSetCookie ? res.headers.getSetCookie() : [];
+  if (cookies.length) {
+    headers.delete("Set-Cookie");
+    const apex = ".".concat(toHost.split(".").slice(-2).join("."));
+    for (const c of cookies) {
+      // Strip __Host-/__Secure- prefixes (invalid with a Domain) and normalise
+      // the Domain to the public apex so the browser sends them back.
+      let out = c
+        .replace(/^__Host-/, "")
+        .replace(/^__Secure-/, "")
+        .replace(/;\s*Domain=[^;]*/gi, "");
+      out += `; Domain=${apex}`;
+      headers.append("Set-Cookie", out);
+    }
+  }
+
+  return new Response(res.body, {
+    status: res.status,
+    statusText: res.statusText,
+    headers,
   });
 }

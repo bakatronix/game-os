@@ -5,6 +5,20 @@ import { users, accounts, sessions, verificationTokens } from "@/db/schema";
 import authConfig from "@/auth.config";
 import { ensureStudioForUser } from "@/lib/studio";
 
+// The app runs behind a Cloudflare Worker that rewrites Host to the Vercel
+// host, so Auth.js cannot see llamagriffin.com. We pin the cookie domain to
+// the public apex and drop the __Host-/__Secure- prefixes (which require the
+// exact request host). This keeps CSRF/PKCE/session cookies scoped to the
+// public site across the proxy.
+const COOKIE_DOMAIN = process.env.AUTH_COOKIE_DOMAIN || ".llamagriffin.com";
+const baseCookie = {
+  httpOnly: true,
+  sameSite: "lax" as const,
+  path: "/",
+  secure: true,
+  domain: COOKIE_DOMAIN,
+};
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   adapter: DrizzleAdapter(getDb(), {
@@ -13,6 +27,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     sessionsTable: sessions,
     verificationTokensTable: verificationTokens,
   }),
+  cookies: {
+    sessionToken: { name: "authjs.session-token", options: baseCookie },
+    callbackUrl: { name: "authjs.callback-url", options: baseCookie },
+    csrfToken: { name: "authjs.csrf-token", options: baseCookie },
+    pkceCodeVerifier: { name: "authjs.pkce.code_verifier", options: baseCookie },
+    state: { name: "authjs.state", options: baseCookie },
+    nonce: { name: "authjs.nonce", options: baseCookie },
+  },
   callbacks: {
     ...authConfig.callbacks,
     async jwt({ token, user, trigger }) {
