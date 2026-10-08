@@ -471,6 +471,30 @@
     }
   }
 
+  /* ============================================================
+     Session — unified identity (GET /api/me)
+     ============================================================ */
+
+  function loadSession() {
+    fetch('/api/me', { credentials: 'same-origin' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (data) {
+        if (!data || !data.user) return;
+        var info = document.getElementById('sessionInfo');
+        var acct = document.getElementById('accountLink');
+        var label = data.user.studioName || data.user.name || data.user.email || '';
+        if (info && label) {
+          info.textContent = label;
+          info.hidden = false;
+        }
+        if (acct) acct.hidden = false;
+      })
+      .catch(function () { /* signed out — header stays as-is */ });
+  }
+
   window.addEventListener('hashchange', route);
-  window.addEventListener('DOMContentLoaded', route);
+  window.addEventListener('DOMContentLoaded', function () {
+    route();
+    loadSession();
+  });
 })();

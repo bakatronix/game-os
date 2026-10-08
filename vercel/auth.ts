@@ -3,6 +3,7 @@ import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { getDb } from "@/db";
 import { users, accounts, sessions, verificationTokens } from "@/db/schema";
 import authConfig from "@/auth.config";
+import { ensureStudioForUser } from "@/lib/studio";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
@@ -13,15 +14,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     verificationTokensTable: verificationTokens,
   }),
   callbacks: {
-    async jwt({ token, user }) {
+    ...authConfig.callbacks,
+    async jwt({ token, user, trigger }) {
       if (user) token.id = user.id;
-      return token;
-    },
-    async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id as string;
+
+      // Resolve the user's studio + role onto the token on sign-in or when
+      // explicitly refreshed (session.update()). Kept off the hot path.
+      const needsStudio = (user || trigger === "update") && token.id;
+      if (needsStudio) {
+        try {
+          const { studioId, studioName, role } = await ensureStudioForUser(
+            token.id as string,
+            (user?.name as string) || null,
+          );
+          token.studioId = studioId;
+          token.studioName = studioName;
+          token.role = role;
+        } catch (err) {
+          console.error("[auth] studio resolution failed", err);
+        }
       }
-      return session;
+      return token;
     },
   },
 });

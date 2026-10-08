@@ -1,9 +1,22 @@
 import type { Metadata } from "next";
+import { Archivo, Source_Sans_3 } from "next/font/google";
+import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Game OS",
   description: "Llama & Griffin operator surface for indie studio executives.",
 };
+
+const archivo = Archivo({
+  subsets: ["latin"],
+  weight: ["700", "800"],
+  variable: "--font-display",
+});
+const sourceSans = Source_Sans_3({
+  subsets: ["latin"],
+  weight: ["400", "500", "700"],
+  variable: "--font-sans",
+});
 
 export default function RootLayout({
   children,
@@ -11,18 +24,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body
-        style={{
-          margin: 0,
-          fontFamily:
-            '"Archivo", "Arial Black", system-ui, sans-serif',
-          background: "#f0e3c3",
-          color: "#2f2a20",
-        }}
-      >
-        {children}
-      </body>
+    <html lang="en" className={`${archivo.variable} ${sourceSans.variable}`}>
+      <body>{children}</body>
     </html>
   );
 }
