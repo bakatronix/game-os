@@ -184,7 +184,7 @@ export const designPartners = pgTable("design_partner", {
   studioName: text("studioName").notNull(),
   contact: text("contact"),
   game: text("game"),
-  steamPageUrl: text("steam_page_url"),
+  steamPageUrl: text("steamPageUrl"),
   devStage: text("devStage"),
   recruitedVia: text("recruitedVia"), // ring1 | ring2 | content | other
   dateJoined: timestamp("dateJoined", { mode: "date" }).defaultNow(),

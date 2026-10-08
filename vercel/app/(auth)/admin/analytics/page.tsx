@@ -53,7 +53,7 @@ export default async function AnalyticsPage() {
   );
 
   return (
-    <GosShell title="Analytics" active="admin">
+    <GosShell title="Analytics" active="admin" subnav="funnel">
       <div className="gos-card">
         <h2>Funnel (unique actors)</h2>
         <p className="gos-muted" style={{ marginTop: -4 }}>
