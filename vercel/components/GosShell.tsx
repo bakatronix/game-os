@@ -13,6 +13,7 @@ export default function GosShell({
     { key: "dashboard", href: "/game-os", label: "Dashboard" },
     { key: "account", href: "/account", label: "Account" },
     { key: "admin", href: "/admin", label: "Admin" },
+    { key: "admin", href: "/admin/analytics", label: "Analytics" },
   ];
   return (
     <div className="gos-shell">

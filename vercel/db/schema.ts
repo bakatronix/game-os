@@ -160,3 +160,34 @@ export const pii = pgTable("pii", {
   gameLink: text("gameLink"),
   createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
 });
+
+/* Layer 3 — design partner records (manual, maintained by Jay). */
+export const designPartners = pgTable("design_partner", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("userId").references(() => users.id, { onDelete: "set null" }),
+  studioName: text("studioName").notNull(),
+  contact: text("contact"),
+  game: text("game"),
+  steamPageUrl: text("steam_page_url"),
+  devStage: text("devStage"),
+  recruitedVia: text("recruitedVia"), // ring1 | ring2 | content | other
+  dateJoined: timestamp("dateJoined", { mode: "date" }).defaultNow(),
+  toolsUsed: text("toolsUsed"), // JSON array
+  quotePermission: text("quotePermission").default("n"), // y | n
+  status: text("status").default("active"), // active | dormant | churned
+  validating: text("validating"),
+  createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
+});
+
+/* Layer 4 — Discord engagement snapshots. */
+export const discordSnapshots = pgTable("discord_snapshot", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  snapshotDate: timestamp("snapshotDate", { mode: "date" }).defaultNow().notNull(),
+  memberCount: integer("memberCount"),
+  newJoins: integer("newJoins"),
+  leaves: integer("leaves"),
+  activeMembers: integer("activeMembers"),
+  messagesCount: integer("messagesCount"),
+  playNightAttendance: integer("playNightAttendance"),
+  granularity: text("granularity").default("daily"), // daily | weekly
+});
