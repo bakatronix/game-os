@@ -108,3 +108,55 @@ export const games = pgTable("game", {
   steamAppId: text("steamAppId"),
   createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
 });
+
+/* ---------------------------------------------------------------------------
+   App registry — every tool/app Game OS serves, as data. Adding a future app
+   is one row, not a code change. `access` governs who can open it.
+--------------------------------------------------------------------------- */
+
+export const apps = pgTable("app", {
+  id: text("id").primaryKey(), // slug, e.g. "price-calc", "pmf", "seismic"
+  name: text("name").notNull(),
+  path: text("path").notNull(), // e.g. "/game-os/price-calc"
+  url: text("url"), // external tool URL if not served locally
+  access: text("access").notNull().default("public"), // public | authenticated | studio | role
+  minRole: text("minRole"), // when access = role: viewer | editor | owner
+  version: text("version"), // app_version stamped on events
+  icon: text("icon"),
+  sortOrder: integer("sortOrder").notNull().default(0),
+  enabled: integer("enabled").notNull().default(1), // 1 = shown
+  createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
+});
+
+/* ---------------------------------------------------------------------------
+   Instrumentation (Jay's spec). Raw events, one row each; metrics are
+   computed in the dashboard layer. PII is isolated from events.
+--------------------------------------------------------------------------- */
+
+export const events = pgTable("event", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  eventName: text("eventName").notNull(),
+  timestamp: timestamp("timestamp", { mode: "date" }).defaultNow().notNull(),
+  anonId: text("anonId"),
+  userId: text("userId").references(() => users.id, { onDelete: "set null" }),
+  sessionId: text("sessionId"),
+  toolId: text("toolId"),
+  appVersion: text("appVersion"),
+  utmSource: text("utmSource"),
+  utmMedium: text("utmMedium"),
+  utmCampaign: text("utmCampaign"),
+  referrer: text("referrer"),
+  props: text("props"), // JSON string of event-specific fields
+});
+
+/* Restricted PII — never exposed to the app or joined into dashboards. */
+export const pii = pgTable("pii", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("userId").references(() => users.id, { onDelete: "cascade" }),
+  anonId: text("anonId"),
+  email: text("email").notNull(),
+  studioName: text("studioName"),
+  devStage: text("devStage"),
+  gameLink: text("gameLink"),
+  createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
+});

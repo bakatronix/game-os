@@ -66,6 +66,55 @@ async function main() {
       "steamAppId" TEXT,
       "createdAt" TIMESTAMP NOT NULL DEFAULT now()
     )`,
+    `CREATE TABLE IF NOT EXISTS "app" (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      path TEXT NOT NULL,
+      url TEXT,
+      access TEXT NOT NULL DEFAULT 'public',
+      "minRole" TEXT,
+      version TEXT,
+      icon TEXT,
+      "sortOrder" INTEGER NOT NULL DEFAULT 0,
+      enabled INTEGER NOT NULL DEFAULT 1,
+      "createdAt" TIMESTAMP NOT NULL DEFAULT now()
+    )`,
+    `CREATE TABLE IF NOT EXISTS "event" (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      "eventName" TEXT NOT NULL,
+      "timestamp" TIMESTAMP NOT NULL DEFAULT now(),
+      "anonId" TEXT,
+      "userId" TEXT REFERENCES "user"(id) ON DELETE SET NULL,
+      "sessionId" TEXT,
+      "toolId" TEXT,
+      "appVersion" TEXT,
+      "utmSource" TEXT,
+      "utmMedium" TEXT,
+      "utmCampaign" TEXT,
+      referrer TEXT,
+      props TEXT
+    )`,
+    `CREATE INDEX IF NOT EXISTS event_name_ts_idx ON "event" ("eventName", "timestamp")`,
+    `CREATE INDEX IF NOT EXISTS event_anon_idx ON "event" ("anonId")`,
+    `CREATE INDEX IF NOT EXISTS event_user_idx ON "event" ("userId")`,
+    `CREATE TABLE IF NOT EXISTS "pii" (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      "userId" TEXT REFERENCES "user"(id) ON DELETE CASCADE,
+      "anonId" TEXT,
+      email TEXT NOT NULL,
+      "studioName" TEXT,
+      "devStage" TEXT,
+      "gameLink" TEXT,
+      "createdAt" TIMESTAMP NOT NULL DEFAULT now()
+    )`,
+    // Seed the app registry with the tools we serve today (public-first).
+    `INSERT INTO "app" (id, name, path, access, version, "sortOrder") VALUES
+      ('dashboard', 'Dashboard', '/game-os', 'authenticated', '1', 0),
+      ('price-calc', 'Pricing Calculator', '/game-os/price-calc', 'public', '1', 1),
+      ('chicken-brulee', 'Chicken Brûlée', '/game-os/chicken-brulee', 'public', '1', 2),
+      ('pmf', 'PMF Analyzer', '/game-os/PMF', 'public', '1', 3),
+      ('seismic', 'Seismic', '/seismic', 'public', '1', 4)
+    ON CONFLICT (id) DO NOTHING`,
   ];
 
   for (const s of statements) {
