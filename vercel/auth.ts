@@ -7,7 +7,6 @@ import { ensureStudioForUser } from "@/lib/studio";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
-  debug: true,
   adapter: DrizzleAdapter(getDb(), {
     usersTable: users,
     accountsTable: accounts,
