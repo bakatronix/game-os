@@ -1,6 +1,19 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // The app runs behind a Cloudflare Worker that proxies to the Vercel host.
+  // Vercel sets x-forwarded-host to the Vercel host, but the browser's Origin
+  // is llamagriffin.com. Allow the public origin so Server Actions (used by
+  // the Auth.js sign-in buttons) are not rejected.
+  experimental: {
+    serverActions: {
+      allowedOrigins: [
+        "llamagriffin.com",
+        "www.llamagriffin.com",
+        "game-os-seismic2.vercel.app",
+      ],
+    },
+  },
   async rewrites() {
     return [
       // ---- Static tools (served from /public) ----
