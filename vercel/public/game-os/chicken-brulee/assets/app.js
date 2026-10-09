@@ -46,7 +46,7 @@
           <h2>Chicken Brûlée</h2>
           <p class="auth-sub">Discord Playtest Scanner</p>
           <div id="auth-form"></div>
-          <p class="auth-footer">Your data is isolated. Each account sees only their own server.<br><a href="tos.html" style="color:var(--text-mut)">Terms</a> · <a href="privacy.html" style="color:var(--text-mut)">Privacy</a></p>
+          <p class="auth-footer">Your data is isolated. Each account sees only their own server.<br><a href="/game-os/chicken-brulee/tos.html" style="color:var(--text-mut)">Terms</a> · <a href="/game-os/chicken-brulee/privacy.html" style="color:var(--text-mut)">Privacy</a></p>
         </div>
       </div>`;
     showLoginForm();
@@ -110,7 +110,7 @@
       <div class="wrap" id="pageContent"></div>
       <footer style="border-top:1px solid var(--border);padding:24px 0;margin-top:40px"><div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;color:var(--text-fnt);font-size:12px;font-family:var(--font-mono)">
         <span>Chicken Brûlée · Discord Playtest Scanner</span>
-        <span><a href="tos.html" style="color:var(--text-mut)">Terms of Service</a> · <a href="privacy.html" style="color:var(--text-mut)">Privacy Policy</a> · <span id="footVersion">—</span></span>
+        <span><a href="/game-os/chicken-brulee/tos.html" style="color:var(--text-mut)">Terms of Service</a> · <a href="/game-os/chicken-brulee/privacy.html" style="color:var(--text-mut)">Privacy Policy</a> · <span id="footVersion">—</span></span>
       </div></footer>`;
 
     $("#btnLogout")?.addEventListener("click", () => supabase.auth.signOut());
