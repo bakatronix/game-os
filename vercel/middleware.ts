@@ -53,6 +53,15 @@ export default auth(async (req) => {
   const { pathname } = req.nextUrl;
   const isLoggedIn = !!req.auth;
 
+  // Never gate static assets or framework files — only the HTML pages.
+  if (
+    /\/(assets|_next|favicon\.ico|.*\.(?:js|css|svg|png|jpg|jpeg|gif|woff2?|map))$/i.test(
+      pathname,
+    )
+  ) {
+    return undefined;
+  }
+
   const gates = await getGates(req);
   const gate = matchGate(pathname, gates);
 

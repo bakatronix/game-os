@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=DM+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/seismic.css?v=6">
+<link rel="stylesheet" href="/seismic/css/seismic.css?v=6">
 <script src="/track.js" data-tool="seismic" data-version="1"></script>
 </head>
 <body>
@@ -54,13 +54,13 @@
 <script>
 document.getElementById('main-content').innerHTML = '<div style="padding:2rem"><h3 style="color:var(--gold)">Loading...</h3></div>';
 </script>
-<script src="js/data.js?v=6"></script>
+<script src="/seismic/js/data.js?v=6"></script>
 <script>
 var mc = document.getElementById('main-content');
 mc.innerHTML += '<p>' + (typeof GATE_LOG !== 'undefined' ? '✓ data.js OK' : '✗ data.js FAILED') + '</p>';
 mc.innerHTML += '<p>' + (typeof THESIS !== 'undefined' ? '✓ THESIS OK' : '✗ THESIS missing') + '</p>';
 </script>
-<script src="js/app.js?v=6"></script>
+<script src="/seismic/js/app.js?v=6"></script>
 <script>
 mc.innerHTML += '<p>' + (typeof navigate !== 'undefined' ? '✓ app.js OK' : '✗ app.js FAILED') + '</p>';
 </script>
