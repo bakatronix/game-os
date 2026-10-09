@@ -42,26 +42,26 @@ export default {
     if (toVercel) {
       const origin = env.VERCEL_ORIGIN;
       if (!origin) return misconfigured();
-      // Vercel only accepts its own host, so we rewrite Host to the Vercel
-      // host. Next.js Server Actions additionally compare x-forwarded-host
-      // with the Origin header and abort on mismatch — so Origin/Referer and
-      // x-forwarded-host must ALL be the Vercel host. Public URLs are still
-      // correct because Auth.js uses AUTH_URL=https://llamagriffin.com.
+      // Vercel routes by the Host header, which must be the Vercel host. But
+      // Auth.js builds the OAuth redirect_uri from X-Forwarded-Host, so that
+      // MUST be the PUBLIC host or Google's token exchange rejects it. Next.js
+      // Server Actions compare x-forwarded-host with Origin — both are the
+      // public host, so the check passes.
       const target = new URL(request.url);
       target.protocol = "https:";
       target.hostname = origin.replace(/^https?:\/\//, "");
       const proxied = new Request(target.toString(), request);
       proxied.headers.set("Host", target.host);
-      proxied.headers.set("X-Forwarded-Host", target.host);
+      proxied.headers.set("X-Forwarded-Host", url.host);
       proxied.headers.set("X-Forwarded-Proto", "https");
 
       const originHeader = request.headers.get("Origin");
-      if (originHeader) proxied.headers.set("Origin", `https://${target.host}`);
+      if (originHeader) proxied.headers.set("Origin", `https://${url.host}`);
       const referer = request.headers.get("Referer");
       if (referer) {
         try {
           const r = new URL(referer);
-          r.host = target.host;
+          r.host = url.host;
           proxied.headers.set("Referer", r.toString());
         } catch {}
       }
