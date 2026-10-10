@@ -34,29 +34,26 @@ test.describe("Auth gate", () => {
   });
 });
 
-test.describe("Tools render + instrument", () => {
+test.describe("Tools are gated + track.js is public", () => {
   const tools = [
-    ["/game-os/price-calc", /Pricing Dashboard|Indie Game Pricing/i],
-    ["/game-os/PMF", /PMF Analyzer/i],
-    ["/game-os/chicken-brulee", /Chicken Brûlée|Playtest/i],
-    ["/seismic", /Seismic/i],
+    "/game-os/price-calc",
+    "/game-os/PMF",
+    "/game-os/chicken-brulee",
+    "/game-os/steam-page-audit",
+    "/seismic",
   ];
-  for (const [path, re] of tools) {
-    test(`${path} loads and loads track.js`, async ({ page }) => {
-      const trackReq = page.waitForRequest((r) => /\/track\.js/.test(r.url()), { timeout: 15000 }).catch(() => null);
+  for (const path of tools) {
+    test(`${path} redirects anonymous users to /login`, async ({ page }) => {
       await page.goto(path, { waitUntil: "domcontentloaded" });
-      await expect(page).toHaveTitle(re, { timeout: 15000 });
-      expect(await trackReq).toBeTruthy();
+      await page.waitForURL(/\/login/, { timeout: 15000 });
+      expect(page.url()).toContain("/login");
     });
   }
 
-  test("price-calc emits a page_view event", async ({ page }) => {
-    const trackPost = page.waitForRequest(
-      (r) => /\/api\/track/.test(r.url()) && r.method() === "POST",
-      { timeout: 20000 },
-    ).catch(() => null);
-    await page.goto("/game-os/price-calc", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(3000);
-    expect(await trackPost).toBeTruthy();
+  test("track.js is public (200) and exposes gosTrack", async ({ request, baseURL }) => {
+    const res = await request.get(`${baseURL}/track.js`);
+    expect(res.status()).toBe(200);
+    const body = await res.text();
+    expect(body).toContain("gosTrack");
   });
 });

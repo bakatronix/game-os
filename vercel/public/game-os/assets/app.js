@@ -287,7 +287,8 @@
       '<div class="watching-item"><span class="watching-module">PMF:</span> 30 days post-launch, are acquisition, engagement, and satisfaction signals pointing toward product-market fit?</div>' +
       '</div>' +
       '<div class="sync-note">Last synced: 2m ago (demo)</div>' +
-      '</div>'
+      '</div>' +
+      '<div id="toolsSection"></div>'
     );
   }
 
@@ -472,6 +473,35 @@
   }
 
   /* ============================================================
+     Tools — registry-driven "More tools" grid (everything below the top 3)
+     ============================================================ */
+
+  function renderToolsGrid(apps) {
+    var el = document.getElementById('toolsSection');
+    if (!el) return;
+    var tools = apps.filter(function (a) {
+      return a.group === 'tools' && a.id !== 'dashboard';
+    });
+    if (!tools.length) {
+      el.innerHTML = '';
+      return;
+    }
+    var cards = tools
+      .map(function (a) {
+        return (
+          '<a class="ss-card tool-card" href="' + a.path + '">' +
+          '<h3>' + escapeHtml(a.name) + '</h3>' +
+          '<span class="tool-open">Open \u2192</span>' +
+          '</a>'
+        );
+      })
+      .join('');
+    el.innerHTML =
+      '<h2 class="tools-heading">More tools</h2>' +
+      '<div class="tool-grid">' + cards + '</div>';
+  }
+
+  /* ============================================================
      Session — unified identity (GET /api/me)
      ============================================================ */
 
@@ -479,7 +509,9 @@
     fetch('/api/me', { credentials: 'same-origin' })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (data) {
-        if (!data || !data.user) return;
+        if (!data) return;
+        if (data.apps) renderToolsGrid(data.apps);
+        if (!data.user) return;
         var info = document.getElementById('sessionInfo');
         var acct = document.getElementById('accountLink');
         var label = data.user.studioName || data.user.name || data.user.email || '';

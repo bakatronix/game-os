@@ -1,79 +1,49 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect } from "@playwright/test";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
-/* Regression: each tool's OWN assets must load and the app must initialize.
- * Catches relative-asset breakage from trailing-slash redirects (the blank
- * dashboard bug). Fails if a tool's CSS/JS 404 or the app never renders.
+/* Regression: every Game OS tool must reference its assets with ABSOLUTE
+ * paths (relative refs break under the /x -> /x trailing-slash redirect), and
+ * every tool must be gated to Game OS accounts.
+ *
+ * Asset-path checks read the source HTML from disk (deterministic; the served
+ * .html is auth-gated). Gate checks run in the browser.
  */
 
-type Fail = { url: string; status?: number; error?: string };
+const ROOT = resolve(__dirname, "..", "..", "public");
 
-async function check(
-  page: Page,
-  path: string,
-  opts: { assetPattern: RegExp; expectRendered: () => Promise<boolean>; label: string },
-) {
-  const bad: Fail[] = [];
-  page.on("response", (r) => {
-    if (opts.assetPattern.test(r.url()) && r.status() >= 400) {
-      bad.push({ url: r.url(), status: r.status() });
-    }
-  });
-  page.on("requestfailed", (r) => {
-    if (opts.assetPattern.test(r.url())) bad.push({ url: r.url(), error: r.failure()?.errorText });
-  });
+const HTML: [string, RegExp, string][] = [
+  ["game-os/index.html", /\/game-os\/assets\/app\.js/, "dashboard"],
+  ["game-os/chicken-brulee/index.html", /\/game-os\/chicken-brulee\/assets\/app\.js/, "chicken-brulee"],
+  ["game-os/steam-page-audit/index.html", /\/game-os\/steam-page-audit\/assets\/app\.js/, "steam-page-audit"],
+  ["seismic/index.html", /\/seismic\/js\/app\.js/, "seismic"],
+  ["game-os/PMF/index.html", /\/game-os\/PMF\/assets\/index-.*\.js/, "PMF"],
+  ["game-os/price-calc/index.html", /(inline|track\.js)/, "price-calc"],
+];
 
-  await page.goto(path, { waitUntil: "networkidle" });
-  const rendered = await opts.expectRendered();
-  expect(bad, `assets failed to load: ${JSON.stringify(bad)}`).toEqual([]);
-  expect(rendered, `${opts.label} did not render`).toBeTruthy();
-}
-
-test.describe("tool assets load and apps render", () => {
-  test("dashboard: styles + app.js load, #content renders", async ({ page }) => {
-    // dashboard is auth-gated; unauthenticated it goes to /login. Assert the
-    // login page's own assets load, and (if redirected) skip the render check.
-    await page.goto("/game-os", { waitUntil: "networkidle" });
-    if (/\/login/.test(page.url())) {
-      await expect(page.getByRole("button", { name: /Continue with Google/i })).toBeVisible();
-      return;
-    }
-    await expect(page.locator("#content")).not.toBeEmpty();
-  });
-
-  test("price-calc: renders", async ({ page }) => {
-    await check(page, "/game-os/price-calc", {
-      assetPattern: /\/game-os\/price-calc\//,
-      label: "price-calc",
-      expectRendered: async () => (await page.title()).length > 0,
+test.describe("assets use absolute paths (no relative-ref breakage)", () => {
+  for (const [file, absRef, label] of HTML) {
+    test(`${label}: no relative asset refs`, () => {
+      const body = readFileSync(resolve(ROOT, file), "utf8");
+      expect(body, `${label} missing expected ref`).toMatch(absRef);
+      expect(body, `${label} has relative asset refs`).not.toMatch(/(href|src)="(assets|css|js)\//);
     });
-  });
+  }
+});
 
-  test("PMF: renders", async ({ page }) => {
-    await check(page, "/game-os/PMF", {
-      assetPattern: /\/game-os\/PMF\//,
-      label: "PMF",
-      expectRendered: async () => (await page.title()).length > 0,
+test.describe("every tool is gated to Game OS accounts", () => {
+  const paths = [
+    "/game-os",
+    "/game-os/price-calc",
+    "/game-os/PMF",
+    "/game-os/chicken-brulee",
+    "/game-os/steam-page-audit",
+    "/seismic",
+  ];
+  for (const p of paths) {
+    test(`${p} redirects anonymous users to /login`, async ({ page }) => {
+      await page.goto(p, { waitUntil: "networkidle" });
+      expect(page.url()).toMatch(/\/login/);
     });
-  });
-
-  test("chicken-brulee: its own assets load (not the dashboard's)", async ({ page }) => {
-    const seen: string[] = [];
-    page.on("response", (r) => {
-      if (/\/assets\/(app|styles)\.(js|css)/.test(r.url())) seen.push(r.url());
-    });
-    await page.goto("/game-os/chicken-brulee", { waitUntil: "networkidle" });
-    // Every asset URL must be under /game-os/chicken-brulee/ — never /game-os/assets/
-    const wrong = seen.filter((u) => /\/game-os\/assets\//.test(u));
-    expect(wrong, `chicken-brulee loaded wrong assets: ${wrong}`).toEqual([]);
-    expect(seen.some((u) => /\/game-os\/chicken-brulee\/assets\//.test(u))).toBeTruthy();
-  });
-
-  test("seismic: css + js load", async ({ page }) => {
-    const bad: string[] = [];
-    page.on("response", (r) => {
-      if (/\/seismic\/(css|js)\//.test(r.url()) && r.status() >= 400) bad.push(`${r.status()} ${r.url()}`);
-    });
-    await page.goto("/seismic", { waitUntil: "networkidle" });
-    expect(bad, `seismic assets failed: ${bad}`).toEqual([]);
-  });
+  }
 });

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Steam Page Audit — Game OS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Source+Sans+3:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/game-os/steam-page-audit/assets/tokens.css?v=1">
+  <link rel="stylesheet" href="/game-os/steam-page-audit/assets/components.css?v=1">
+  <link rel="stylesheet" href="/game-os/steam-page-audit/assets/styles.css?v=1">
+  <script src="/track.js" data-tool="steam-page-audit" data-version="1"></script>
+</head>
+<body>
+  <div class="topbar"></div>
+  <div class="page">
+    <div class="page-head">
+      <a class="brand" href="/game-os">
+        <img src="/game-os/steam-page-audit/assets/logo.svg" alt="Game OS">
+      </a>
+      <a class="back" href="/game-os">&larr; Game OS</a>
+    </div>
+
+    <h1 class="title">Steam Page Audit</h1>
+    <p class="kicker">Score your store page before players do.</p>
+
+    <form class="search" id="auditForm">
+      <div class="field">
+        <label for="appid">Steam App ID</label>
+        <input class="input" type="text" id="appid" inputmode="numeric" placeholder="e.g. 105600" autocomplete="off">
+      </div>
+      <button class="btn" type="submit" id="runBtn">Run audit</button>
+    </form>
+
+    <div id="status" class="muted"></div>
+    <div id="report"></div>
+  </div>
+
+  <script src="/game-os/steam-page-audit/assets/app.js?v=1"></script>
+</body>
+</html>

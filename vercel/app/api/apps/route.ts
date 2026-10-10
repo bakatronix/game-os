@@ -20,6 +20,9 @@ export async function GET() {
       minRole: a.minRole,
       id: a.id,
       name: a.name,
+      group: a.group,
+      version: a.version,
+      sortOrder: a.sortOrder,
     }));
   return NextResponse.json(
     { gates },
