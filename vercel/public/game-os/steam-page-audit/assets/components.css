@@ -1,0 +1,91 @@
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Source+Sans+3:wght@400;500;700&display=swap');
+
+/* Game OS Sandstone — components on the token variables */
+body { margin: 0; background: var(--sand); color: var(--ink); font-family: var(--font-sans); font-size: 15px; line-height: 22px; }
+.ss-pad { padding: 16px; }
+
+/* Header */
+.ss-header { font-family: var(--font-display); font-weight: 800; text-transform: uppercase; margin: 0; }
+.ss-header .k { display: block; font-size: 34px; line-height: 36px; letter-spacing: -.01em; color: var(--teal); }
+.ss-header .p { display: block; font-size: 52px; line-height: 52px; letter-spacing: -.015em; color: var(--orange-deep); }
+.ss-header-row { display: flex; flex-wrap: wrap; gap: 16px 24px; align-items: center; justify-content: space-between; }
+.ss-demo { font: 700 12px/16px var(--font-sans); letter-spacing: .06em; text-transform: uppercase; color: var(--slate); border: 1.5px solid var(--slate); border-radius: var(--radius-pill); padding: 3px 10px; }
+
+/* KPI tiles */
+.ss-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.ss-kpi { display: flex; align-items: center; gap: 16px; padding: 14px 18px; border-radius: var(--radius-tile); border: 1.5px solid; color: var(--tile-ink); }
+.ss-kpi.t { background: var(--teal-soft); border-color: var(--teal); }
+.ss-kpi.m { background: var(--mustard-soft); border-color: var(--mustard); }
+.ss-kpi.o { background: var(--orange-soft); border-color: var(--orange); }
+.ss-kpi svg { width: 32px; height: 32px; flex: none; fill: none; stroke: var(--tile-ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ss-kpi .v { font: 700 32px/36px var(--font-display); font-variant-numeric: tabular-nums; }
+.ss-kpi .l { font: 500 15px/20px var(--font-sans); }
+.ss-kpi .body { display: flex; flex-direction: column; align-items: center; flex: 1; text-align: center; }
+
+/* Cards */
+.ss-card { border: 1px solid var(--orange); border-radius: var(--radius-card); padding: 16px; background: var(--sand); min-width: 0; }
+.ss-card h3 { margin: 0 0 8px; text-align: center; font: 700 17px/22px var(--font-sans); color: var(--ink); }
+.ss-meta { display: block; margin-top: 8px; font: 400 12px/16px var(--font-sans); color: var(--ink-muted); }
+
+/* Filter panel */
+.ss-filters { border: 1px solid var(--orange); border-radius: var(--radius-card); overflow: hidden; position: relative; background: var(--sand); }
+.ss-filters .head { background: var(--orange-deep); padding: 14px 16px 18px; display: flex; flex-direction: column; gap: 14px; }
+.ss-dates { display: flex; gap: 8px; }
+.ss-date { flex: 1; min-width: 0; font: 500 14px/20px var(--font-sans); color: var(--ink); background: var(--sand); border: 1px solid var(--sand-deep); border-radius: var(--radius-field); padding: 5px 8px; font-variant-numeric: tabular-nums; }
+.ss-range { position: relative; height: 22px; }
+.ss-range .track { position: absolute; left: 10px; right: 10px; top: 9px; height: 4px; border-radius: 2px; background: var(--slate); }
+.ss-range .h { position: absolute; top: 0; width: 22px; height: 22px; border-radius: 50%; background: var(--sand); border: 2px solid var(--slate); box-sizing: border-box; }
+.ss-filters .body { padding: 14px 16px 18px; display: flex; flex-direction: column; gap: 18px; position: relative; }
+.ss-field { display: flex; flex-direction: column; gap: 6px; position: relative; z-index: 1; }
+.ss-field label { font: 700 15px/20px var(--font-sans); color: var(--orange-deep); }
+.ss-select { font: 400 14px/20px var(--font-sans); color: var(--ink-secondary); background: transparent; border: 0; border-bottom: 1.5px solid var(--orange); padding: 4px 0; display: flex; justify-content: space-between; width: 100%; text-align: left; cursor: pointer; }
+.ss-select:focus-visible, .ss-date:focus-visible, .ss-chip:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.ss-arcs { position: absolute; right: -40px; top: 6px; width: 200px; height: 200px; pointer-events: none; }
+.ss-arcs circle { fill: none; stroke: var(--sand-deep); stroke-width: 1.5; }
+.ss-chip { font: 500 13px/18px var(--font-sans); padding: 4px 12px; border-radius: var(--radius-pill); border: 1px solid var(--slate); background: transparent; color: var(--slate); cursor: pointer; }
+.ss-chip[aria-pressed="true"] { background: var(--slate); color: var(--cream); }
+
+/* Badges */
+.ss-badge { display: inline-flex; align-items: center; gap: 6px; font: 700 12px/16px var(--font-sans); padding: 4px 10px; border-radius: var(--radius-pill); }
+.ss-badge.healthy { color: var(--status-healthy); background: var(--status-healthy-bg); }
+.ss-badge.watch { color: var(--status-watch); background: var(--status-watch-bg); }
+.ss-badge.concern { color: var(--status-concern); background: var(--status-concern-bg); }
+
+/* Charts */
+.ss-chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.ss-chart .grid { stroke: var(--sand-deep); stroke-width: 1; stroke-dasharray: 2 4; }
+.ss-chart .base { stroke: var(--sand-deep); stroke-width: 1; }
+.ss-chart .tick { fill: var(--ink-secondary); font: 400 12px var(--font-sans); }
+.ss-chart .end { fill: var(--ink-secondary); font: 500 12px var(--font-sans); }
+.ss-chart .val { fill: var(--ink); font: 500 12px var(--font-sans); font-variant-numeric: tabular-nums; }
+.ss-chart .line { fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.ss-chart .dot { stroke: var(--sand); stroke-width: 2; }
+.s1 { stroke: var(--data-1); } .f1 { fill: var(--data-1); }
+.s2 { stroke: var(--data-2); } .f2 { fill: var(--data-2); }
+.s3 { stroke: var(--data-3); } .f3 { fill: var(--data-3); }
+.s4 { stroke: var(--data-4); } .f4 { fill: var(--data-4); }
+.sb { stroke: var(--data-baseline); } .fb { fill: var(--data-baseline); }
+.c-teal { fill: var(--teal); } .c-orange { fill: var(--orange); } .c-mustard { fill: var(--mustard); } .c-slate { fill: var(--slate); } .c-brick { fill: var(--brick); }
+.ss-donut .slice { stroke: var(--sand); stroke-width: 2; }
+.ss-donut .hole circle { fill: none; stroke: var(--sand-deep); stroke-width: 1.5; }
+.ss-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 16px; margin-top: 8px; font: 400 12px/16px var(--font-sans); color: var(--ink-secondary); }
+.ss-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.ss-legend i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.ss-legend i.ln { width: 16px; height: 3px; border-radius: 2px; }
+
+/* Segment blocks */
+.ss-blocks { display: flex; gap: 2px; height: 120px; }
+.ss-blocks > div { display: flex; flex-direction: column; justify-content: space-between; padding: 6px 8px; min-width: 0; overflow: hidden; font: 500 13px/16px var(--font-sans); }
+.ss-blocks > div b { font-weight: 700; font-variant-numeric: tabular-nums; }
+.ss-blocks .bt { background: var(--teal-deep); color: var(--cream); }
+.ss-blocks .bs { background: var(--slate); color: var(--cream); }
+.ss-blocks .bm { background: var(--mustard); color: var(--tile-ink); }
+.ss-blocks .bo { background: var(--orange-deep); color: var(--cream); }
+.ss-blocks .bx { background: var(--sand-deep); color: var(--ink); }
+
+/* Table */
+.ss-table { width: 100%; border-collapse: collapse; font: 400 14px/20px var(--font-sans); }
+.ss-table th { text-align: left; font: 700 13px/18px var(--font-sans); color: var(--ink); background: var(--sand-deep); padding: 8px 10px; }
+.ss-table td { padding: 8px 10px; border-bottom: 1px solid var(--sand-deep); color: var(--ink-secondary); }
+.ss-table .num { text-align: right; font-variant-numeric: tabular-nums; color: var(--ink); }
+.ss-table tbody tr:hover td { background: var(--sand-deep); }

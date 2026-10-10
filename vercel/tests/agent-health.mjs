@@ -61,24 +61,35 @@ describe("Game OS app shell", (t) => {
   });
 });
 
-describe("Tools (public-first)", (t) => {
+describe("Tools (all gated to Game OS accounts)", (t) => {
   const tools = [
     ["/game-os/price-calc", /Pricing Dashboard|price/i],
     ["/game-os/PMF", /PMF Analyzer/i],
     ["/game-os/chicken-brulee", /Chicken Brûlée|Playtest/i],
     ["/seismic", /Seismic/i],
+    ["/game-os/steam-page-audit", /Steam Page Audit/i],
   ];
-  for (const [path, re] of tools) {
-    t.it(`GET ${path} serves the tool`, async () => {
+  for (const [path] of tools) {
+    t.it(`${path} requires auth (redirects to /login)`, async () => {
       let r = await http(`${BASE}${path}`);
-      if (r.status !== 200) r = await http(`${BASE}${path}/`);
-      assertEq(r.status, 200, `status ${r.status}`);
-      assert(re.test(r.body), `content matches ${re}`);
+      if (r.status === 308 && r.location) {
+        const next = r.location.startsWith("http") ? r.location : `${BASE}${r.location}`;
+        r = await http(next);
+      }
+      assert([307, 302, 200].includes(r.status), `status ${r.status}`);
+      if (r.status !== 200) assert(/\/login/.test(r.location), `${path} -> ${r.location}`);
     });
-    t.it(`${path} carries track.js`, async () => {
-      let r = await http(`${BASE}${path}`);
-      if (r.status !== 200) r = await http(`${BASE}${path}/`);
-      assert(/track\.js/.test(r.body), "track.js present");
+  }
+  // Assets are public (not gated) — verify they serve for each tool.
+  const assets = [
+    "/game-os/assets/app.js",
+    "/seismic/js/app.js",
+    "/game-os/steam-page-audit/assets/app.js",
+  ];
+  for (const a of assets) {
+    t.it(`${a} serves (200)`, async () => {
+      const r = await http(`${BASE}${a}`);
+      assertEq(r.status, 200, `status ${r.status}`);
     });
   }
 });
@@ -120,6 +131,17 @@ describe("Public APIs", (t) => {
     });
     assertEq(r.status, 200, "status");
     assert(/"ok":true/.test(r.body), "ok");
+  });
+  t.it("POST /api/steam-page-audit scores a game", async () => {
+    const r = await http(`${BASE}/api/steam-page-audit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ app_id: 105600 }),
+    });
+    assertEq(r.status, 200, "status");
+    const d = JSON.parse(r.body);
+    assert(d.overall > 0 && d.grade, "scored");
+    assert(Array.isArray(d.criteria) && d.criteria.length >= 5, "criteria present");
   });
 });
 

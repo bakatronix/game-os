@@ -12,10 +12,11 @@ type Gate = { path: string; access: string; minRole: string | null; id: string; 
  */
 const FALLBACK_GATES: Gate[] = [
   { path: "/game-os", access: "authenticated", minRole: null, id: "dashboard", name: "Dashboard" },
-  { path: "/game-os/price-calc", access: "public", minRole: null, id: "price-calc", name: "Pricing Calculator" },
-  { path: "/game-os/chicken-brulee", access: "public", minRole: null, id: "chicken-brulee", name: "Chicken Brûlée" },
-  { path: "/game-os/PMF", access: "public", minRole: null, id: "pmf", name: "PMF Analyzer" },
-  { path: "/seismic", access: "public", minRole: null, id: "seismic", name: "Seismic" },
+  { path: "/game-os/price-calc", access: "authenticated", minRole: null, id: "price-calc", name: "Pricing Calculator" },
+  { path: "/game-os/chicken-brulee", access: "authenticated", minRole: null, id: "chicken-brulee", name: "Chicken Brûlée" },
+  { path: "/game-os/PMF", access: "authenticated", minRole: null, id: "pmf", name: "PMF Analyzer" },
+  { path: "/seismic", access: "authenticated", minRole: null, id: "seismic", name: "Seismic" },
+  { path: "/game-os/steam-page-audit", access: "authenticated", minRole: null, id: "steam-page-audit", name: "Steam Page Audit" },
 ];
 
 // Edge cache for the registry (per isolate).

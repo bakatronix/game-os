@@ -79,6 +79,44 @@ a:hover { color: var(--orange-deep); }
   align-items: start;
 }
 
+/* ---- More tools (registry-driven) ---- */
+
+.tools-heading {
+  font-family: var(--font-display), "Archivo", system-ui, sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  margin: 24px 0 12px;
+}
+
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.tool-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  text-decoration: none;
+  padding: 16px;
+}
+.tool-card h3 { margin: 0; color: var(--ink); }
+.tool-card .tool-open {
+  font: 700 12px/16px var(--font-sans), system-ui, sans-serif;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--orange-deep);
+  white-space: nowrap;
+}
+.tool-card:hover { border-color: var(--orange-deep); }
+.tool-card:hover h3 { color: var(--orange-deep); }
+
 .ss-card { padding: 16px; }
 .ss-card .module-head {
   display: flex;
@@ -268,6 +306,7 @@ a:hover { color: var(--orange-deep); }
 
 @media (max-width: 900px) {
   .module-grid { grid-template-columns: 1fr; }
+  .tool-grid { grid-template-columns: 1fr; }
   .detail-layout { grid-template-columns: 1fr; }
 }
 

@@ -1,0 +1,86 @@
+/* Steam Page Audit — Game OS widget. Own product; Sandstone tokens. */
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--sand);
+  color: var(--ink);
+  font-family: var(--font-sans), "Source Sans 3", system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 22px;
+}
+
+.page { max-width: 960px; margin: 0 auto; padding: 24px; }
+
+.topbar { height: 3px; background: var(--topbar); }
+
+.page-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; border-bottom: 1px solid var(--orange); padding: 16px 0;
+}
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.brand img { height: 24px; }
+.back { font: 700 12px/16px var(--font-sans); letter-spacing: .04em; text-transform: uppercase; color: var(--orange-deep); text-decoration: none; }
+
+h1.title {
+  font-family: var(--font-display), "Archivo", system-ui, sans-serif;
+  font-weight: 800; text-transform: uppercase; letter-spacing: -.015em;
+  font-size: 40px; line-height: 44px; margin: 24px 0 4px; color: var(--ink);
+}
+.kicker { color: var(--orange-deep); font-weight: 700; margin: 0 0 24px; }
+
+.search { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 24px; }
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field label { font: 700 13px/18px var(--font-sans); color: var(--orange-deep); }
+.input {
+  font: 500 15px/20px var(--font-sans); color: var(--ink); background: var(--sand);
+  border: 1px solid var(--sand-deep); border-radius: var(--radius-field);
+  padding: 9px 12px; min-width: 220px;
+}
+.input:focus-visible { outline: 2px solid var(--slate); outline-offset: 2px; }
+
+.btn {
+  font: 700 14px/20px var(--font-sans); padding: 10px 18px; border-radius: var(--radius-field);
+  border: 1px solid var(--orange-deep); background: var(--orange-deep); color: var(--cream);
+  cursor: pointer;
+}
+.btn:hover { background: var(--orange); border-color: var(--orange); }
+.btn:disabled { opacity: .6; cursor: default; }
+
+.card {
+  border: 1px solid var(--orange); border-radius: var(--radius-card);
+  background: var(--sand); padding: 20px; margin-bottom: 16px;
+}
+.card h2 { margin: 0 0 12px; font-size: 17px; font-weight: 700; }
+
+.grade-row { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+.grade {
+  font-family: var(--font-display), "Archivo", system-ui, sans-serif;
+  font-weight: 800; font-size: 72px; line-height: 72px;
+}
+.grade.A { color: #2c6a5a; } .grade.B { color: #3b8d83; }
+.grade.C { color: #a97a08; } .grade.D { color: #cf5a2e; } .grade.F { color: #963226; }
+.score-big { font-family: var(--font-display), "Archivo", system-ui, sans-serif; font-weight: 800; font-size: 40px; }
+
+.criterion { display: grid; grid-template-columns: 160px 1fr 56px; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--sand-deep); }
+.criterion:last-child { border-bottom: 0; }
+.criterion .lbl { font: 700 14px/20px var(--font-sans); }
+.bar { height: 12px; background: var(--sand-deep); border-radius: 6px; overflow: hidden; }
+.bar > span { display: block; height: 100%; background: var(--teal); }
+.bar.warn > span { background: var(--orange-deep); }
+.bar.bad > span { background: #b3361f; }
+.criterion .val { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
+.criterion .detail { grid-column: 2 / -1; font-size: 13px; color: var(--ink-muted); margin-top: -6px; }
+
+.pills { display: flex; gap: 8px; flex-wrap: wrap; }
+.pill { font: 700 12px/16px var(--font-sans); padding: 4px 10px; border-radius: var(--radius-pill); background: var(--sand-deep); color: var(--ink-secondary); }
+.pill.good { background: #dfe5c8; color: #2c6a5a; }
+.pill.bad { background: #f2cbb6; color: #963226; }
+
+.cover { max-width: 100%; border: 1px solid var(--border); border-radius: var(--radius-field); }
+.muted { color: var(--ink-muted); }
+.spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--sand-deep); border-top-color: var(--orange-deep); border-radius: 50%; animation: spin .7s linear infinite; vertical-align: -2px; margin-right: 8px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.error { color: #963226; font-weight: 700; }
+
+.cta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }

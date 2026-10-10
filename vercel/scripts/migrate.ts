@@ -91,6 +91,7 @@ async function main() {
       enabled INTEGER NOT NULL DEFAULT 1,
       "createdAt" TIMESTAMP NOT NULL DEFAULT now()
     )`,
+    `ALTER TABLE "app" ADD COLUMN IF NOT EXISTS "group" TEXT NOT NULL DEFAULT 'tools'`,
     `CREATE TABLE IF NOT EXISTS "event" (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       "eventName" TEXT NOT NULL,
@@ -146,14 +147,20 @@ async function main() {
       "playNightAttendance" INTEGER,
       granularity TEXT DEFAULT 'daily'
     )`,
-    // Seed the app registry with the tools we serve today (public-first).
-    `INSERT INTO "app" (id, name, path, access, version, "sortOrder") VALUES
-      ('dashboard', 'Dashboard', '/game-os', 'authenticated', '1', 0),
-      ('price-calc', 'Pricing Calculator', '/game-os/price-calc', 'public', '1', 1),
-      ('chicken-brulee', 'Chicken Brûlée', '/game-os/chicken-brulee', 'public', '1', 2),
-      ('pmf', 'PMF Analyzer', '/game-os/PMF', 'public', '1', 3),
-      ('seismic', 'Seismic', '/seismic', 'public', '1', 4)
+    // Seed the app registry (public-first) — all within the Game OS universe.
+    `INSERT INTO "app" (id, name, path, access, version, "sortOrder", "group") VALUES
+      ('dashboard', 'Dashboard', '/game-os', 'authenticated', '1', 0, 'cxo'),
+      ('price-calc', 'Pricing Calculator', '/game-os/price-calc', 'public', '1', 1, 'cxo'),
+      ('chicken-brulee', 'Chicken Brûlée', '/game-os/chicken-brulee', 'public', '1', 2, 'cxo'),
+      ('pmf', 'PMF Analyzer', '/game-os/PMF', 'public', '1', 3, 'cxo'),
+      ('seismic', 'Seismic', '/seismic', 'public', '1', 4, 'cxo'),
+      ('steam-page-audit', 'Steam Page Audit', '/game-os/steam-page-audit', 'public', '1', 10, 'tools')
     ON CONFLICT (id) DO NOTHING`,
+    // Everything in the Game OS universe requires a signed-in account.
+    `UPDATE "app" SET access = 'authenticated' WHERE id IN
+      ('dashboard','price-calc','chicken-brulee','pmf','seismic','steam-page-audit')`,
+    `UPDATE "app" SET "group" = 'cxo' WHERE id IN
+      ('dashboard','price-calc','chicken-brulee','pmf','seismic')`,
   ];
 
   for (const s of statements) {

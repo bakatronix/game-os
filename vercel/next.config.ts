@@ -25,6 +25,8 @@ const nextConfig: NextConfig = {
       { source: "/game-os/chicken-brulee/", destination: "/game-os/chicken-brulee/index.html" },
       { source: "/game-os/PMF", destination: "/game-os/PMF/index.html" },
       { source: "/game-os/PMF/", destination: "/game-os/PMF/index.html" },
+      { source: "/game-os/steam-page-audit", destination: "/game-os/steam-page-audit/index.html" },
+      { source: "/game-os/steam-page-audit/", destination: "/game-os/steam-page-audit/index.html" },
       // PMF web (built with VITE_API_URL=/game-os/PMF/api/v1) posts to
       // /game-os/PMF/api/v1/analyze — send it to the ported route handler.
       {
