@@ -54,10 +54,11 @@ test.describe("Seismic tools are registered as Game OS widgets", () => {
     expect(res.status()).toBe(200);
     const { gates } = await res.json();
     const seismicTools = gates.filter((g: any) => g.path === "/seismic" && g.group === "tools");
-    expect(seismicTools.length).toBe(18); // 15 tools + 3 shared-object views
-    expect(seismicTools.every((g: any) => g.anchor && g.anchor.startsWith("?tool="))).toBe(true);
-    expect(seismicTools.some((g: any) => g.anchor === "?tool=market-scope")).toBe(true);
-    expect(seismicTools.some((g: any) => g.stage === "Concept")).toBe(true);
+    expect(seismicTools.length).toBe(19); // 15 tools + 3 shared views + Seismic overview
+    const linked = seismicTools.filter((g: any) => g.id !== "seismic");
+    expect(linked.every((g: any) => g.anchor && g.anchor.startsWith("?tool="))).toBe(true);
+    expect(linked.some((g: any) => g.anchor === "?tool=market-scope")).toBe(true);
+    expect(linked.some((g: any) => g.stage === "Concept")).toBe(true);
   });
 
   test("deep-link ?tool= opens the right tool (source markup)", () => {

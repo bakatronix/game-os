@@ -102,8 +102,11 @@ describe("Public APIs", (t) => {
     assert(Array.isArray(d.gates) && d.gates.length >= 5, "5+ gates");
     assert(d.gates.some((g) => g.id === "price-calc"), "has price-calc");
     const seismicTools = d.gates.filter((g) => g.path === "/seismic" && g.group === "tools");
-    assert(seismicTools.length >= 18, `18 Seismic tools/views (got ${seismicTools.length})`);
-    assert(seismicTools.every((g) => g.anchor), "each has a deep-link anchor");
+    // 15 tools + 3 shared views + the Seismic overview container = 19.
+    assert(seismicTools.length >= 19, `19 Seismic entries (got ${seismicTools.length})`);
+    // Every deep-linked tool carries an anchor; the overview container does not.
+    const linked = seismicTools.filter((g) => g.id !== "seismic");
+    assert(linked.every((g) => g.anchor), "each deep-linked tool has an anchor");
   });
   t.it("GET /api/me null when signed out", async () => {
     const r = await http(`${BASE}/api/me`);
