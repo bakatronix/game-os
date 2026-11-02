@@ -216,7 +216,7 @@ async function main() {
        "description"='30 days in, is this game showing PMF signals, and where is the weakness? The MTG PMF Analyzer evaluates acquisition, engagement, and satisfaction lenses on Steam-native public data.',
        "status"='nodata', "statusLabel"='No data',
        "metrics"='[{"label":"Days since launch","value":"—"},{"label":"Acquisition lens","value":"—"},{"label":"Engagement lens","value":"—"},{"label":"Satisfaction lens","value":"—"}]',
-       "spark"=NULL
+       "spark"='{"type":"line","values":[0,0,62,71,78,84,91,94]}'
      WHERE id='pmf'`,
     // Steam Page Audit widget.
     `UPDATE "app" SET
@@ -224,7 +224,7 @@ async function main() {
        "description"='Enter a Steam App ID; score your store page across art, trailer, description, reviews, and pricing — before players do.',
        "status"='healthy', "statusLabel"='Healthy',
        "metrics"='[{"label":"Overall","value":"93/100"},{"label":"Grade","value":"A"},{"label":"Criteria scored","value":"7"}]',
-       "spark"=NULL
+       "spark"='{"type":"bars","values":[90,85,94,85,90]}'
      WHERE id='steam-page-audit'`,
     // Seismic tools — concise descriptions + status.
     // Seismic overview as a tool entry (its 15 tools are separate widgets).
@@ -257,6 +257,26 @@ async function main() {
     `UPDATE "app" SET "description"='The single versioned record of what you claim and why.' WHERE id='thesis-view'`,
     `UPDATE "app" SET "description"='Every signal, normalized against benchmarks, one ledger.' WHERE id='ledger-view'`,
     `UPDATE "app" SET "description"='Forced verdicts at each stage — proceed, revise, or stop.' WHERE id='gate-log'`,
+    // --- Widget previews: metrics + sparkline for every Seismic tool + view ---
+    `UPDATE "app" SET "cxoQuestion"='Does an audience exist?', "metrics"='[{"label":"Saturation","value":"Low"},{"label":"Genres tracked","value":"34"},{"label":"Blue-ocean pairs","value":"6"}]', "spark"='{"type":"line","values":[42,46,49,51,54]}' WHERE id='market-scope'`,
+    `UPDATE "app" SET "cxoQuestion"='What is your claim?', "metrics"='[{"label":"Comp set","value":"4"},{"label":"Price hypothesis","value":"$19.99"},{"label":"Thesis versions","value":"3"}]', "spark"='{"type":"bars","values":[60,64,62,68,71]}' WHERE id='thesis-builder'`,
+    `UPDATE "app" SET "cxoQuestion"='Where do players live?', "metrics"='[{"label":"Channels","value":"14"},{"label":"Top fit","value":"92%"},{"label":"Communities","value":"9"}]', "spark"='{"type":"line","values":[51,56,54,60,66]}' WHERE id='audience-map'`,
+    `UPDATE "app" SET "cxoQuestion"='Does it convert?', "metrics"='[{"label":"Capsule CTR","value":"5.8%"},{"label":"Trailer retention","value":"71%"},{"label":"Creative versions","value":"7"}]', "spark"='{"type":"line","values":[55,58,61,63,66]}' WHERE id='page-engine'`,
+    `UPDATE "app" SET "cxoQuestion"='Is the loop building?', "metrics"='[{"label":"Members","value":"28K"},{"label":"Feedback tags","value":"112"},{"label":"Active (7d)","value":"41%"}]', "spark"='{"type":"bars","values":[40,45,48,52,55]}' WHERE id='community-scaffold'`,
+    `UPDATE "app" SET "cxoQuestion"='Does the hook read?', "metrics"='[{"label":"Variants","value":"6"},{"label":"Best lift","value":"+23%"},{"label":"Winner","value":"Cap B"}]', "spark"='{"type":"line","values":[48,52,55,59,62]}' WHERE id='test-loop'`,
+    `UPDATE "app" SET "cxoQuestion"='Where to show it?', "metrics"='[{"label":"Submitted","value":"3"},{"label":"Accepted","value":"2"},{"label":"Avg lift","value":"+2,000"}]', "spark"='{"type":"bars","values":[38,42,44,48,50]}' WHERE id='festival-radar'`,
+    `UPDATE "app" SET "cxoQuestion"='What did players say?', "metrics"='[{"label":"Sessions","value":"8"},{"label":"Findings","value":"26"},{"label":"Critical","value":"4"}]', "spark"='{"type":"line","values":[44,47,50,53,57]}' WHERE id='playtest-pipeline'`,
+    `UPDATE "app" SET "cxoQuestion"='Who should cover it?', "metrics"='[{"label":"Matched creators","value":"48"},{"label":"Contacted","value":"17"},{"label":"Interested","value":"9"}]', "spark"='{"type":"bars","values":[35,40,45,48,52]}' WHERE id='creator-match'`,
+    `UPDATE "app" SET "cxoQuestion"='What do they feel?', "metrics"='[{"label":"Sentiment index","value":"7.8/10"},{"label":"Themes","value":"12"},{"label":"Decay alarms","value":"1"}]', "spark"='{"type":"line","values":[62,64,67,70,74]}' WHERE id='sentiment-radar'`,
+    `UPDATE "app" SET "cxoQuestion"='Does the demo sell?', "metrics"='[{"label":"Conversion","value":"14.2%"},{"label":"Percentile","value":"87th"},{"label":"Wishlists","value":"+3,200"}]', "spark"='{"type":"line","values":[56,60,64,68,72]}' WHERE id='demo-command'`,
+    `UPDATE "app" SET "cxoQuestion"='When to launch?', "metrics"='[{"label":"Target weeks","value":"3"},{"label":"Congestion","value":"Moderate"},{"label":"Price lock","value":"$19.99"}]', "spark"='{"type":"bars","values":[46,48,52,54,58]}' WHERE id='window-planner'`,
+    `UPDATE "app" SET "cxoQuestion"='Ready to ship?', "metrics"='[{"label":"Checklist","value":"24/28"},{"label":"Alerts","value":"2"},{"label":"Funnel ready","value":"Yes"}]', "spark"='{"type":"line","values":[58,62,65,70,76]}' WHERE id='launch-runbook'`,
+    `UPDATE "app" SET "cxoQuestion"='How long can it earn?', "metrics"='[{"label":"Gross","value":"$210K"},{"label":"Decay","value":"82%/q"},{"label":"Localization ROI","value":"+19%"}]', "spark"='{"type":"line","values":[64,68,72,78,84]}' WHERE id='long-tail-engine'`,
+    `UPDATE "app" SET "cxoQuestion"='What is next?', "metrics"='[{"label":"Best path","value":"Sequel"},{"label":"Momentum","value":"94"},{"label":"DLC score","value":"71"}]', "spark"='{"type":"bars","values":[70,75,80,86,90]}' WHERE id='sequel-signal'`,
+    `UPDATE "app" SET "cxoQuestion"='The source of truth.', "metrics"='[{"label":"Version","value":"3"},{"label":"Comp set","value":"4"},{"label":"Stage","value":"6"}]', "spark"='{"type":"line","values":[58,62,66,70,74]}' WHERE id='thesis-view'`,
+    `UPDATE "app" SET "cxoQuestion"='Every signal, one ledger.', "metrics"='[{"label":"Signals","value":"18,600"},{"label":"Momentum","value":"84"},{"label":"Percentile","value":"86th"}]', "spark"='{"type":"line","values":[60,64,68,73,80]}' WHERE id='ledger-view'`,
+    `UPDATE "app" SET "cxoQuestion"='The verdict history.', "metrics"='[{"label":"Gates","value":"6"},{"label":"Proceeded","value":"5"},{"label":"Revised","value":"1"}]', "spark"='{"type":"bars","values":[50,55,60,66,72]}' WHERE id='gate-log'`,
+    `UPDATE "app" SET "cxoQuestion"='One system, eight stages.', "metrics"='[{"label":"Tools","value":"15"},{"label":"Stages","value":"8"},{"label":"Momentum","value":"84"}]', "spark"='{"type":"line","values":[58,64,70,78,84]}' WHERE id='seismic'`,
   ];
 
   for (const s of statements) {

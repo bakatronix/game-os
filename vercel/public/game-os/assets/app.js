@@ -447,59 +447,47 @@
     try { return JSON.parse(s); } catch (e) { return null; }
   }
 
-  function widgetCard(a, rich) {
+  function widgetCard(a) {
     var name = a.name || a.id;
     var toolName = a.toolName;
     var href = a.path + (a.anchor || '');
     var badge = a.status ? statusBadge(a.status === 'nodata' ? 'demo' : a.status, a.statusLabel || a.status) : '';
 
-    if (rich) {
-      var metrics = parseJSON(a.metrics) || [];
-      var spark = parseJSON(a.spark);
-      var metricsHtml = metrics.length
-        ? '<div class="metrics-grid">' +
-            metrics
-              .map(function (m) {
-                var val = m.value === '\u2014' || m.value === '—' ? '<span class="metric-value empty">—</span>' : '<span class="metric-value">' + escapeHtml(m.value) + '</span>';
-                return (
-                  '<div class="metric-item">' +
-                  '<span class="metric-label">' + escapeHtml(m.label) + '</span>' +
-                  val +
-                  '</div>'
-                );
-              })
-              .join('') +
-            '</div>'
-        : '';
-      var sparkHtml = spark ? '<div class="module-spark">' + sparkSVG(spark) + '</div>' : '';
-      return (
-        '<div class="ss-card module-card">' +
-        '<div class="module-head">' +
-        '<div>' +
-        '<h3>' + escapeHtml(name) + (toolName ? ' \u2014 ' + escapeHtml(toolName) : '') + '</h3>' +
-        (a.cxoQuestion ? '<div class="module-q">' + escapeHtml(a.cxoQuestion) + '</div>' : '') +
-        '</div>' +
-        badge +
-        '</div>' +
-        (a.description ? '<p class="module-desc">' + escapeHtml(a.description) + '</p>' : '') +
-        metricsHtml +
-        sparkHtml +
-        '<div class="card-actions">' +
-        '<a class="ss-btn" href="' + escapeHtml(href) + '">Open \u2192</a>' +
-        '</div>' +
-        '</div>'
-      );
-    }
+    var metrics = parseJSON(a.metrics) || [];
+    var spark = parseJSON(a.spark);
+    var metricsHtml = metrics.length
+      ? '<div class="metrics-grid">' +
+          metrics
+            .map(function (m) {
+              var val = m.value === '\u2014' || m.value === '—' ? '<span class="metric-value empty">—</span>' : '<span class="metric-value">' + escapeHtml(m.value) + '</span>';
+              return (
+                '<div class="metric-item">' +
+                '<span class="metric-label">' + escapeHtml(m.label) + '</span>' +
+                val +
+                '</div>'
+              );
+            })
+            .join('') +
+          '</div>'
+      : '';
+    var sparkHtml = spark ? '<div class="module-spark">' + sparkSVG(spark) + '</div>' : '';
 
-    // Non-rich tool card.
     return (
-      '<a class="ss-card tool-card" href="' + escapeHtml(href) + '">' +
+      '<div class="ss-card module-card">' +
+      '<div class="module-head">' +
       '<div>' +
-      '<h3>' + escapeHtml(name) + '</h3>' +
-      (a.description ? '<span class="tool-desc">' + escapeHtml(a.description) + '</span>' : '') +
+      '<h3>' + escapeHtml(name) + (toolName ? ' \u2014 ' + escapeHtml(toolName) : '') + '</h3>' +
+      (a.cxoQuestion ? '<div class="module-q">' + escapeHtml(a.cxoQuestion) + '</div>' : '') +
       '</div>' +
-      '<span class="tool-open">Open \u2192</span>' +
-      '</a>'
+      badge +
+      '</div>' +
+      (a.description ? '<p class="module-desc">' + escapeHtml(a.description) + '</p>' : '') +
+      metricsHtml +
+      sparkHtml +
+      '<div class="card-actions">' +
+      '<a class="ss-btn" href="' + escapeHtml(href) + '">Open \u2192</a>' +
+      '</div>' +
+      '</div>'
     );
   }
 
@@ -518,14 +506,14 @@
 
     var html = '';
 
-    // Top CXO tiles (rich widgets).
+    // Top CXO tiles.
     if (cxo.length) {
       html += '<div class="module-grid">' +
-        cxo.map(function (a) { return widgetCard(a, true); }).join('') +
+        cxo.map(widgetCard).join('') +
         '</div>';
     }
 
-    // Everything else, grouped by stage.
+    // Everything else, grouped by lifecycle stage, all as rich widgets.
     if (tools.length) {
       var order = [];
       var groups = {};
@@ -538,8 +526,8 @@
       order.forEach(function (stage) {
         html +=
           '<h3 class="tools-group-label">' + escapeHtml(stage) + '</h3>' +
-          '<div class="tool-grid">' +
-          groups[stage].map(function (a) { return widgetCard(a, false); }).join('') +
+          '<div class="module-grid">' +
+          groups[stage].map(widgetCard).join('') +
           '</div>';
       });
     }
