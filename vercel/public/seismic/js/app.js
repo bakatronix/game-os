@@ -26,13 +26,56 @@ function init() {
   try {
     updateLifecycleNav();
     updateSidebar();
-    navigate('dashboard');
+    var target = deepLinkTarget();
+    if (target) {
+      // Deep-link into a specific tool (or shared object view).
+      STATE.currentScreen = target.id;
+      if (target.stage) STATE.currentStage = target.stage;
+      updateLifecycleNav();
+      renderScreen(target.id);
+      updateSidebar();
+      trackToolOpen(target.id);
+    } else {
+      navigate('dashboard');
+    }
   } catch(e) {
     document.getElementById('main-content').innerHTML = '<div style="padding:2rem"><h3 style="color:var(--coral)">JS Error</h3><pre style="font-size:12px;white-space:pre-wrap">' + e.message + '</pre></div>';
   }
 }
 if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', init); }
 else { setTimeout(init, 20); }
+
+// === DEEP LINKING (Game OS widgets) ===
+function deepLinkTarget() {
+  var t = null;
+  try {
+    var p = new URLSearchParams(window.location.search);
+    t = p.get('tool');
+  } catch(e) {
+    var m = window.location.search.match(/[?&]tool=([^&]+)/);
+    if (m) t = decodeURIComponent(m[1]);
+  }
+  if (!t) return null;
+
+  // Resolve stage by scanning the stage->tools map.
+  var stage = 0;
+  for (var s = 1; s <= 8; s++) {
+    var tools = getToolsForStage(s);
+    for (var i = 0; i < tools.length; i++) if (tools[i].id === t) stage = s;
+  }
+  // Shared object views (no stage).
+  var shared = { 'thesis-view': 1, 'ledger-view': 1, 'gate-log': 1 };
+  if (shared[t]) return { id: t, stage: 0 };
+
+  return stage ? { id: t, stage: stage } : null;
+}
+
+// === PER-TOOL JOURNEY STEP (Jay's spec) ===
+function trackToolOpen(toolId) {
+  if (typeof window.gosTrack !== 'function') return;
+  window.gosTrack('tool_session_start', { tool_id: toolId, entry_source: document.referrer || null });
+  window.gosTrack('journey_step', { tool_id: toolId, step_name: 'tool_opened', step_index: 1 });
+}
 
 // === NAVIGATION ===
 function navigate(screen) {

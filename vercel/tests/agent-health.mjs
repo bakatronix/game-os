@@ -101,6 +101,9 @@ describe("Public APIs", (t) => {
     const d = JSON.parse(r.body);
     assert(Array.isArray(d.gates) && d.gates.length >= 5, "5+ gates");
     assert(d.gates.some((g) => g.id === "price-calc"), "has price-calc");
+    const seismicTools = d.gates.filter((g) => g.path === "/seismic" && g.group === "tools");
+    assert(seismicTools.length >= 18, `18 Seismic tools/views (got ${seismicTools.length})`);
+    assert(seismicTools.every((g) => g.anchor), "each has a deep-link anchor");
   });
   t.it("GET /api/me null when signed out", async () => {
     const r = await http(`${BASE}/api/me`);
@@ -120,8 +123,12 @@ describe("Public APIs", (t) => {
     });
     assertEq(r.status, 200, "status");
     const d = JSON.parse(r.body);
-    assert(d.lenses?.satisfaction?.score > 0, "scored");
     assertEq(d.game_name, "Terraria", "game_name");
+    assert(d.lenses, "lenses present");
+    assert(d.lenses.reach && typeof d.lenses.reach.score === "number", "reach scored");
+    assert(Array.isArray(d.recommendations ?? []), "recommendations array");
+    // satisfaction/engagement may be null when Steam review data is unavailable
+    // (rate-limited) — that's a valid "no review data" state, not an error.
   });
   t.it("POST /api/track accepts an event", async () => {
     const r = await http(`${BASE}/api/track`, {

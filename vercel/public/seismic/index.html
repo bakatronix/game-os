@@ -66,10 +66,18 @@ mc.innerHTML += '<p>' + (typeof navigate !== 'undefined' ? 'âœ“ app.js OK' : 'âœ
 </script>
 <script>
 /* Game OS instrumentation â€” seismic journey:
-   stage_entered -> tool_opened -> gate_decision -> thesis_revised */
+   stage_entered -> tool_opened -> gate_decision -> thesis_revised.
+   tool_open events attribute to the specific Seismic tool id. */
 (function () {
   if (typeof window.gosTrack !== 'function') return;
-  window.gosTrack('tool_session_start', { entry_source: document.referrer || null });
+
+  var TOOL_IDS = {
+    'market-scope':1,'thesis-builder':1,'audience-map':1,'page-engine':1,
+    'community-scaffold':1,'test-loop':1,'festival-radar':1,'playtest-pipeline':1,
+    'creator-match':1,'sentiment-radar':1,'demo-command':1,'window-planner':1,
+    'launch-runbook':1,'long-tail-engine':1,'sequel-signal':1,
+    'thesis-view':1,'ledger-view':1,'gate-log':1
+  };
 
   if (typeof window.navigateStage === 'function') {
     var origStage = window.navigateStage;
@@ -81,7 +89,12 @@ mc.innerHTML += '<p>' + (typeof navigate !== 'undefined' ? 'âœ“ app.js OK' : 'âœ
   if (typeof window.navigate === 'function') {
     var origNav = window.navigate;
     window.navigate = function (screen) {
-      window.gosTrack('journey_step', { step_name: 'tool_opened', step_index: 2, screen: screen });
+      if (TOOL_IDS[screen]) {
+        window.gosTrack('tool_session_start', { tool_id: screen, entry_source: document.referrer || null });
+        window.gosTrack('journey_step', { tool_id: screen, step_name: 'tool_opened', step_index: 2 });
+      } else if (screen === 'dashboard') {
+        window.gosTrack('journey_step', { step_name: 'dashboard_opened', step_index: 0 });
+      }
       return origNav.apply(this, arguments);
     };
   }

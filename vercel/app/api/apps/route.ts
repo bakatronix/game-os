@@ -23,6 +23,8 @@ export async function GET() {
       group: a.group,
       version: a.version,
       sortOrder: a.sortOrder,
+      stage: a.stage,
+      anchor: a.anchor,
     }));
   return NextResponse.json(
     { gates },

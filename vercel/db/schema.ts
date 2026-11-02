@@ -140,6 +140,8 @@ export const apps = pgTable("app", {
   version: text("version"), // app_version stamped on events
   icon: text("icon"),
   group: text("group").notNull().default("tools"), // cxo (top 3) | tools (below)
+  anchor: text("anchor"), // deep-link target appended to path, e.g. "?tool=market-scope"
+  stage: text("stage"), // lifecycle stage label for grouping (Seismic) — e.g. "Concept"
   sortOrder: integer("sortOrder").notNull().default(0),
   enabled: integer("enabled").notNull().default(1), // 1 = shown
   createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),

@@ -481,24 +481,38 @@
     if (!el) return;
     var tools = apps.filter(function (a) {
       return a.group === 'tools' && a.id !== 'dashboard';
-    });
+    }).sort(function (a, b) { return (a.sortOrder || 0) - (b.sortOrder || 0); });
     if (!tools.length) {
       el.innerHTML = '';
       return;
     }
-    var cards = tools
-      .map(function (a) {
-        return (
-          '<a class="ss-card tool-card" href="' + a.path + '">' +
-          '<h3>' + escapeHtml(a.name) + '</h3>' +
-          '<span class="tool-open">Open \u2192</span>' +
-          '</a>'
-        );
-      })
-      .join('');
-    el.innerHTML =
-      '<h2 class="tools-heading">More tools</h2>' +
-      '<div class="tool-grid">' + cards + '</div>';
+    // Group by lifecycle stage; stage-less tools fall under "Tools".
+    var order = [];
+    var groups = {};
+    tools.forEach(function (a) {
+      var key = a.stage || 'Tools';
+      if (!groups[key]) { groups[key] = []; order.push(key); }
+      groups[key].push(a);
+    });
+
+    var section = '<h2 class="tools-heading">More tools</h2>';
+    order.forEach(function (stage) {
+      var cards = groups[stage]
+        .map(function (a) {
+          var href = a.path + (a.anchor || '');
+          return (
+            '<a class="ss-card tool-card" href="' + escapeHtml(href) + '">' +
+            '<h3>' + escapeHtml(a.name) + '</h3>' +
+            '<span class="tool-open">Open \u2192</span>' +
+            '</a>'
+          );
+        })
+        .join('');
+      section +=
+        '<h3 class="tools-group-label">' + escapeHtml(stage) + '</h3>' +
+        '<div class="tool-grid">' + cards + '</div>';
+    });
+    el.innerHTML = section;
   }
 
   /* ============================================================

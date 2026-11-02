@@ -92,6 +92,8 @@ async function main() {
       "createdAt" TIMESTAMP NOT NULL DEFAULT now()
     )`,
     `ALTER TABLE "app" ADD COLUMN IF NOT EXISTS "group" TEXT NOT NULL DEFAULT 'tools'`,
+    `ALTER TABLE "app" ADD COLUMN IF NOT EXISTS "anchor" TEXT`,
+    `ALTER TABLE "app" ADD COLUMN IF NOT EXISTS "stage" TEXT`,
     `CREATE TABLE IF NOT EXISTS "event" (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       "eventName" TEXT NOT NULL,
@@ -156,9 +158,34 @@ async function main() {
       ('seismic', 'Seismic', '/seismic', 'public', '1', 4, 'cxo'),
       ('steam-page-audit', 'Steam Page Audit', '/game-os/steam-page-audit', 'public', '1', 10, 'tools')
     ON CONFLICT (id) DO NOTHING`,
+    // Seismic's tools + shared objects, surfaced as Game OS widgets.
+    `INSERT INTO "app" (id, name, path, access, version, "sortOrder", "group", "anchor", "stage") VALUES
+      ('market-scope',        'Market Scope',        '/seismic', 'public', '1', 11, 'tools', '?tool=market-scope',     'Concept'),
+      ('thesis-builder',      'Thesis Builder',      '/seismic', 'public', '1', 12, 'tools', '?tool=thesis-builder',   'Concept'),
+      ('audience-map',        'Audience Map',        '/seismic', 'public', '1', 13, 'tools', '?tool=audience-map',     'Pre-production'),
+      ('page-engine',         'Page Engine',         '/seismic', 'public', '1', 14, 'tools', '?tool=page-engine',      'First Playable'),
+      ('community-scaffold',  'Community Scaffold',  '/seismic', 'public', '1', 15, 'tools', '?tool=community-scaffold', 'First Playable'),
+      ('test-loop',           'Test Loop',           '/seismic', 'public', '1', 16, 'tools', '?tool=test-loop',        'Pre-Alpha'),
+      ('festival-radar',      'Festival Radar',      '/seismic', 'public', '1', 17, 'tools', '?tool=festival-radar',   'Pre-Alpha'),
+      ('playtest-pipeline',   'Playtest Pipeline',   '/seismic', 'public', '1', 18, 'tools', '?tool=playtest-pipeline', 'Pre-Alpha'),
+      ('creator-match',       'Creator Match',       '/seismic', 'public', '1', 19, 'tools', '?tool=creator-match',    'Closed Beta'),
+      ('sentiment-radar',     'Sentiment Radar',     '/seismic', 'public', '1', 20, 'tools', '?tool=sentiment-radar',  'Closed Beta'),
+      ('demo-command',        'Demo Command',        '/seismic', 'public', '1', 21, 'tools', '?tool=demo-command',     'Open Beta / EA'),
+      ('window-planner',      'Window Planner',      '/seismic', 'public', '1', 22, 'tools', '?tool=window-planner',   'Open Beta / EA'),
+      ('launch-runbook',      'Launch Runbook',      '/seismic', 'public', '1', 23, 'tools', '?tool=launch-runbook',   'Launch'),
+      ('long-tail-engine',    'Long Tail Engine',    '/seismic', 'public', '1', 24, 'tools', '?tool=long-tail-engine', 'Post-launch'),
+      ('sequel-signal',       'Sequel Signal',       '/seismic', 'public', '1', 25, 'tools', '?tool=sequel-signal',    'Post-launch'),
+      ('thesis-view',         'Publishing Thesis',   '/seismic', 'public', '1', 26, 'tools', '?tool=thesis-view',      'Shared'),
+      ('ledger-view',         'Signal Ledger',       '/seismic', 'public', '1', 27, 'tools', '?tool=ledger-view',      'Shared'),
+      ('gate-log',            'Gate History',        '/seismic', 'public', '1', 28, 'tools', '?tool=gate-log',         'Shared')
+    ON CONFLICT (id) DO NOTHING`,
     // Everything in the Game OS universe requires a signed-in account.
     `UPDATE "app" SET access = 'authenticated' WHERE id IN
-      ('dashboard','price-calc','chicken-brulee','pmf','seismic','steam-page-audit')`,
+      ('dashboard','price-calc','chicken-brulee','pmf','seismic','steam-page-audit',
+       'market-scope','thesis-builder','audience-map','page-engine','community-scaffold',
+       'test-loop','festival-radar','playtest-pipeline','creator-match','sentiment-radar',
+       'demo-command','window-planner','launch-runbook','long-tail-engine','sequel-signal',
+       'thesis-view','ledger-view','gate-log')`,
     `UPDATE "app" SET "group" = 'cxo' WHERE id IN
       ('dashboard','price-calc','chicken-brulee','pmf','seismic')`,
   ];

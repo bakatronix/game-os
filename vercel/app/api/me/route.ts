@@ -57,5 +57,7 @@ function publicApp(a: typeof apps.$inferSelect) {
     icon: a.icon,
     group: a.group,
     sortOrder: a.sortOrder,
+    stage: a.stage,
+    anchor: a.anchor,
   };
 }
