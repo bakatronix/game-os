@@ -59,5 +59,12 @@ function publicApp(a: typeof apps.$inferSelect) {
     sortOrder: a.sortOrder,
     stage: a.stage,
     anchor: a.anchor,
+    toolName: a.toolName,
+    cxoQuestion: a.cxoQuestion,
+    description: a.description,
+    status: a.status,
+    statusLabel: a.statusLabel,
+    metrics: a.metrics,
+    spark: a.spark,
   };
 }

@@ -251,44 +251,9 @@
   function renderOverview() {
     var s = loadSettings();
     var kicker = 'Game OS \u00b7 ' + (s.gameTitle || 'Demo Game');
-
-    var tiles = MODULE_KEYS.map(function (key) {
-      var m = MODULES[key];
-      var url = getModuleUrl(key);
-      var kind = m.status === 'nodata' ? 'demo' : m.status;
-      return (
-        '<div class="ss-card">' +
-        '<div class="module-head">' +
-        '<div>' +
-        '<h3>' + escapeHtml(m.name) + ' \u2014 ' + escapeHtml(m.toolName) + '</h3>' +
-        '<div class="module-q">' + escapeHtml(m.cxoQuestion) + '</div>' +
-        '</div>' +
-        statusBadge(kind, m.statusLabel) +
-        '</div>' +
-        '<div class="metrics-grid">' + renderMetrics(m.metrics) + '</div>' +
-        moduleSpark(key) +
-        '<div class="card-actions">' +
-        '<a class="ss-btn" href="' + url + '" target="_blank" rel="noopener">Open module \u2192</a>' +
-        '<a class="ss-btn ghost" href="#/' + key + '">Detail page \u2192</a>' +
-        '</div>' +
-        '<div class="card-note">' + escapeHtml(m.detailNote) + '</div>' +
-        '</div>'
-      );
-    }).join('');
-
     return (
       pageHeader(kicker, 'Studio Health', '<span class="ss-demo">Demo data</span>') +
-      '<div class="module-grid">' + tiles + '</div>' +
-      '<div class="ss-card watching-panel">' +
-      '<h3>What Game OS is watching for you</h3>' +
-      '<div class="watching-list">' +
-      '<div class="watching-item"><span class="watching-module">Community:</span> Is the playtest community giving useful, directional feedback that surfaces systemic issues before launch?</div>' +
-      '<div class="watching-item"><span class="watching-module">Pricing:</span> Is your launch price, discount plan, and regional strategy defensible against comparable titles in the same genre and scope?</div>' +
-      '<div class="watching-item"><span class="watching-module">PMF:</span> 30 days post-launch, are acquisition, engagement, and satisfaction signals pointing toward product-market fit?</div>' +
-      '</div>' +
-      '<div class="sync-note">Last synced: 2m ago (demo)</div>' +
-      '</div>' +
-      '<div id="toolsSection"></div>'
+      '<div id="widgetsSection" class="gos-meta">Loading widgets\u2026</div>'
     );
   }
 
@@ -473,46 +438,113 @@
   }
 
   /* ============================================================
-     Tools — registry-driven "More tools" grid (everything below the top 3)
-     ============================================================ */
+      Widgets — registry-driven. Everything is a widget on the dashboard:
+      top CXO tiles (rich), then every other tool grouped by lifecycle stage.
+      ============================================================ */
 
-  function renderToolsGrid(apps) {
-    var el = document.getElementById('toolsSection');
-    if (!el) return;
-    var tools = apps.filter(function (a) {
-      return a.group === 'tools' && a.id !== 'dashboard';
-    }).sort(function (a, b) { return (a.sortOrder || 0) - (b.sortOrder || 0); });
-    if (!tools.length) {
-      el.innerHTML = '';
-      return;
+  function parseJSON(s) {
+    if (!s) return null;
+    try { return JSON.parse(s); } catch (e) { return null; }
+  }
+
+  function widgetCard(a, rich) {
+    var name = a.name || a.id;
+    var toolName = a.toolName;
+    var href = a.path + (a.anchor || '');
+    var badge = a.status ? statusBadge(a.status === 'nodata' ? 'demo' : a.status, a.statusLabel || a.status) : '';
+
+    if (rich) {
+      var metrics = parseJSON(a.metrics) || [];
+      var spark = parseJSON(a.spark);
+      var metricsHtml = metrics.length
+        ? '<div class="metrics-grid">' +
+            metrics
+              .map(function (m) {
+                var val = m.value === '\u2014' || m.value === '—' ? '<span class="metric-value empty">—</span>' : '<span class="metric-value">' + escapeHtml(m.value) + '</span>';
+                return (
+                  '<div class="metric-item">' +
+                  '<span class="metric-label">' + escapeHtml(m.label) + '</span>' +
+                  val +
+                  '</div>'
+                );
+              })
+              .join('') +
+            '</div>'
+        : '';
+      var sparkHtml = spark ? '<div class="module-spark">' + sparkSVG(spark) + '</div>' : '';
+      return (
+        '<div class="ss-card module-card">' +
+        '<div class="module-head">' +
+        '<div>' +
+        '<h3>' + escapeHtml(name) + (toolName ? ' \u2014 ' + escapeHtml(toolName) : '') + '</h3>' +
+        (a.cxoQuestion ? '<div class="module-q">' + escapeHtml(a.cxoQuestion) + '</div>' : '') +
+        '</div>' +
+        badge +
+        '</div>' +
+        (a.description ? '<p class="module-desc">' + escapeHtml(a.description) + '</p>' : '') +
+        metricsHtml +
+        sparkHtml +
+        '<div class="card-actions">' +
+        '<a class="ss-btn" href="' + escapeHtml(href) + '">Open \u2192</a>' +
+        '</div>' +
+        '</div>'
+      );
     }
-    // Group by lifecycle stage; stage-less tools fall under "Tools".
-    var order = [];
-    var groups = {};
-    tools.forEach(function (a) {
-      var key = a.stage || 'Tools';
-      if (!groups[key]) { groups[key] = []; order.push(key); }
-      groups[key].push(a);
-    });
 
-    var section = '<h2 class="tools-heading">More tools</h2>';
-    order.forEach(function (stage) {
-      var cards = groups[stage]
-        .map(function (a) {
-          var href = a.path + (a.anchor || '');
-          return (
-            '<a class="ss-card tool-card" href="' + escapeHtml(href) + '">' +
-            '<h3>' + escapeHtml(a.name) + '</h3>' +
-            '<span class="tool-open">Open \u2192</span>' +
-            '</a>'
-          );
-        })
-        .join('');
-      section +=
-        '<h3 class="tools-group-label">' + escapeHtml(stage) + '</h3>' +
-        '<div class="tool-grid">' + cards + '</div>';
-    });
-    el.innerHTML = section;
+    // Non-rich tool card.
+    return (
+      '<a class="ss-card tool-card" href="' + escapeHtml(href) + '">' +
+      '<div>' +
+      '<h3>' + escapeHtml(name) + '</h3>' +
+      (a.description ? '<span class="tool-desc">' + escapeHtml(a.description) + '</span>' : '') +
+      '</div>' +
+      '<span class="tool-open">Open \u2192</span>' +
+      '</a>'
+    );
+  }
+
+  function renderWidgets(apps) {
+    var el = document.getElementById('widgetsSection');
+    if (!el) return;
+
+    var sorted = apps
+      .filter(function (a) { return a.id !== 'dashboard'; })
+      .sort(function (a, b) { return (a.sortOrder || 0) - (b.sortOrder || 0); });
+
+    if (!sorted.length) { el.innerHTML = ''; return; }
+
+    var cxo = sorted.filter(function (a) { return a.group === 'cxo'; });
+    var tools = sorted.filter(function (a) { return a.group !== 'cxo'; });
+
+    var html = '';
+
+    // Top CXO tiles (rich widgets).
+    if (cxo.length) {
+      html += '<div class="module-grid">' +
+        cxo.map(function (a) { return widgetCard(a, true); }).join('') +
+        '</div>';
+    }
+
+    // Everything else, grouped by stage.
+    if (tools.length) {
+      var order = [];
+      var groups = {};
+      tools.forEach(function (a) {
+        var key = a.stage || 'Tools';
+        if (!groups[key]) { groups[key] = []; order.push(key); }
+        groups[key].push(a);
+      });
+      html += '<h2 class="tools-heading">More tools</h2>';
+      order.forEach(function (stage) {
+        html +=
+          '<h3 class="tools-group-label">' + escapeHtml(stage) + '</h3>' +
+          '<div class="tool-grid">' +
+          groups[stage].map(function (a) { return widgetCard(a, false); }).join('') +
+          '</div>';
+      });
+    }
+
+    el.innerHTML = html;
   }
 
   /* ============================================================
@@ -524,7 +556,7 @@
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (data) {
         if (!data) return;
-        if (data.apps) renderToolsGrid(data.apps);
+        if (data.apps) renderWidgets(data.apps);
         if (!data.user) return;
         var info = document.getElementById('sessionInfo');
         var acct = document.getElementById('accountLink');

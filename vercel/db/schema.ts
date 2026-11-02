@@ -142,6 +142,14 @@ export const apps = pgTable("app", {
   group: text("group").notNull().default("tools"), // cxo (top 3) | tools (below)
   anchor: text("anchor"), // deep-link target appended to path, e.g. "?tool=market-scope"
   stage: text("stage"), // lifecycle stage label for grouping (Seismic) — e.g. "Concept"
+  // Widget presentation (rich tiles on the dashboard).
+  toolName: text("toolName"), // underlying tool name, e.g. "Chicken Brûlée"
+  cxoQuestion: text("cxoQuestion"), // one-line CXO framing
+  description: text("description"), // short description shown on the tile
+  status: text("status"), // healthy | watch | nodata
+  statusLabel: text("statusLabel"), // "Healthy" | "Watch" | "No data"
+  metrics: text("metrics"), // JSON array [{label,value}]
+  spark: text("spark"), // JSON {type:'bars'|'line',values:[...]} or null
   sortOrder: integer("sortOrder").notNull().default(0),
   enabled: integer("enabled").notNull().default(1), // 1 = shown
   createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),

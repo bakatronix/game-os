@@ -94,6 +94,13 @@ async function main() {
     `ALTER TABLE "app" ADD COLUMN IF NOT EXISTS "group" TEXT NOT NULL DEFAULT 'tools'`,
     `ALTER TABLE "app" ADD COLUMN IF NOT EXISTS "anchor" TEXT`,
     `ALTER TABLE "app" ADD COLUMN IF NOT EXISTS "stage" TEXT`,
+    `ALTER TABLE "app" ADD COLUMN IF NOT EXISTS "toolName" TEXT`,
+    `ALTER TABLE "app" ADD COLUMN IF NOT EXISTS "cxoQuestion" TEXT`,
+    `ALTER TABLE "app" ADD COLUMN IF NOT EXISTS "description" TEXT`,
+    `ALTER TABLE "app" ADD COLUMN IF NOT EXISTS "status" TEXT`,
+    `ALTER TABLE "app" ADD COLUMN IF NOT EXISTS "statusLabel" TEXT`,
+    `ALTER TABLE "app" ADD COLUMN IF NOT EXISTS "metrics" TEXT`,
+    `ALTER TABLE "app" ADD COLUMN IF NOT EXISTS "spark" TEXT`,
     `CREATE TABLE IF NOT EXISTS "event" (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       "eventName" TEXT NOT NULL,
@@ -187,7 +194,69 @@ async function main() {
        'demo-command','window-planner','launch-runbook','long-tail-engine','sequel-signal',
        'thesis-view','ledger-view','gate-log')`,
     `UPDATE "app" SET "group" = 'cxo' WHERE id IN
-      ('dashboard','price-calc','chicken-brulee','pmf','seismic')`,
+      ('price-calc','chicken-brulee','pmf')`,
+    // --- Widget presentation data (rich dashboard tiles) ---
+    // Top 3 CXO widgets.
+    `UPDATE "app" SET
+       "toolName"='Chicken Brûlée', "cxoQuestion"='Are players engaging?',
+       "description"='Is the playtest community giving useful, directional feedback? Chicken Brûlée scans your Discord playtest channels for recurring patterns, onboarding friction, and flagged comments.',
+       "status"='watch', "statusLabel"='Watch',
+       "metrics"='[{"label":"Contributors (7d)","value":"12"},{"label":"New observations","value":"34"},{"label":"Onboarding-flagged","value":"41%"}]',
+       "spark"='{"type":"bars","values":[8,12,10,14,11,12,9]}'
+     WHERE id='chicken-brulee'`,
+    `UPDATE "app" SET
+       "toolName"='Comp Analysis / SEB', "cxoQuestion"='Is the price right?',
+       "description"='Is our launch price, discount plan, and regional strategy defensible? SEB is the full indie pricing workbook: comparable-game research, four-variable scoring, score-to-tier mapping, and discount staircase planning.',
+       "status"='healthy', "statusLabel"='Healthy',
+       "metrics"='[{"label":"Required launch price","value":"$21.41"},{"label":"Wishlist → Week 1 est.","value":"630 units"},{"label":"Net revenue Week 1","value":"$9,443.70"}]',
+       "spark"='{"type":"line","values":[18,19,19.5,20,20.8,21,21.4]}'
+     WHERE id='price-calc'`,
+    `UPDATE "app" SET
+       "toolName"='MTG PMF Analyzer', "cxoQuestion"='Are we hitting product-market fit?',
+       "description"='30 days in, is this game showing PMF signals, and where is the weakness? The MTG PMF Analyzer evaluates acquisition, engagement, and satisfaction lenses on Steam-native public data.',
+       "status"='nodata', "statusLabel"='No data',
+       "metrics"='[{"label":"Days since launch","value":"—"},{"label":"Acquisition lens","value":"—"},{"label":"Engagement lens","value":"—"},{"label":"Satisfaction lens","value":"—"}]',
+       "spark"=NULL
+     WHERE id='pmf'`,
+    // Steam Page Audit widget.
+    `UPDATE "app" SET
+       "toolName"='Store Page Scorer', "cxoQuestion"='Will your page convert?',
+       "description"='Enter a Steam App ID; score your store page across art, trailer, description, reviews, and pricing — before players do.',
+       "status"='healthy', "statusLabel"='Healthy',
+       "metrics"='[{"label":"Overall","value":"93/100"},{"label":"Grade","value":"A"},{"label":"Criteria scored","value":"7"}]',
+       "spark"=NULL
+     WHERE id='steam-page-audit'`,
+    // Seismic tools — concise descriptions + status.
+    // Seismic overview as a tool entry (its 15 tools are separate widgets).
+    `UPDATE "app" SET
+       "group"='tools', "stage"='Lifecycle', "toolName"='Seismic',
+       "description"='The full publishing lifecycle: 15 tools across 8 stages, one shared system.',
+       "status"='healthy', "statusLabel"='Healthy', "anchor"=NULL
+     WHERE id='seismic'`,
+    `UPDATE "app" SET "toolName"='Seismic', "status"='healthy', "statusLabel"='Healthy' WHERE id IN
+      ('market-scope','thesis-builder','audience-map','page-engine','community-scaffold',
+       'test-loop','festival-radar','playtest-pipeline','creator-match','sentiment-radar',
+       'demo-command','window-planner','launch-runbook','long-tail-engine','sequel-signal',
+       'thesis-view','ledger-view','gate-log')`,
+    // Concise per-tool descriptions so each widget reads as a product.
+    `UPDATE "app" SET "description"='Does an audience exist? Size the market, saturation, and blue-ocean pairs.' WHERE id='market-scope'`,
+    `UPDATE "app" SET "description"='Your versioned publishing thesis: audience, comp set, hook, price, and per-stage targets.' WHERE id='thesis-builder'`,
+    `UPDATE "app" SET "description"='Where does the audience live? Channels, communities, and the vocabulary they use.' WHERE id='audience-map'`,
+    `UPDATE "app" SET "description"='Store page performance: capsule CTR, trailer retention, and creative versions.' WHERE id='page-engine'`,
+    `UPDATE "app" SET "description"='Stand up your Discord community and structured feedback loop.' WHERE id='community-scaffold'`,
+    `UPDATE "app" SET "description"='A/B the hook: capsule and positioning variants against a conversion lift norm.' WHERE id='test-loop'`,
+    `UPDATE "app" SET "description"='Which festivals to submit to, with deadlines and average wishlist lift.' WHERE id='festival-radar'`,
+    `UPDATE "app" SET "description"='Manage playtest sessions, demo scope, and key findings.' WHERE id='playtest-pipeline'`,
+    `UPDATE "app" SET "description"='Match creators by audience overlap; track outreach and response.' WHERE id='creator-match'`,
+    `UPDATE "app" SET "description"='Sentiment index, decay alarms, and the words players actually use.' WHERE id='sentiment-radar'`,
+    `UPDATE "app" SET "description"='Demo conversion diagnostics and the time series behind them.' WHERE id='demo-command'`,
+    `UPDATE "app" SET "description"='Pick your launch window: congestion, price lock, and wishlist geography.' WHERE id='window-planner'`,
+    `UPDATE "app" SET "description"='Launch checklist, alerts, and the expectation-delivery gap.' WHERE id='launch-runbook'`,
+    `UPDATE "app" SET "description"='Revenue by quarter, discount ladder, and update-beat planning.' WHERE id='long-tail-engine'`,
+    `UPDATE "app" SET "description"='DLC, sequel, port, or pivot — scenario cards and the next thesis draft.' WHERE id='sequel-signal'`,
+    `UPDATE "app" SET "description"='The single versioned record of what you claim and why.' WHERE id='thesis-view'`,
+    `UPDATE "app" SET "description"='Every signal, normalized against benchmarks, one ledger.' WHERE id='ledger-view'`,
+    `UPDATE "app" SET "description"='Forced verdicts at each stage — proceed, revise, or stop.' WHERE id='gate-log'`,
   ];
 
   for (const s of statements) {

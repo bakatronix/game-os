@@ -122,6 +122,12 @@ a:hover { color: var(--orange-deep); }
   color: var(--orange-deep);
   white-space: nowrap;
 }
+.tool-card .tool-desc {
+  display: block;
+  margin-top: 4px;
+  font: 400 13px/18px var(--font-sans), system-ui, sans-serif;
+  color: var(--ink-muted);
+}
 .tool-card:hover { border-color: var(--orange-deep); }
 .tool-card:hover h3 { color: var(--orange-deep); }
 
@@ -138,6 +144,12 @@ a:hover { color: var(--orange-deep); }
   margin-top: 4px;
   font: 400 13px/18px var(--font-sans);
   color: var(--ink-muted);
+}
+
+.module-desc {
+  margin: 10px 0 0;
+  font: 400 14px/20px var(--font-sans);
+  color: var(--ink-secondary);
 }
 
 /* ---- Module metrics ---- */

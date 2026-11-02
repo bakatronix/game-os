@@ -25,6 +25,13 @@ export async function GET() {
       sortOrder: a.sortOrder,
       stage: a.stage,
       anchor: a.anchor,
+      toolName: a.toolName,
+      cxoQuestion: a.cxoQuestion,
+      description: a.description,
+      status: a.status,
+      statusLabel: a.statusLabel,
+      metrics: a.metrics,
+      spark: a.spark,
     }));
   return NextResponse.json(
     { gates },
