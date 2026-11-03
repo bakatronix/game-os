@@ -77,12 +77,17 @@ test.describe("Seismic tools are registered as Game OS widgets", () => {
     expect(src).toContain("get('tool')");
   });
 
-  test("market-scope is now a standalone widget (own folder + render fn)", () => {
+  test("market-scope is redesigned as a Sandstone Game OS widget", () => {
     const html = readFileSync(resolve(ROOT, "game-os/market-scope/index.html"), "utf8");
     expect(html).toMatch(/\/game-os\/toolkit\/data\.js/);
+    expect(html).toMatch(/\/game-os\/toolkit\/components\.css/);
+    expect(html).toMatch(/\/game-os\/market-scope\/market-scope\.css/);
     expect(html).toMatch(/\/game-os\/market-scope\/render\.js/);
-    expect(html).toContain("bootWidget('market-scope')");
     const render = readFileSync(resolve(ROOT, "game-os/market-scope/render.js"), "utf8");
-    expect(render).toContain("function render_market_scope");
+    expect(render).toContain("window.msRender");
+    expect(render).toContain("ss-kpi");
+    expect(render).toContain("ss-chip");
+    // No Seismic coupling in the redesigned widget.
+    expect(render).not.toMatch(/toolkit\/toolkit\.js|bootWidget|render_market_scope|Seismic/);
   });
 });
