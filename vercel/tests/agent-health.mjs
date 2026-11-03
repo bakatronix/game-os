@@ -85,6 +85,9 @@ describe("Tools (all gated to Game OS accounts)", (t) => {
     "/game-os/assets/app.js",
     "/seismic/js/app.js",
     "/game-os/steam-page-audit/assets/app.js",
+    "/game-os/toolkit/data.js",
+    "/game-os/toolkit/toolkit.js",
+    "/game-os/market-scope/render.js",
   ];
   for (const a of assets) {
     t.it(`${a} serves (200)`, async () => {
@@ -102,9 +105,9 @@ describe("Public APIs", (t) => {
     assert(Array.isArray(d.gates) && d.gates.length >= 5, "5+ gates");
     assert(d.gates.some((g) => g.id === "price-calc"), "has price-calc");
     const seismicTools = d.gates.filter((g) => g.path === "/seismic" && g.group === "tools");
-    // 15 tools + 3 shared views + the Seismic overview container = 19.
-    assert(seismicTools.length >= 19, `19 Seismic entries (got ${seismicTools.length})`);
-    // Every deep-linked tool carries an anchor; the overview container does not.
+    // 14 remaining Seismic tools + 3 shared views + the Seismic overview = 18
+    // (Market Scope has been extracted as a standalone widget).
+    assert(seismicTools.length >= 18, `18 Seismic entries (got ${seismicTools.length})`);
     const linked = seismicTools.filter((g) => g.id !== "seismic");
     assert(linked.every((g) => g.anchor), "each deep-linked tool has an anchor");
   });

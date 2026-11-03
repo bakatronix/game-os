@@ -277,6 +277,8 @@ async function main() {
     `UPDATE "app" SET "cxoQuestion"='Every signal, one ledger.', "metrics"='[{"label":"Signals","value":"18,600"},{"label":"Momentum","value":"84"},{"label":"Percentile","value":"86th"}]', "spark"='{"type":"line","values":[60,64,68,73,80]}' WHERE id='ledger-view'`,
     `UPDATE "app" SET "cxoQuestion"='The verdict history.', "metrics"='[{"label":"Gates","value":"6"},{"label":"Proceeded","value":"5"},{"label":"Revised","value":"1"}]', "spark"='{"type":"bars","values":[50,55,60,66,72]}' WHERE id='gate-log'`,
     `UPDATE "app" SET "cxoQuestion"='One system, eight stages.', "metrics"='[{"label":"Tools","value":"15"},{"label":"Stages","value":"8"},{"label":"Momentum","value":"84"}]', "spark"='{"type":"line","values":[58,64,70,78,84]}' WHERE id='seismic'`,
+    // Market Scope is now a standalone Game OS widget (not a Seismic deep-link).
+    `UPDATE "app" SET path='/game-os/market-scope', anchor=NULL WHERE id='market-scope'`,
   ];
 
   for (const s of statements) {

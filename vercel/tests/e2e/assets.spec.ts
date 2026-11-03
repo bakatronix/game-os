@@ -54,10 +54,10 @@ test.describe("Seismic tools are registered as Game OS widgets", () => {
     expect(res.status()).toBe(200);
     const { gates } = await res.json();
     const seismicTools = gates.filter((g: any) => g.path === "/seismic" && g.group === "tools");
-    expect(seismicTools.length).toBe(19); // 15 tools + 3 shared views + Seismic overview
+    expect(seismicTools.length).toBe(18); // 14 tools + 3 shared views + Seismic overview (Market Scope extracted)
     const linked = seismicTools.filter((g: any) => g.id !== "seismic");
     expect(linked.every((g: any) => g.anchor && g.anchor.startsWith("?tool="))).toBe(true);
-    expect(linked.some((g: any) => g.anchor === "?tool=market-scope")).toBe(true);
+    expect(linked.some((g: any) => g.anchor === "?tool=thesis-builder")).toBe(true);
     expect(linked.some((g: any) => g.stage === "Concept")).toBe(true);
   });
 
@@ -66,5 +66,14 @@ test.describe("Seismic tools are registered as Game OS widgets", () => {
     const src = readFileSync(resolve(ROOT, "seismic/js/app.js"), "utf8");
     expect(src).toContain("deepLinkTarget");
     expect(src).toContain("get('tool')");
+  });
+
+  test("market-scope is now a standalone widget (own folder + render fn)", () => {
+    const html = readFileSync(resolve(ROOT, "game-os/market-scope/index.html"), "utf8");
+    expect(html).toMatch(/\/game-os\/toolkit\/data\.js/);
+    expect(html).toMatch(/\/game-os\/market-scope\/render\.js/);
+    expect(html).toContain("bootWidget('market-scope')");
+    const render = readFileSync(resolve(ROOT, "game-os/market-scope/render.js"), "utf8");
+    expect(render).toContain("function render_market_scope");
   });
 });

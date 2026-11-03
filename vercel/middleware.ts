@@ -17,6 +17,7 @@ const FALLBACK_GATES: Gate[] = [
   { path: "/game-os/PMF", access: "authenticated", minRole: null, id: "pmf", name: "PMF Analyzer" },
   { path: "/seismic", access: "authenticated", minRole: null, id: "seismic", name: "Seismic" },
   { path: "/game-os/steam-page-audit", access: "authenticated", minRole: null, id: "steam-page-audit", name: "Steam Page Audit" },
+  { path: "/game-os/market-scope", access: "authenticated", minRole: null, id: "market-scope", name: "Market Scope" },
 ];
 
 // Edge cache for the registry (per isolate).

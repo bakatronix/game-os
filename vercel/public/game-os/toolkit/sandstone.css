@@ -1,0 +1,217 @@
+/* Game OS — Seismic-tool compatibility styles on Sandstone.
+ *
+ * The extracted Seismic render functions emit markup whose classes + inline
+ * vars are Seismic-flavoured (beige/gold, Playfair/DM Sans). This shim maps
+ * those onto Game OS Sandstone tokens and re-styles the shared components so
+ * the standalone widgets read as Game OS — without touching the render code.
+ *
+ * Load AFTER tokens.css (Sandstone tokens) so this can override.
+ */
+
+/* Map Seismic's legacy variable names onto Sandstone tokens. */
+:root {
+  --bg: var(--surface-page, #f0e3c3);
+  --bg2: var(--surface-card, #fdfcf9);
+  --bg3: var(--surface-muted, #eae7e0);
+  --border: var(--border, #d2cdc3);
+  --text: var(--ink, #2f2a20);
+  --text-muted: var(--ink-secondary, #4d4139);
+  --text-dim: var(--ink-muted, #655e4b);
+  --gold: var(--orange-deep, #b84c27);
+  --gold-light: var(--orange, #e3683f);
+  --gold-dim: rgba(227, 104, 63, 0.12);
+  --teal: var(--teal, #3b8d83);
+  --teal-light: var(--teal, #3b8d83);
+  --teal-dim: rgba(59, 141, 131, 0.10);
+  --coral: var(--orange-deep, #b84c27);
+  --coral-light: var(--orange, #e3683f);
+  --coral-dim: rgba(184, 76, 39, 0.10);
+  --amber: var(--mustard, #f3b43e);
+  --blue: var(--slate, #304d4f);
+  --blue-dim: rgba(48, 77, 79, 0.10);
+  --font-display: var(--font-display, "Archivo", sans-serif);
+  --font-sans: var(--font-sans, "Source Sans 3", sans-serif);
+  --font-mono: var(--font-mono, "IBM Plex Mono", monospace);
+  --radius-card: var(--radius-card, 8px);
+  --radius-sm: var(--radius-sm, 2px);
+  --radius-pill: var(--radius-pill, 999px);
+}
+
+/* ---- Widget shell ---- */
+.widget-shell {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 22px;
+}
+.widget-shell .widget-breadcrumb {
+  font: 700 12px/16px var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin: 0 0 16px;
+}
+.widget-shell .widget-breadcrumb a {
+  color: var(--gold);
+  text-decoration: none;
+}
+
+/* ---- Panels (Seismic .panel -> Sandstone card) ---- */
+.panel {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.panel-title {
+  font: 700 12px/16px var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 12px;
+}
+
+/* ---- Tool header ---- */
+.tool-header { margin-bottom: 16px; }
+.tool-breadcrumb {
+  font: 700 12px/16px var(--font-mono);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.tool-breadcrumb span { color: var(--gold); }
+.tool-title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: -0.015em;
+  font-size: 32px;
+  line-height: 36px;
+  margin: 6px 0 2px;
+  color: var(--text);
+}
+.tool-subtitle { color: var(--text-muted); margin: 0; }
+
+/* ---- Lineage bar ---- */
+.lineage-bar {
+  font: 400 12px/16px var(--font-mono);
+  color: var(--text-dim);
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  margin-bottom: 16px;
+}
+.lineage-label { color: var(--text-muted); }
+.lineage-bar span { color: var(--text); }
+.lineage-arrow { color: var(--gold); }
+
+/* ---- Stat grid ---- */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.stat-cell {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 14px 16px;
+}
+.stat-val {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 26px;
+  line-height: 30px;
+  color: var(--text);
+}
+.stat-val.gold { color: var(--gold); }
+.stat-val.teal { color: var(--teal); }
+.stat-val.purple { color: var(--slate, #304d4f); }
+.stat-val.coral { color: var(--orange-deep, #b84c27); }
+.stat-lbl { font: 700 12px/16px var(--font-mono); text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); margin-top: 4px; }
+.stat-sub { font: 400 11px/16px var(--font-sans); color: var(--text-dim); margin-top: 2px; }
+
+/* ---- Tables ---- */
+.data-table { width: 100%; border-collapse: collapse; font: 500 14px/20px var(--font-sans); }
+.data-table th {
+  text-align: left;
+  font: 700 12px/16px var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  background: var(--bg3);
+  padding: 8px 10px;
+}
+.data-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); color: var(--text); }
+.data-table .cell-highlight { font-family: var(--font-mono); font-weight: 700; color: var(--teal); }
+
+/* ---- Metric rows ---- */
+.metric-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.metric-name { font: 500 14px/20px var(--font-sans); color: var(--text-muted); }
+.metric-value { font-family: var(--font-mono); font-weight: 700; color: var(--text); }
+
+/* ---- Action rows ---- */
+.action-row {
+  display: flex;
+  gap: 16px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  margin-bottom: 12px;
+  background: var(--bg2);
+}
+.action-metric { min-width: 140px; text-align: center; }
+.action-value { font-family: var(--font-display); font-weight: 800; font-size: 20px; }
+.action-value.teal { color: var(--teal); }
+.action-value.coral { color: var(--orange-deep); }
+.action-label { font: 700 11px/16px var(--font-mono); text-transform: uppercase; color: var(--text-dim); }
+.action-benchmark { font: 400 11px/16px var(--font-sans); color: var(--text-dim); }
+.action-body { flex: 1; align-self: center; }
+.action-recommendation { font-size: 14px; line-height: 20px; color: var(--text-muted); }
+
+/* ---- Tag pill (Market Scope tag cloud) ---- */
+.tag-cloud { display: flex; flex-wrap: wrap; gap: 8px; }
+.tag-pill {
+  font: 500 13px/18px var(--font-sans);
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  color: var(--text-muted);
+  background: var(--bg2);
+}
+.tag-pill.selected { background: var(--ink, #2f2a20); color: var(--bg2); border-color: var(--ink, #2f2a20); }
+
+/* ---- Two-col ---- */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 720px) { .two-col { grid-template-columns: 1fr; } }
+
+/* ---- Gate banner ---- */
+.gate-banner {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 14px;
+}
+.gate-banner-icon { font-size: 16px; color: var(--gold); }
+.gate-banner-title { font-weight: 700; color: var(--text); }
+.gate-banner-question { font: 400 13px/18px var(--font-sans); color: var(--text-muted); margin: 4px 0 0; }
+
+/* ---- Benchmark hint ---- */
+.benchmark-hint { font: 400 11px/16px var(--font-mono); color: var(--text-dim); }
