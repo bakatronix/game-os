@@ -472,6 +472,10 @@
       : '';
     var sparkHtml = spark ? '<div class="module-spark">' + sparkSVG(spark) + '</div>' : '';
 
+    var stageTag = a.stage && a.group !== 'cxo'
+      ? '<span class="widget-stage">' + escapeHtml(a.stage) + '</span>'
+      : '';
+
     return (
       '<div class="ss-card module-card">' +
       '<div class="module-head">' +
@@ -486,6 +490,7 @@
       sparkHtml +
       '<div class="card-actions">' +
       '<a class="ss-btn" href="' + escapeHtml(href) + '">Open \u2192</a>' +
+      (stageTag ? stageTag : '') +
       '</div>' +
       '</div>'
     );
@@ -513,23 +518,13 @@
         '</div>';
     }
 
-    // Everything else, grouped by lifecycle stage, all as rich widgets.
+    // Everything else — one continuous responsive grid so widgets sit
+    // beside each other (not stacked per stage). Stage is a small in-card tag.
     if (tools.length) {
-      var order = [];
-      var groups = {};
-      tools.forEach(function (a) {
-        var key = a.stage || 'Tools';
-        if (!groups[key]) { groups[key] = []; order.push(key); }
-        groups[key].push(a);
-      });
-      html += '<h2 class="tools-heading">More tools</h2>';
-      order.forEach(function (stage) {
-        html +=
-          '<h3 class="tools-group-label">' + escapeHtml(stage) + '</h3>' +
-          '<div class="module-grid">' +
-          groups[stage].map(widgetCard).join('') +
-          '</div>';
-      });
+      html += '<h2 class="tools-heading">More tools</h2>' +
+        '<div class="module-grid module-grid-tools">' +
+        tools.map(widgetCard).join('') +
+        '</div>';
     }
 
     el.innerHTML = html;
