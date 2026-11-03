@@ -49,16 +49,25 @@ test.describe("every tool is gated to Game OS accounts", () => {
 });
 
 test.describe("Seismic tools are registered as Game OS widgets", () => {
-  test("registry lists 15 tools + 3 shared views under /seismic", async ({ request, baseURL }) => {
+  test("15 tools are standalone widgets; 3 shared views stay in Seismic", async ({ request, baseURL }) => {
     const res = await request.get(`${baseURL}/api/apps`);
     expect(res.status()).toBe(200);
     const { gates } = await res.json();
-    const seismicTools = gates.filter((g: any) => g.path === "/seismic" && g.group === "tools");
-    expect(seismicTools.length).toBe(18); // 14 tools + 3 shared views + Seismic overview (Market Scope extracted)
-    const linked = seismicTools.filter((g: any) => g.id !== "seismic");
-    expect(linked.every((g: any) => g.anchor && g.anchor.startsWith("?tool="))).toBe(true);
-    expect(linked.some((g: any) => g.anchor === "?tool=thesis-builder")).toBe(true);
-    expect(linked.some((g: any) => g.stage === "Concept")).toBe(true);
+
+    // Standalone: the 15 Seismic tools now live under /game-os/<id>, no anchor.
+    const toolIds = ["market-scope","thesis-builder","audience-map","page-engine","community-scaffold","test-loop","festival-radar","playtest-pipeline","creator-match","sentiment-radar","demo-command","window-planner","launch-runbook","long-tail-engine","sequel-signal"];
+    for (const id of toolIds) {
+      const row = gates.find((g: any) => g.id === id);
+      expect(row, id).toBeTruthy();
+      expect(row.path).toBe(`/game-os/${id}`);
+      expect(row.anchor).toBeFalsy();
+    }
+
+    // Seismic deep-links: only the 3 shared views (+ overview) remain.
+    const seis = gates.filter((g: any) => g.path === "/seismic" && g.group === "tools");
+    expect(seis.map((g: any) => g.id).sort()).toEqual(["gate-log", "ledger-view", "seismic", "thesis-view"]);
+    const views = seis.filter((g: any) => g.id !== "seismic");
+    expect(views.every((g: any) => g.anchor && g.anchor.startsWith("?tool="))).toBe(true);
   });
 
   test("deep-link ?tool= opens the right tool (source markup)", () => {

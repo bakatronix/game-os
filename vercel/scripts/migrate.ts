@@ -279,6 +279,12 @@ async function main() {
     `UPDATE "app" SET "cxoQuestion"='One system, eight stages.', "metrics"='[{"label":"Tools","value":"15"},{"label":"Stages","value":"8"},{"label":"Momentum","value":"84"}]', "spark"='{"type":"line","values":[58,64,70,78,84]}' WHERE id='seismic'`,
     // Market Scope is now a standalone Game OS widget (not a Seismic deep-link).
     `UPDATE "app" SET path='/game-os/market-scope', anchor=NULL WHERE id='market-scope'`,
+    // The remaining Seismic tools are extracted as standalone widgets too.
+    `UPDATE "app" SET path='/game-os/'||id, anchor=NULL WHERE id IN
+      ('thesis-builder','audience-map','page-engine','community-scaffold',
+       'test-loop','festival-radar','playtest-pipeline','creator-match',
+       'sentiment-radar','demo-command','window-planner','launch-runbook',
+       'long-tail-engine','sequel-signal')`,
   ];
 
   for (const s of statements) {

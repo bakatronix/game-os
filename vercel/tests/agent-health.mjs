@@ -105,11 +105,11 @@ describe("Public APIs", (t) => {
     assert(Array.isArray(d.gates) && d.gates.length >= 5, "5+ gates");
     assert(d.gates.some((g) => g.id === "price-calc"), "has price-calc");
     const seismicTools = d.gates.filter((g) => g.path === "/seismic" && g.group === "tools");
-    // 14 remaining Seismic tools + 3 shared views + the Seismic overview = 18
-    // (Market Scope has been extracted as a standalone widget).
-    assert(seismicTools.length >= 18, `18 Seismic entries (got ${seismicTools.length})`);
+    // Only the Seismic overview + 3 shared views remain deep-linked; the 15
+    // tools are now standalone /game-os/<id> widgets.
+    assert(seismicTools.length >= 4, `Seismic overview + 3 shared views (got ${seismicTools.length})`);
     const linked = seismicTools.filter((g) => g.id !== "seismic");
-    assert(linked.every((g) => g.anchor), "each deep-linked tool has an anchor");
+    assert(linked.every((g) => g.anchor), "each deep-linked shared view has an anchor");
   });
   t.it("GET /api/me null when signed out", async () => {
     const r = await http(`${BASE}/api/me`);
