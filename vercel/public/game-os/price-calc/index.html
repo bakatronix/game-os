@@ -536,8 +536,12 @@
 <body>
 
 <div class="landing-overlay" id="landing-overlay" style="display:none">
+  <div class="landing-top">
+    <a class="gos-brand" href="/game-os" aria-label="Game OS home"><img src="/game-os/assets/logo.svg?v=6" alt="Game OS"></a>
+    <a class="gos-back" href="/game-os">&larr; Back to dashboard</a>
+  </div>
   <div class="landing-card" role="dialog" aria-labelledby="landing-title">
-    <div class="landing-brand">Game OS &middot; Pricing Calculator</div>
+    <div class="landing-brand">Pricing Calculator</div>
     <h1 id="landing-title">Find a launch price you can defend</h1>
     <p class="landing-lead">Tell us about your game and a handful of similar Steam games. You&rsquo;ll leave with the price to set on Steam, a discount plan that triggers wishlist emails, and a report you can share.</p>
 
@@ -546,7 +550,7 @@
       <li><span class="ls-num" aria-hidden="true">2</span><div><strong>Add comparable games</strong><span>Paste Steam App IDs for 8&ndash;12 similar games; prices and reviews fill in for you.</span></div></li>
       <li><span class="ls-num" aria-hidden="true">3</span><div><strong>Get your price</strong><span>Pick the sale price you&rsquo;re aiming for and see your launch price, discount staircase and break-even.</span></div></li>
     </ol>
-    <p class="landing-optional"><strong>Optional, when you&rsquo;re ready:</strong> wishlist forecast, demo performance, Early Access, regional pricing and post-launch checks.</p>
+    <p class="landing-optional"><strong>Optional, when you&rsquo;re ready:</strong> wishlist forecast, community signals, demo performance, Early Access, regional pricing and post-launch checks.</p>
 
     <div class="landing-cta">
       <button class="btn" id="landing-start">Start with your game &rarr;</button>
@@ -578,16 +582,16 @@
     <br>
     <div class="nav-wrapper">
       <select class="nav-select" onchange="switchTab(this.value)">
-        <option value="profile">00 — Game Profile</option>
-        <option value="comp">01 — Comp Analysis</option>
-        <option value="variables">02 — Four Variables</option>
-        <option value="pricing">03 — Price &amp; Discount</option>
-        <option value="wishlist">04 — Wishlist Estimator</option>
-        <option value="demo">05 — Demo Performance</option>
-        <option value="ea">06 — Early Access</option>
-        <option value="regional">07 — Regional &amp; DLC</option>
-        <option value="monitoring">08 — Post-Launch</option>
-        <option value="sources">Sources &amp; Notes</option>
+        <option value="profile">1 — Game Profile</option>
+        <option value="comp">2 — Comp Analysis</option>
+        <option value="variables">3 — Four Variables</option>
+        <option value="pricing">4 — Price &amp; Discount</option>
+        <option value="wishlist">5 — Wishlist Estimator</option>
+        <option value="community">6 — Community Signals</option>
+        <option value="demo">7 — Demo Performance</option>
+        <option value="ea">8 — Early Access</option>
+        <option value="regional">9 — Regional &amp; DLC</option>
+        <option value="monitoring">10 — Post-Launch</option>
         <option value="summary">Pricing Summary</option>
       </select>
     </div>
@@ -597,39 +601,39 @@
       <button data-tab="variables">Variables</button>
       <button data-tab="pricing">Pricing</button>
       <button data-tab="wishlist">Wishlist</button>
+      <button data-tab="community">Community</button>
       <button data-tab="demo">Demo</button>
       <button data-tab="ea">EA</button>
       <button data-tab="regional">Regional</button>
       <button data-tab="monitoring">Monitor</button>
-      <button data-tab="sources">Sources</button>
       <button data-tab="summary">Summary</button>
     </nav>
   </div>
 </header>
 
 <div class="stepper" id="stepper-desktop" role="list" aria-label="Progress">
-  <button class="stepper-step active" data-step="0" data-tab="profile"><span class="dot">0</span>Profile</button>
+  <button class="stepper-step active" data-step="0" data-tab="profile"><span class="dot">1</span>Profile</button>
   <span class="stepper-divider"></span>
-  <button class="stepper-step" data-step="1" data-tab="comp"><span class="dot">1</span>Comp</button>
+  <button class="stepper-step" data-step="1" data-tab="comp"><span class="dot">2</span>Comp</button>
   <span class="stepper-divider"></span>
-  <button class="stepper-step" data-step="2" data-tab="variables"><span class="dot">2</span>Variables</button>
+  <button class="stepper-step" data-step="2" data-tab="variables"><span class="dot">3</span>Variables</button>
   <span class="stepper-divider"></span>
-  <button class="stepper-step" data-step="3" data-tab="pricing"><span class="dot">3</span>Pricing</button>
+  <button class="stepper-step" data-step="3" data-tab="pricing"><span class="dot">4</span>Pricing</button>
   <span class="stepper-divider"></span>
-  <button class="stepper-step" data-step="4" data-tab="wishlist"><span class="dot">4</span>Wishlist</button>
+  <button class="stepper-step" data-step="4" data-tab="wishlist"><span class="dot">5</span>Wishlist</button>
   <span class="stepper-divider"></span>
-  <button class="stepper-step" data-step="5" data-tab="demo"><span class="dot">5</span>Demo</button>
+  <button class="stepper-step" data-step="5" data-tab="community"><span class="dot">6</span>Community</button>
   <span class="stepper-divider"></span>
-  <button class="stepper-step" data-step="6" data-tab="ea"><span class="dot">6</span>EA</button>
+  <button class="stepper-step" data-step="6" data-tab="demo"><span class="dot">7</span>Demo</button>
   <span class="stepper-divider"></span>
-  <button class="stepper-step" data-step="7" data-tab="regional"><span class="dot">7</span>Regional</button>
+  <button class="stepper-step" data-step="7" data-tab="ea"><span class="dot">8</span>EA</button>
   <span class="stepper-divider"></span>
-  <button class="stepper-step" data-step="8" data-tab="monitoring"><span class="dot">8</span>Monitor</button>
+  <button class="stepper-step" data-step="8" data-tab="regional"><span class="dot">9</span>Regional</button>
   <span class="stepper-divider"></span>
-  <button class="stepper-step" data-step="9" data-tab="sources"><span class="dot">9</span>Sources</button>
+  <button class="stepper-step" data-step="9" data-tab="monitoring"><span class="dot">10</span>Monitor</button>
 </div>
 <div class="stepper-mobile" id="stepper-mobile">
-  Step <span id="stepper-current">0</span> of 10 · Game Profile
+  Step <span id="stepper-current">1</span> of 10 · <span id="stepper-label">Game Profile</span>
   <div class="progress-bar"><div class="progress-bar-fill" id="stepper-fill" style="width:12.5%"></div></div>
 </div>
 
@@ -993,7 +997,7 @@
           <input type="number" id="wishlist-count" value="" min="0" step="500" oninput="markManual('wishlist-count'); updateWishlist()">
           <div class="estimate-note heuristic" id="wishlist-estimate-note"></div>
           <p class="output-note" style="margin-top:4px">Use organic wishlist count only — exclude botted, fabricated, or incentivised wishlists. Steam's algorithm detects artificial activity and may penalise your Visibility Rounds.</p>
-          <div class="inline-prompt" id="wishlist-community-prompt">Wishlist count alone predicts launch success only ~17% of the time under 10,000 wishlists. <a onclick="document.getElementById('community-signals-details').open=true; document.getElementById('community-signals-details').scrollIntoView({behavior:'smooth'});">Add your community signals below</a> to strengthen this estimate.</div>
+          <div class="inline-prompt" id="wishlist-community-prompt"></div>
         </div>
         <div style="margin-bottom:14px">
           <p class="muted">Conversion rate tiers (GameDiscoverCo aggregate data):</p>
@@ -1009,9 +1013,21 @@
           <p class="muted" style="margin-top:8px">Conversion drops ~30% if launch price is above $10. <span id="wishlist-tiers-src"></span></p>
         </div>
 
-        <details class="summary-bar" id="community-signals-details" style="margin-top:12px;border-left:3px solid var(--gold);background:rgba(255,184,77,0.06)">
-          <summary style="color:var(--dark);font-weight:600;font-size:11px">Community Signals (optional) — click to expand</summary>
-          <p class="muted" style="margin-bottom:12px;font-size:12px">Why this matters: GameDiscoverCo research shows wishlist count alone predicts launch success only ~17% of the time for games under 10,000 wishlists — community engagement and wishlist source quality are stronger secondary signals. Use these optional fields to sanity-check whether your wishlist count reflects real purchase intent.</p>
+      </div>
+      <div class="card">
+        <h3>Estimated Results</h3>
+        <div id="wishlist-outputs" aria-live="polite" aria-atomic="true"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMMUNITY SIGNALS (its own step, after Wishlist) -->
+  <section class="tab" id="tab-community">
+    <h2>Community Signals</h2>
+    <p class="subtitle">GameDiscoverCo research shows wishlist count alone predicts launch success only ~17% of the time for games under 10,000 wishlists — community engagement and wishlist source quality are stronger secondary signals. Use these optional fields to sanity-check whether your wishlist count reflects real purchase intent.</p>
+    <div class="grid-2">
+      <div class="card">
+        <h3>Your Community</h3>
           <p class="estimate-note heuristic" id="community-default-note" style="margin-bottom:12px"></p>
           <div style="margin-bottom:12px">
             <label class="stat-label">Discord Member Count</label>
@@ -1039,11 +1055,10 @@
               <option value="paid">Mostly paid ads / one-time spike (e.g. Next Fest)</option>
             </select>
           </div>
-        </details>
       </div>
       <div class="card">
-        <h3>Estimated Results</h3>
-        <div id="wishlist-outputs" aria-live="polite" aria-atomic="true"></div>
+        <h3>Effect on Your Wishlist Forecast</h3>
+        <div id="community-outputs" aria-live="polite"></div>
       </div>
     </div>
   </section>
@@ -1313,16 +1328,10 @@
     </div>
   </section>
 
-  <!-- TAB 9 — SOURCES -->
-  <section class="tab" id="tab-sources">
-    <h2>Sources &amp; Methodology Notes</h2>
-    <p class="subtitle">All data referenced in this workbook. Verify live data before finalizing pricing decisions.</p>
-    <div id="sources-body"></div>
-  </section>
 
   <section class="tab" id="tab-summary">
     <h2>Pricing Summary</h2>
-    <p class="subtitle">Your complete pricing decision recap. All data derived from your inputs across Steps 0–8.</p>
+    <p class="subtitle">Your complete pricing decision recap. Everything here comes from what you entered in the steps above.</p>
     <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px">
       <button class="btn" id="send-thesis-btn" onclick="sendToGameOS()" title="Write this launch price and its projections into your game's Publishing Thesis and Signal Ledger">Send to thesis</button>
       <button class="btn" onclick="try{buildSummary();}catch(e){};setTimeout(function(){window.print()},400)" id="pdf-btn">Download PDF</button>
@@ -1469,7 +1478,7 @@
   input:focus-visible, select:focus-visible, button:focus-visible, .tier-row:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
   .tier-row[role="button"]:focus-visible td { background: rgba(255,184,77,0.06); }
 </style>
-<link rel="stylesheet" href="/game-os/price-calc/sandstone-skin.css?v=5">
+<link rel="stylesheet" href="/game-os/price-calc/sandstone-skin.css?v=6">
 
 <script>
 window.manualFields = {};
@@ -1814,7 +1823,7 @@ var PricingModel = {
     }
 
     if (wl > 0 && inputs.roundWishlist && !signalsFilled) {
-      issues.push({ id: 'wishlist-round', severity: 'warning', title: 'Wishlist estimate unverified', detail: 'This looks like an estimate rather than a tracked number. Expand Community Signals to sanity-check wishlist quality, or confirm this is your best current projection.' });
+      issues.push({ id: 'wishlist-round', severity: 'warning', title: 'Wishlist estimate unverified', detail: 'This looks like an estimate rather than a tracked number. Fill in the Community Signals step to sanity-check wishlist quality, or confirm this is your best current projection.' });
     }
 
     if (demoExists === 'yes') {
@@ -1872,6 +1881,7 @@ function switchTab(tabName) {
   var sel = document.querySelector('.nav-select');
   if (sel) sel.value = tabName;
   if (tabName === 'wishlist') updateWishlist();
+  if (tabName === 'community') renderCommunityOutputs();
   updateContextBanner(tabName);
 }
 (function(){
@@ -2763,6 +2773,7 @@ function getCommunityScore() {
 
 function updateWishlist() {
   renderReconciliation();
+  renderCommunityOutputs();
   var count = parseInt(document.getElementById('wishlist-count').value) || 0;
   var lp = getValidatedLaunchPrice();
   var devShare = getDevShare();
@@ -3067,6 +3078,27 @@ function getDemoConversionRate() {
   return downloads > 0 ? (playedWishlisted / downloads) * 100 : 0;
 }
 
+// Live readout on the Community Signals step: what these inputs do to the
+// wishlist conversion estimate (same model the Wishlist step uses).
+function renderCommunityOutputs() {
+  var el = document.getElementById('community-outputs');
+  if (!el) return;
+  // Keep the "Estimated default" tags honest: drop them once a field is the user's own.
+  refreshCommunityDefaults();
+  var c = getCommunityScore();
+  var pct = Math.round((c.multiplier - 1) * 100);
+  var headline = pct === 0 ? 'No adjustment' : (pct > 0 ? '+' + pct + '%' : '\u2212' + Math.abs(pct) + '%');
+  var verdict = pct > 4 ? 'Your community points to better-than-average conversion.'
+    : pct < -4 ? 'Your community points to weaker-than-average conversion.'
+    : 'Your community signals are neutral for now.';
+  var wl = parseInt(document.getElementById('wishlist-count').value) || 0;
+  el.innerHTML =
+    '<div class="output-row"><span class="output-label">Change to expected wishlist conversion <span class="output-note">' + verdict + '</span></span><span class="output-value">' + headline + '</span></div>' +
+    '<ul class="community-breakdown">' + c.breakdown.map(function (b) { return '<li>' + escapeHtml(b) + '</li>'; }).join('') + '</ul>' +
+    (wl > 0 ? '' : '<p class="muted">Add your projected wishlist count on the <a href="#" onclick="switchStep(stepOrder.indexOf(\'wishlist\')); window.scrollTo(0,0); return false;">Wishlist step</a> to include the follower ratio.</p>') +
+    '<p class="muted">Applied to your first-week sales estimate on the Wishlist step and in the Summary.</p>';
+}
+
 function isCommunitySignalsFilled() {
   return isManual('follower-count') || isManual('discord-activity') || isManual('wishlist-source') ||
     !!(document.getElementById('discord-count').value);
@@ -3141,7 +3173,7 @@ function renderWishlistPrompt() {
   var prompt = document.getElementById('wishlist-community-prompt');
   if (!prompt) return;
   var expanded = details && details.open;
-  var expandLink = '<a onclick="document.getElementById(\'community-signals-details\').open=true; document.getElementById(\'community-signals-details\').scrollIntoView({behavior:\'smooth\'});">Add your community signals below</a>';
+  var expandLink = '<a href="#" onclick="switchStep(stepOrder.indexOf(\'community\')); window.scrollTo(0,0); return false;">Add your community signals</a>';
   if (wl > 0 && !signalsFilled && !expanded) {
     if (isRoundWishlist(wl)) {
       prompt.innerHTML = 'This looks like an estimate rather than a tracked number. ' + expandLink + ' to sanity-check wishlist quality, or confirm this is your best current projection.';
@@ -3382,19 +3414,19 @@ function updateGameProfile() {
   refreshDerivedDefaults();
 }
 
-var stepOrder = ['profile','comp','variables','pricing','wishlist','demo','ea','regional','monitoring','sources'];
-var stepLabels = {'profile':'Game Profile','comp':'Comp Analysis','variables':'Four Variables','pricing':'Price & Discount','wishlist':'Wishlist','demo':'Demo Performance','ea':'Early Access','regional':'Regional & DLC','monitoring':'Post-Launch','sources':'Sources'};
+var stepOrder = ['profile','comp','variables','pricing','wishlist','community','demo','ea','regional','monitoring'];
+var stepLabels = {'profile':'Game Profile','comp':'Comp Analysis','variables':'Four Variables','pricing':'Price & Discount','wishlist':'Wishlist','community':'Community Signals','demo':'Demo Performance','ea':'Early Access','regional':'Regional & DLC','monitoring':'Post-Launch'};
 var stepWhys = {
   'profile': 'Set up who your game is and what it is.',
   'comp': 'Research comparable games so your price has real-world anchors.',
   'variables': 'Score the four variables that decide your recommended tier.',
   'pricing': 'Turn your comp data into a real launch price and discount plan.',
   'wishlist': 'Estimate first-week sales from your projected wishlist count.',
+  'community': 'Show how engaged your community is so the wishlist forecast reflects it.',
   'demo': 'Check whether your demo is a sales asset or a liability.',
   'ea': 'Decide how to price Early Access versus your 1.0 launch.',
   'regional': 'Set regional and DLC pricing without leaving money on the table.',
   'monitoring': 'Know what to watch after launch to course-correct.',
-  'sources': 'Review the benchmark data and methodology behind the numbers.',
   'summary': 'Your complete, defensible pricing decision recap.'
 };
 var TOTAL_STEPS = 11;
@@ -3414,7 +3446,6 @@ function switchStep(idx) {
     updateStepper();
     updateWizardButtons();
     populateSummaryBar();
-    if (stepOrder[idx] === 'sources') document.getElementById('tab-summary').classList.add('active');
   }
 }
 function goNext() {
@@ -3443,7 +3474,7 @@ function goPrev() { var cur = getCurrentStepIndex(); switchStep(Math.max(0, cur 
 function showSummary() {
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
   document.getElementById('tab-summary').classList.add('active');
-  visitedSteps.sources = true;
+  visitedSteps.summary = true;
   updateStepper();
   updateWizardButtons();
   buildSummary();
@@ -3463,6 +3494,8 @@ function updateStepper() {
     else dotSpan.textContent = (i + 1);
   }
   document.getElementById('stepper-current').textContent = cur + 1;
+  var stLabel = document.getElementById('stepper-label');
+  if (stLabel) stLabel.textContent = stepLabels[stepOrder[cur]] || '';
   document.getElementById('stepper-fill').style.width = ((cur + 1) / 10 * 100) + '%';
 }
 
@@ -3487,7 +3520,7 @@ function checkCompletion() {
   completedSteps.ea = !!visitedSteps.ea;
   completedSteps.regional = !!visitedSteps.regional;
   completedSteps.monitoring = !!visitedSteps.monitoring;
-  completedSteps.sources = !!visitedSteps.sources;
+  completedSteps.community = isCommunitySignalsFilled();
   updateStepper();
 }
 
@@ -3834,7 +3867,7 @@ function buildSummary() {
   var sumWiz = document.querySelector('#tab-summary .wizard-nav');
   if (sumWiz) sumWiz.style.display = 'none';
   } catch(e) {
-    document.getElementById('summary-content').innerHTML = '<div class="card"><p class="muted">Fill in Steps 0\u20138 first, then the summary will populate automatically.</p></div>';
+    document.getElementById('summary-content').innerHTML = '<div class="card"><p class="muted">Fill in the steps first, then the summary will populate automatically.</p></div>';
   }
 }
 
@@ -3882,7 +3915,7 @@ function injectWizardUI() {
   var sumEl = document.getElementById('tab-summary');
   if (sumEl && !sumEl.querySelector('.wizard-nav')) {
     var wn = document.createElement('div'); wn.className = 'wizard-nav';
-    wn.innerHTML = '<button class="wizard-prev" onclick="switchStep(9)" aria-label="Back to Sources">← Back to Sources</button>';
+    wn.innerHTML = '<button class="wizard-prev" onclick="switchStep(stepOrder.length - 1)" aria-label="Back to Post-Launch">← Back to Post-Launch</button>';
     sumEl.appendChild(wn);
   }
 }

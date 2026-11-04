@@ -265,3 +265,19 @@
     .landing-cta .btn, .landing-cta .btn-ghost { justify-content: center; }
   }
 }
+
+@media screen {
+  /* ---- Game OS branding above the welcome card ---- */
+  .landing-overlay { flex-direction: column; align-items: center; }
+  .landing-top {
+    width: 100%; max-width: 640px; display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; margin: 0 0 14px;
+  }
+  .landing-top .gos-brand img { height: 30px; width: auto; display: block; }
+
+  /* ---- Community Signals step ---- */
+  .community-breakdown { list-style: none; margin: 12px 0; padding: 0; }
+  .community-breakdown li { font: 400 14px/1.45 var(--sans); color: var(--mid); padding: 6px 0; border-top: 1px solid var(--border); }
+  .community-breakdown li:first-child { border-top: 0; }
+  #community-outputs .output-row:first-child .output-value { font-family: var(--serif); font-weight: 800; font-size: 26px; color: var(--coral); }
+}
