@@ -167,23 +167,23 @@
   function injectStyles() {
     if (document.getElementById("gos-spine-css")) return;
     var css =
-      ".gos-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:10px 14px;margin:0 0 16px;" +
-      "background:var(--cream,#fbf1dc);border:1px solid var(--sand-deep,#e6d6b7);border-radius:var(--radius-card,8px);" +
-      "font-family:var(--font-sans,'Source Sans 3',system-ui,sans-serif);font-size:14px;color:var(--ink,#2f2a20)}" +
+      ".gos-bar{color-scheme:light;display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:10px 14px;margin:0 0 16px;" +
+      "background:#fbf1dc;border:1px solid #e6d6b7;border-radius:8px;" +
+      "font-family:'Source Sans 3',system-ui,sans-serif;font-size:14px;color:#2f2a20}" +
       ".gos-bar *{box-sizing:border-box}" +
-      ".gos-bar-label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted,#655e4b)}" +
-      ".gos-bar select,.gos-bar input{font:inherit;color:inherit;background:#fff;border:1px solid var(--sand-deep,#e6d6b7);" +
-      "border-radius:var(--radius-field,3px);padding:6px 8px;min-height:34px;max-width:100%}" +
-      ".gos-bar-stage{display:inline-block;padding:2px 10px;border-radius:999px;background:var(--status-healthy-bg,#dfe5c8);" +
-      "color:var(--status-healthy,#2c6a5a);font-size:12px;font-weight:700}" +
+      ".gos-bar-label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#655e4b}" +
+      ".gos-bar select,.gos-bar input{font:inherit;color:inherit;background:#fff;border:1px solid #e6d6b7;" +
+      "border-radius:3px;padding:6px 8px;min-height:34px;max-width:100%}" +
+      ".gos-bar-stage{display:inline-block;padding:2px 10px;border-radius:999px;background:#dfe5c8;" +
+      "color:#2c6a5a;font-size:12px;font-weight:700}" +
       ".gos-bar-spacer{flex:1 1 auto}" +
-      ".gos-bar button{font:inherit;font-weight:700;cursor:pointer;border-radius:var(--radius-field,3px);padding:6px 12px;min-height:34px;" +
-      "border:1.5px solid var(--slate,#304d4f);background:transparent;color:var(--slate,#304d4f)}" +
-      ".gos-bar button.primary{background:var(--slate,#304d4f);color:#fff}" +
-      ".gos-bar button:focus-visible,.gos-bar select:focus-visible,.gos-bar input:focus-visible{outline:2px solid var(--focus,#304d4f);outline-offset:2px}" +
+      ".gos-bar button{font:inherit;font-weight:700;cursor:pointer;border-radius:3px;padding:6px 12px;min-height:34px;" +
+      "border:1.5px solid #304d4f;background:transparent;color:#304d4f}" +
+      ".gos-bar button.primary{background:#304d4f;color:#fff}" +
+      ".gos-bar button:focus-visible,.gos-bar select:focus-visible,.gos-bar input:focus-visible{outline:2px solid #304d4f;outline-offset:2px}" +
       ".gos-bar-form{display:flex;flex-wrap:wrap;gap:8px;width:100%;align-items:center}" +
       ".gos-bar-form input[name=title]{flex:2 1 200px}.gos-bar-form input[name=steamAppId]{flex:1 1 130px}" +
-      ".gos-bar-msg{font-size:13px;color:var(--ink-muted,#655e4b)}.gos-bar-msg.err{color:var(--status-concern,#963226)}" +
+      ".gos-bar-msg{font-size:13px;color:#655e4b}.gos-bar-msg.err{color:#963226}" +
       "@media (max-width:560px){.gos-bar select{flex:1 1 100%}.gos-bar-spacer{display:none}}";
     var s = document.createElement("style");
     s.id = "gos-spine-css";

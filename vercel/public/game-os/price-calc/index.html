@@ -531,7 +531,7 @@
   }
 </style>
 <script src="/track.js" data-tool="price-calc" data-version="2"></script>
-<script src="/game-os/toolkit/spine.js?v=1"></script>
+<script src="/game-os/toolkit/spine.js?v=2"></script>
 </head>
 <body>
 
@@ -4687,8 +4687,11 @@ if (location.search && location.search.indexOf('selftest=1') !== -1) { runSelfTe
       if (!GOS.game) { feedback('Add your game in the bar at the top of this page first.', true); window.scrollTo(0, 0); return; }
       var m = computeScenarioMetrics();
       if (!(m.launchPrice > 0)) { feedback('Work out a launch price on the Pricing step first.', true); return; }
+      // The calculator tells the user to set the next Steam price tier up
+      // ("-> set $24.99"); that is the price that belongs in the thesis.
+      var steamPrice = PricingModel.snapToSteamPriceUp(m.launchPrice) || m.launchPrice;
       var list = [
-        { key: 'launch_price', label: 'Required launch price', value: m.launchPrice, unit: 'usd' },
+        { key: 'launch_price', label: 'Launch price (Steam tier)', value: steamPrice, unit: 'usd', meta: { required_raw: Math.round(m.launchPrice * 100) / 100 } },
         { key: 'target_sale_price', label: 'Target sale price', value: m.targetSalePrice, unit: 'usd' },
         { key: 'net_revenue_per_unit', label: 'Net revenue per unit', value: m.netRevenuePerUnit, unit: 'usd' }
       ];
@@ -4702,11 +4705,11 @@ if (location.search && location.search.indexOf('selftest=1') !== -1) { runSelfTe
       feedback('Sending to ' + GOS.game.title + '…');
       GOS.recordSignals('price-calc', list)
         .then(function () {
-          return GOS.saveThesis({ priceHypothesis: m.launchPrice.toFixed(2) }, 'price-calc', 'Launch price from the Pricing Calculator');
+          return GOS.saveThesis({ priceHypothesis: steamPrice.toFixed(2) }, 'price-calc', 'Launch price from the Pricing Calculator');
         })
         .then(function (res) {
           var v = res && res.thesis ? res.thesis.version : null;
-          feedback('Sent. ' + GOS.game.title + '’s thesis price is now $' + m.launchPrice.toFixed(2) +
+          feedback('Sent. ' + GOS.game.title + '’s thesis price is now $' + steamPrice.toFixed(2) +
             (v ? ' (v' + v + ')' : '') + ' and ' + list.length + ' signals are in the ledger.');
           if (typeof window.gosTrack === 'function') window.gosTrack('output_action', { action: 'send_to_thesis' });
         })
