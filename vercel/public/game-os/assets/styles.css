@@ -371,3 +371,8 @@ a:hover { color: var(--orange-deep); }
 .spine-ledger-label small { display: block; font-size: 12px; color: var(--ink-muted); }
 .spine-ledger-val { font-family: var(--font-display); font-weight: 800; font-size: 18px; white-space: nowrap; }
 @media (max-width: 900px) { .spine-grid { grid-template-columns: 1fr; } }
+
+/* ---- Tile data source: live vs demo ---- */
+.ss-badge.demo { color: var(--ink-muted); background: var(--sand-deep); }
+.module-card.is-live { border-width: 1.5px; border-color: var(--teal); }
+.module-head .ss-badge { flex: none; white-space: nowrap; }

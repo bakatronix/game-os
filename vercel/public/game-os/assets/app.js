@@ -252,7 +252,7 @@
     var g = window.GOS && window.GOS.game;
     var kicker = 'Game OS \u00b7 ' + (g ? g.title : 'Your studio');
     return (
-      pageHeader(kicker, 'Studio Health', '<span class="ss-demo">Tool tiles: demo data</span>') +
+      pageHeader(kicker, 'Studio Health', '') +
       '<div id="gameBar"></div>' +
       '<div id="gamePanel"></div>' +
       '<div id="widgetsSection" class="gos-meta">Loading widgets\u2026</div>'
@@ -339,6 +339,7 @@
   if (window.GOS) {
     window.GOS.onChange(function () {
       renderGamePanel();
+      if (cachedApps && document.getElementById('widgetsSection')) renderWidgets(cachedApps);
       var k = document.querySelector('.ss-header-row .ss-header .k');
       if (k && window.GOS.game) k.textContent = 'Game OS \u00b7 ' + window.GOS.game.title;
     });
@@ -536,14 +537,94 @@
     try { return JSON.parse(s); } catch (e) { return null; }
   }
 
+  /* ---- Live tiles: read the current game's thesis + signal ledger ----
+     Returns { metrics, spark, kind, label } for tools wired to the spine, or
+     null for tools that only have demo data so far. */
+  function sig(key) { return window.GOS && window.GOS.signal ? window.GOS.signal(key) : null; }
+  function sigVal(key) { var s = sig(key); return s ? fmtSignal(s) : '\u2014'; }
+  function sigSpark(key, type) {
+    var s = sig(key);
+    var vals = s && s.history ? s.history.map(function (h) { return h.value; }).filter(function (v) { return v != null; }) : [];
+    return vals.length >= 2 ? { type: type || 'line', values: vals } : null;
+  }
+  var LIVE_TILES = {
+    'price-calc': function (G) {
+      var lp = sig('launch_price');
+      return {
+        metrics: [
+          { label: 'Launch price', value: sigVal('launch_price') },
+          { label: 'Week 1 units', value: sigVal('week1_units') },
+          { label: 'Week 1 net revenue', value: sigVal('week1_net_revenue') }
+        ],
+        spark: sigSpark('launch_price'),
+        kind: lp ? 'healthy' : 'demo',
+        label: lp ? 'Live' : 'No data yet'
+      };
+    },
+    'steam-page-audit': function (G) {
+      var o = sig('page_audit_overall');
+      var crit = (G.ledger || []).filter(function (s) { return /^page_audit_(?!overall$)/.test(s.key); });
+      var score = o ? Math.round(o.value) : null;
+      return {
+        metrics: [
+          { label: 'Overall', value: sigVal('page_audit_overall') },
+          { label: 'Grade', value: (o && o.meta && o.meta.grade) || '\u2014' },
+          { label: 'Criteria scored', value: crit.length ? String(crit.length) : '\u2014' }
+        ],
+        spark: crit.length ? { type: 'bars', values: crit.map(function (c) { return c.value; }) } : null,
+        kind: score == null ? 'demo' : score >= 75 ? 'healthy' : score >= 55 ? 'watch' : 'concern',
+        label: score == null ? 'No data yet' : 'Live'
+      };
+    },
+    'thesis-builder': thesisTile,
+    'thesis-view': thesisTile,
+    'ledger-view': function (G) {
+      var l = G.ledger || [];
+      var tools = {};
+      l.forEach(function (s) { tools[s.toolId] = true; });
+      var last = l.reduce(function (m, s) { return !m || new Date(s.observedAt) > new Date(m) ? s.observedAt : m; }, null);
+      return {
+        metrics: [
+          { label: 'Signals', value: l.length ? String(l.length) : '\u2014' },
+          { label: 'From tools', value: l.length ? String(Object.keys(tools).length) : '\u2014' },
+          { label: 'Last update', value: last ? fmtDate(last) : '\u2014' }
+        ],
+        spark: null,
+        kind: l.length ? 'healthy' : 'demo',
+        label: l.length ? 'Live' : 'No data yet'
+      };
+    }
+  };
+  function thesisTile(G) {
+    var t = G.thesis;
+    return {
+      metrics: [
+        { label: 'Price hypothesis', value: t && t.priceHypothesis ? '$' + t.priceHypothesis : '\u2014' },
+        { label: 'Comp set', value: t && t.compSet && t.compSet.length ? String(t.compSet.length) : '\u2014' },
+        { label: 'Version', value: t ? 'v' + t.version : '\u2014' }
+      ],
+      spark: null,
+      kind: t ? 'healthy' : 'demo',
+      label: t ? 'Live' : 'No data yet'
+    };
+  }
+  function liveTile(a) {
+    var G = window.GOS;
+    if (!G || !G.game || !LIVE_TILES[a.id]) return null;
+    return LIVE_TILES[a.id](G);
+  }
+
   function widgetCard(a) {
     var name = a.name || a.id;
-    var toolName = a.toolName;
+    var toolName = a.toolName && a.toolName !== name ? a.toolName : null;
     var href = a.path + (a.anchor || '');
-    var badge = a.status ? statusBadge(a.status === 'nodata' ? 'demo' : a.status, a.statusLabel || a.status) : '';
+    var live = liveTile(a);
+    // Only tiles backed by the current game's data get a health status;
+    // everything else is honestly labelled as demo data.
+    var badge = live ? statusBadge(live.kind, live.label) : statusBadge('demo', 'Demo data');
 
-    var metrics = parseJSON(a.metrics) || [];
-    var spark = parseJSON(a.spark);
+    var metrics = live ? live.metrics : (parseJSON(a.metrics) || []);
+    var spark = live ? live.spark : parseJSON(a.spark);
     var metricsHtml = metrics.length
       ? '<div class="metrics-grid">' +
           metrics
@@ -566,7 +647,7 @@
       : '';
 
     return (
-      '<div class="ss-card module-card">' +
+      '<div class="ss-card module-card' + (live ? ' is-live' : '') + '">' +
       '<div class="module-head">' +
       '<div>' +
       '<h3>' + escapeHtml(name) + (toolName ? ' \u2014 ' + escapeHtml(toolName) : '') + '</h3>' +
