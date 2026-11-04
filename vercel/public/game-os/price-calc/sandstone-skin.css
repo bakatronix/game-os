@@ -235,3 +235,33 @@
 /* Demo banner in every medium (its white label vanished on paper). */
 .demo-banner { background: #f3d9a0; color: #2f2a20; }
 .demo-banner strong { color: #2f2a20; }
+
+@media screen {
+  /* ---- Welcome screen: outcome first, three steps, optional extras ---- */
+  .landing-card { max-width: 640px; padding: 32px; }
+  .landing-card h1 { font-size: 34px; line-height: 1.08; margin-bottom: 12px; }
+  .landing-lead { font: 400 17px/1.5 var(--sans); color: var(--dark); margin: 0 0 20px; }
+  .landing-steps { list-style: none; margin: 0 0 14px; padding: 0; display: grid; gap: 10px; }
+  .landing-steps li {
+    display: flex; gap: 14px; align-items: flex-start;
+    background: var(--cream); border: 1px solid var(--border); border-radius: 6px; padding: 12px 14px;
+  }
+  .ls-num {
+    flex: none; width: 28px; height: 28px; border-radius: 50%;
+    background: var(--coral); color: #fbf1dc; font: 800 15px/28px var(--serif); text-align: center;
+  }
+  .landing-steps strong { display: block; font: 700 16px/1.3 var(--sans); color: var(--dark); }
+  .landing-steps span:not(.ls-num) { display: block; font: 400 14px/1.45 var(--sans); color: var(--mid); margin-top: 2px; }
+  .landing-optional { font: 400 14px/1.5 var(--sans); color: var(--mid); margin: 0 0 22px; }
+  .landing-optional strong { color: var(--dark); }
+  .landing-cta { margin-top: 0; }
+  .landing-cta .btn, .landing-cta .btn-ghost { min-height: 46px; padding: 0 20px; font-size: 15px; }
+  .landing-note { font: 400 13px/1.4 var(--sans); color: var(--faint); margin: 12px 0 0; }
+  .landing-dismiss { margin-top: 8px; }
+  @media (max-width: 560px) {
+    .landing-card { padding: 22px 18px; }
+    .landing-card h1 { font-size: 27px; }
+    .landing-cta { flex-direction: column; align-items: stretch; }
+    .landing-cta .btn, .landing-cta .btn-ghost { justify-content: center; }
+  }
+}
