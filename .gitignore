@@ -6,3 +6,6 @@ node_modules/
 .next/
 .vercel
 *.tsbuildinfo
+
+# Stale pre-Vercel Chicken Brûlée (own private repo; contains old credentials)
+chicken-brulee/
