@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Indie Game Pricing Dashboard</title>
+<title>Pricing Calculator — Game OS</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --cream: #0c0812;
@@ -537,7 +537,7 @@
 
 <div class="landing-overlay" id="landing-overlay" style="display:none">
   <div class="landing-card">
-    <div class="landing-brand">Indie Game Pricing Dashboard</div>
+    <div class="landing-brand">Game OS &middot; Pricing Calculator</div>
     <h1>Price your game like you mean it</h1>
     <p class="landing-problem"><strong>Indie pricing is hard.</strong> Most studios guess their launch price. Comp data is scattered across SteamDB, storefronts and old newsletters, and a wrong price is expensive to reverse after launch — you can drop a price, but raising it burns your launch window.</p>
     <p class="landing-solution"><strong>This tool walks you through it.</strong> Comp analysis, weighted scoring, discount strategy, wishlist conversion, demo performance and regional pricing — so you land on a defensible number, not a guess.</p>
@@ -563,7 +563,11 @@
 
 <header>
   <div class="container">
-    <h1>Indie Game Pricing Dashboard</h1>
+    <div class="gos-topbar">
+      <a class="gos-brand" href="/game-os" aria-label="Game OS home"><img src="/game-os/assets/logo.svg?v=6" alt="Game OS"></a>
+      <a class="gos-back" href="/game-os">&larr; Back to dashboard</a>
+    </div>
+    <h1>Pricing Calculator</h1>
     <br>
     <div class="nav-wrapper">
       <select class="nav-select" onchange="switchTab(this.value)">
@@ -1458,6 +1462,7 @@
   input:focus-visible, select:focus-visible, button:focus-visible, .tier-row:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
   .tier-row[role="button"]:focus-visible td { background: rgba(255,184,77,0.06); }
 </style>
+<link rel="stylesheet" href="/game-os/price-calc/sandstone-skin.css?v=4">
 
 <script>
 window.manualFields = {};
@@ -2963,7 +2968,7 @@ function renderSources() {
   var oldest = getOldestVerifiedDate();
   var html = '';
   if (oldest && daysSince(oldest) > 180) {
-    html += '<div class="card" style="border-left:3px solid var(--gold)"><h3 style="color:#ffcf7a">\u26A0 Benchmarks due for review</h3><p style="font-family:var(--sans);font-size:14px;color:#ffcf7a">The oldest cited benchmark was verified on ' + oldest + ' \u2014 more than six months ago. Confirm live figures before final pricing decisions.</p></div>';
+    html += '<div class="card" style="border-left:3px solid var(--gold)"><h3 style="color:var(--gold-dark)">\u26A0 Benchmarks due for review</h3><p style="font-family:var(--sans);font-size:14px;color:var(--gold-dark)">The oldest cited benchmark was verified on ' + oldest + ' \u2014 more than six months ago. Confirm live figures before final pricing decisions.</p></div>';
   }
   html += '<div class="card"><p class="muted">Oldest verified benchmark: <strong>' + (oldest || 'none dated') + '</strong>.</p></div>';
 
