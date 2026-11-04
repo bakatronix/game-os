@@ -101,6 +101,51 @@ async function main() {
       "createdBy" TEXT REFERENCES "user"(id) ON DELETE SET NULL
     )`,
     `CREATE INDEX IF NOT EXISTS signal_game_key_idx ON "signal" ("gameId", key, "observedAt" DESC)`,
+    // Chicken Brûlée (Discord playtest scanner), moved off Supabase.
+    `CREATE TABLE IF NOT EXISTS "playtest_config" (
+      "gameId" UUID PRIMARY KEY REFERENCES "game"(id) ON DELETE CASCADE,
+      "botToken" TEXT,
+      channels TEXT,
+      "staffPrefixes" TEXT,
+      "roleMapping" TEXT,
+      "gameContext" TEXT,
+      "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
+      "updatedBy" TEXT REFERENCES "user"(id) ON DELETE SET NULL
+    )`,
+    `CREATE TABLE IF NOT EXISTS "playtest_scan" (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      "gameId" UUID NOT NULL REFERENCES "game"(id) ON DELETE CASCADE,
+      "channelIds" TEXT,
+      "messagesFetched" INTEGER DEFAULT 0,
+      "observationsFound" INTEGER DEFAULT 0,
+      summary TEXT,
+      insights TEXT,
+      recommendations TEXT,
+      error TEXT,
+      "startedAt" TIMESTAMP NOT NULL DEFAULT now(),
+      "completedAt" TIMESTAMP,
+      "createdBy" TEXT REFERENCES "user"(id) ON DELETE SET NULL
+    )`,
+    `CREATE INDEX IF NOT EXISTS playtest_scan_game_idx ON "playtest_scan" ("gameId", "startedAt" DESC)`,
+    `CREATE TABLE IF NOT EXISTS "playtest_observation" (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      "gameId" UUID NOT NULL REFERENCES "game"(id) ON DELETE CASCADE,
+      "scanId" UUID REFERENCES "playtest_scan"(id) ON DELETE SET NULL,
+      "messageId" TEXT NOT NULL,
+      "timestamp" TIMESTAMP NOT NULL,
+      "channelId" TEXT NOT NULL,
+      "channelName" TEXT NOT NULL,
+      kind TEXT NOT NULL DEFAULT 'observation',
+      speaker TEXT NOT NULL,
+      role TEXT NOT NULL DEFAULT 'Player',
+      theme TEXT NOT NULL,
+      signal TEXT NOT NULL,
+      severity TEXT NOT NULL DEFAULT 'Medium',
+      excerpt TEXT NOT NULL,
+      paraphrase TEXT,
+      UNIQUE ("gameId", "messageId")
+    )`,
+    `CREATE INDEX IF NOT EXISTS playtest_obs_game_ts_idx ON "playtest_observation" ("gameId", "timestamp" DESC)`,
     `CREATE TABLE IF NOT EXISTS "invitation" (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       "studioId" UUID NOT NULL REFERENCES "studio"(id) ON DELETE CASCADE,

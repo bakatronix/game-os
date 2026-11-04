@@ -2,13 +2,24 @@
 (function () {
   "use strict";
 
-  // ── Config (replace with your Supabase project values) ──
-  const SUPABASE_URL = "https://***REMOVED***.supabase.co";
-  const SUPABASE_ANON_KEY = "***REMOVED***";
-  const SCAN_FUNCTION_URL = "https://***REMOVED***.supabase.co/functions/v1/scan";
-
-  let supabase = null;
-  let session = null;
+  // ── Game OS data layer ──
+  // Sign-in, the current game and storage all come from Game OS
+  // (toolkit/spine.js + /api/games/:id/playtest). One setup per game.
+  function api(method, path, body) {
+    return fetch(path, {
+      method,
+      credentials: "same-origin",
+      headers: body ? { "Content-Type": "application/json" } : {},
+      body: body ? JSON.stringify(body) : undefined,
+    }).then((r) => r.json().catch(() => ({})).then((j) => {
+      if (!r.ok) { const e = new Error(j.error || ("Request failed (" + r.status + ")")); e.status = r.status; throw e; }
+      return j;
+    }));
+  }
+  const gameId = () => (window.GOS && window.GOS.game && window.GOS.game.id) || null;
+  const playtestUrl = (suffix) => "/api/games/" + encodeURIComponent(gameId()) + "/playtest" + (suffix || "");
+  let currentGame = null;
+  let currentView = "dashboard";
 
   // ── Chart.js colors ──
   const C = {
@@ -34,8 +45,8 @@
   const $ = s => document.querySelector(s);
   const el = (t, c, h) => { const e = document.createElement(t); if(c)e.className=c; if(h!==undefined)e.innerHTML=h; return e; };
 
-  // ── Auth UI ──
-  function showAuth() {
+  // ── Gate screens (no Game OS sign-in / no game yet) ──
+  function showMessage(title, body, cta) {
     const app = $("#app-root"); if (!app) return;
     app.innerHTML = `
       <div class="auth-container">
@@ -43,98 +54,57 @@
           <div class="auth-logo">
             <svg viewBox="0 0 40 40" fill="none"><rect width="40" height="40" rx="10" fill="#d24bd8"/><path d="M11 29V11l9 9 9-9v18" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
-          <h2>Chicken Brûlée</h2>
-          <p class="auth-sub">Discord Playtest Scanner</p>
-          <div id="auth-form"></div>
-          <p class="auth-footer">Your data is isolated. Each account sees only their own server.<br><a href="/game-os/chicken-brulee/tos.html" style="color:var(--text-mut)">Terms</a> · <a href="/game-os/chicken-brulee/privacy.html" style="color:var(--text-mut)">Privacy</a></p>
+          <h2>${escHtml(title)}</h2>
+          <p class="auth-sub">${body}</p>
+          ${cta || ""}
+          <p class="auth-footer"><a href="/game-os/chicken-brulee/tos.html" style="color:var(--text-mut)">Terms</a> · <a href="/game-os/chicken-brulee/privacy.html" style="color:var(--text-mut)">Privacy</a></p>
         </div>
       </div>`;
-    showLoginForm();
   }
 
-  function showLoginForm() {
-    const f = $("#auth-form"); if (!f) return;
-    f.innerHTML = `
-      <div class="form-group"><input type="email" id="loginEmail" placeholder="Email" class="form-input"></div>
-      <div class="form-group"><input type="password" id="loginPass" placeholder="Password" class="form-input"></div>
-      <button class="btn-primary" id="btnLogin">Sign In</button>
-      <p class="auth-switch">Don't have an account? <a href="#" id="linkSignup">Sign up</a></p>`;
-
-    $("#btnLogin")?.addEventListener("click", async () => {
-      const email = $("#loginEmail")?.value, pass = $("#loginPass")?.value;
-      if (!email || !pass) return alert("Enter email and password");
-      const { error } = await supabase.auth.signInWithPassword({ email, password: pass });
-      if (error) alert(error.message);
-    });
-
-    $("#linkSignup")?.addEventListener("click", (e) => { e.preventDefault(); showSignupForm(); });
-  }
-
-  function showSignupForm() {
-    const f = $("#auth-form"); if (!f) return;
-    f.innerHTML = `
-      <div class="form-group"><input type="email" id="signupEmail" placeholder="Email" class="form-input"></div>
-      <div class="form-group"><input type="password" id="signupPass" placeholder="Password (min 6 chars)" class="form-input"></div>
-      <button class="btn-primary" id="btnSignup">Create Account</button>
-      <p class="auth-switch">Already have an account? <a href="#" id="linkLogin">Sign in</a></p>`;
-
-    $("#btnSignup")?.addEventListener("click", async () => {
-      const email = $("#signupEmail")?.value, pass = $("#signupPass")?.value;
-      if (!email || !pass) return alert("Enter email and password");
-      if (pass.length < 6) return alert("Password must be at least 6 characters");
-      const { data, error } = await supabase.auth.signUp({ email, password: pass });
-      if (error) { alert(error.message); return; }
-      if (data.session) {
-        // autoconfirm enabled — logged in immediately
-      } else {
-        alert("Account created! You'll be logged in automatically.");
-      }
-    });
-
-    $("#linkLogin")?.addEventListener("click", (e) => { e.preventDefault(); showLoginForm(); });
-  }
-
-  // ── App Shell (logged in) ──
-  function showApp(user) {
+  // ── App Shell (signed in to Game OS, game selected) ──
+  function showApp(game) {
     const app = $("#app-root"); if (!app) return;
-    app.innerHTML = `
+    currentGame = game;
+    if (!$("#pageContent")) {
+      app.innerHTML = `
       <div class="topbar"><div class="wrap">
         <div class="brand">
           <svg viewBox="0 0 30 30" fill="none"><rect width="30" height="30" rx="7" fill="#d24bd8"/><path d="M8 22V8l7 7 7-7v14" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <div><span>Chicken Brûlée</span><small id="topEmail">${user.email}</small></div>
+          <div><span>Chicken Brûlée</span><small id="topGame"></small></div>
         </div>
         <div class="nav"><a href="#" id="navDash">Dashboard</a><a href="#" id="navSettings">Settings</a></div>
         <button class="btn-print" onclick="window.print()">Print / PDF</button>
-        <button class="btn-logout" id="btnLogout">Log out</button>
+        <a class="btn-logout" href="/game-os/" style="text-decoration:none">← Game OS</a>
       </div></div>
       <div class="wrap" id="pageContent"></div>
       <footer style="border-top:1px solid var(--border);padding:24px 0;margin-top:40px"><div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;color:var(--text-fnt);font-size:12px;font-family:var(--font-mono)">
-        <span>Chicken Brûlée · Discord Playtest Scanner</span>
-        <span><a href="/game-os/chicken-brulee/tos.html" style="color:var(--text-mut)">Terms of Service</a> · <a href="/game-os/chicken-brulee/privacy.html" style="color:var(--text-mut)">Privacy Policy</a> · <span id="footVersion">—</span></span>
+        <span>Chicken Brûlée · Discord Playtest Scanner · part of Game OS</span>
+        <span><a href="/game-os/chicken-brulee/tos.html" style="color:var(--text-mut)">Terms of Service</a> · <a href="/game-os/chicken-brulee/privacy.html" style="color:var(--text-mut)">Privacy Policy</a></span>
       </div></footer>`;
-
-    $("#btnLogout")?.addEventListener("click", () => supabase.auth.signOut());
-    $("#navDash")?.addEventListener("click", (e) => { e.preventDefault(); renderDashboard(user); });
-    $("#navSettings")?.addEventListener("click", (e) => { e.preventDefault(); renderSettings(user); });
-
-    renderDashboard(user);
+      $("#navDash")?.addEventListener("click", (e) => { e.preventDefault(); currentView = "dashboard"; renderDashboard(currentGame); });
+      $("#navSettings")?.addEventListener("click", (e) => { e.preventDefault(); currentView = "settings"; renderSettings(currentGame); });
+    }
+    const tg = $("#topGame"); if (tg) tg.textContent = game.title;
+    if (currentView === "settings") renderSettings(game); else renderDashboard(game);
   }
 
   // ── Settings ──
-  async function renderSettings(user) {
+  async function renderSettings(game) {
     const pc = $("#pageContent"); if (!pc) return;
-    const { data: config } = await supabase.from("bot_configs").select("*").eq("user_id", user.id).maybeSingle();
-    const token = config?.bot_token || "";
+    let config = null;
+    try { config = (await api("GET", playtestUrl())).config; }
+    catch (e) { pc.innerHTML = `<section><div class="callout">Couldn't load settings: ${escHtml(e.message)}</div></section>`; return; }
     const channels = config?.channels || [];
-    const prefixes = config?.staff_prefixes || "";
-    const ctx = config?.game_context || {};
-    const roleMap = config?.role_mapping || {};
+    const prefixes = config?.staffPrefixes || "";
+    const ctx = config?.gameContext || { game_name: game.title };
+    const roleMap = config?.roleMapping || {};
 
     pc.innerHTML = `<section><div class="section-head"><span class="eyebrow">SETTINGS</span><h2>Bot Configuration</h2></div>
       <div class="settings-card">
         <div class="form-group"><label>Discord Bot Token</label>
-          <input type="password" id="setToken" class="form-input" value="${escAttr(token)}" placeholder="Paste your bot token">
-          <p class="form-hint">Create a bot at <a href="https://discord.com/developers/applications" target="_blank">discord.com/developers</a>. Only needs Read Messages + Read Message History.</p>
+          <input type="password" id="setToken" class="form-input" value="" autocomplete="off" placeholder="${config?.hasToken ? `Saved (${escAttr(config.tokenHint)}). Leave blank to keep it.` : "Paste your bot token"}">
+          <p class="form-hint">Create a bot at <a href="https://discord.com/developers/applications" target="_blank">discord.com/developers</a>. Only needs View Channel + Read Message History. The token is encrypted and never shown again.</p>
         </div>
         <div class="form-group"><label>Channel IDs (comma-separated)</label>
           <input type="text" id="setChannels" class="form-input" value="${escAttr(channels.map(function(c) { return c.id; }).join(','))}" placeholder="123456789,987654321">
@@ -167,31 +137,35 @@
           <textarea id="setGoals" class="form-input" rows="3" style="resize:vertical" placeholder="What are you testing? What feedback are you looking for?">${escAttr(ctx.goals||'')}</textarea>
         </div>
         <button class="btn-primary" id="btnSaveConfig">Save Configuration</button>
-        <span id="cfgStatus" style="margin-left:12px;font-size:13px;color:var(--pres)"></span>
+        <span id="cfgStatus" style="margin-left:12px;font-size:13px;color:var(--sev-pres)"></span>
       </div></section>`;
 
     $("#btnSaveConfig")?.addEventListener("click", async () => {
       const token = $("#setToken")?.value?.trim();
       const chIds = ($("#setChannels")?.value || "").split(",").map(s => s.trim()).filter(Boolean);
-      const labels = ($("#setLabels")?.value || "").split(",").map(s => s.trim()).filter(Boolean);
+      const known = {}; channels.forEach((c) => { known[c.id] = c.name; });
       const prefixes = ($("#setPrefixes")?.value || "").trim();
       const gameName = ($("#setGameName")?.value || "").trim();
       const gameDesc = ($("#setGameDesc")?.value || "").trim();
       const mechanics = ($("#setMechanics")?.value || "").split("\n").map(s=>s.trim()).filter(Boolean);
       const goals = ($("#setGoals")?.value || "").trim();
-      if (!token || !chIds.length) return alert("Bot token and at least one channel ID are required.");
-
-      const chArr = chIds.map((id, i) => ({ id, name: labels[i] || id, label: "#" + (labels[i] || id) }));
-      const gameContext = { game_name: gameName, description: gameDesc, mechanics, goals };
-      const payload = { bot_token: token, channels: chArr, staff_prefixes: prefixes, role_mapping: localRoleMap, game_context: gameContext, updated_at: new Date().toISOString() };
-
-      if (config?.id) {
-        await supabase.from("bot_configs").update(payload).eq("id", config.id);
-      } else {
-        await supabase.from("bot_configs").insert({ user_id: user.id, bot_token: token, channels: chArr, staff_prefixes: prefixes });
-      }
-
-      const s = $("#cfgStatus"); if (s) { s.textContent = "Saved."; setTimeout(() => { s.textContent = ""; }, 2000); }
+      const st = $("#cfgStatus");
+      if (!token && !config?.hasToken) { if (st) { st.style.color = "var(--sev-crit)"; st.textContent = "Paste your bot token."; } return; }
+      if (!chIds.length) { if (st) { st.style.color = "var(--sev-crit)"; st.textContent = "Add at least one channel ID."; } return; }
+      const btn = $("#btnSaveConfig"); if (btn) btn.disabled = true;
+      try {
+        config = (await api("PUT", playtestUrl(), {
+          botToken: token || undefined,
+          channels: chIds.map((id) => ({ id, name: known[id] || id })),
+          staffPrefixes: prefixes,
+          roleMapping: localRoleMap,
+          gameContext: { game_name: gameName, description: gameDesc, mechanics, goals },
+        })).config;
+        const t = $("#setToken"); if (t) { t.value = ""; t.placeholder = `Saved (${config.tokenHint}). Leave blank to keep it.`; }
+        if (st) { st.style.color = "var(--sev-pres)"; st.textContent = "Saved."; setTimeout(() => { st.textContent = ""; }, 2500); }
+      } catch (e) {
+        if (st) { st.style.color = "var(--sev-crit)"; st.textContent = e.message; }
+      } finally { if (btn) btn.disabled = false; }
     });
 
     // Role mapping UI
@@ -341,25 +315,28 @@
   }
 
   // ── Dashboard ──
-  async function renderDashboard(user) {
+  async function renderDashboard(game) {
     const pc = $("#pageContent"); if (!pc) return;
+    const forGame = game.id;
 
-    // Load config
-    const { data: config } = await supabase.from("bot_configs").select("*").eq("user_id", user.id).maybeSingle();
+    let data;
+    try { data = await api("GET", playtestUrl()); }
+    catch (e) { pc.innerHTML = `<section><div class="callout">Couldn't load playtest data: ${escHtml(e.message)}</div></section>`; return; }
+    if (gameId() !== forGame) return; // the user switched games while this loaded
+    const config = data.config;
     const channels = config?.channels || [];
+    const canEdit = data.role === "owner" || data.role === "editor";
 
-    // Load observations
-    const { data: obs } = await supabase.from("observations").select("*").eq("user_id", user.id).order("timestamp", { ascending: false });
-    const observations = obs || [];
+    const observations = data.observations || [];
     const staff = observations.filter(o => o.kind === "staff");
     const engagement = observations.filter(o => o.kind === "engagement");
     const playerObs = observations.filter(o => o.kind === "observation");
     // Load scans for summary/insights
-    const { data: scans } = await supabase.from("scans").select("summary,insights,recommendations,completed_at").eq("user_id", user.id).order("completed_at", { ascending: false }).limit(1);
-    const latestSummary = scans?.[0]?.summary || "";
-    const latestInsights = scans?.[0]?.insights || "";
-    const latestRecommendations = scans?.[0]?.recommendations || "";
-    const lastScan = scans?.[0]?.completed_at ? new Date(scans[0].completed_at).toLocaleDateString() : "—";
+    const scan = data.latestScan || null;
+    const latestSummary = scan?.summary || "";
+    const latestInsights = scan?.insights || "";
+    const latestRecommendations = scan?.recommendations || "";
+    const lastScan = scan?.completedAt ? new Date(scan.completedAt).toLocaleDateString() : "—";
     const speakers = [...new Set(playerObs.map(o => o.speaker))];
 
     // Compute sessions (used by filter, ledger, comparison)
@@ -374,15 +351,15 @@
 
     pc.innerHTML = `
       <section class="hero"><div class="kicker"><span class="dot"></span> Discord Playtest Scanner</div>
-        <h1><span class="grad">${escHtml(user.user_metadata?.server_name || "Your Dashboard")}</span></h1>
-        <p class="lede">${observations.length ? `${observations.length} classified messages from ${speakers.length} contributors across ${channels.length} channel${channels.length!==1?'s':''}.` : 'No scan data yet. Configure your bot and run a scan.'}</p>
+        <h1><span class="grad">${escHtml(game.title)}</span></h1>
+        <p class="lede">${observations.length ? `${observations.length} classified messages from ${speakers.length} contributors across ${channels.length} channel${channels.length!==1?'s':''}.` : (channels.length ? 'No scan data yet. Run a scan to read your Discord channels.' : 'No scan data yet. Open <a href="#" id="goSettings">Settings</a> to connect your Discord bot, then run a scan.')}</p>
         <div class="hero-meta">
           <div><span>Contributors</span><strong>${speakers.length || "—"}</strong></div>
           <div><span>Observations</span><strong>${playerObs.length || "—"}</strong></div>
           <div><span>Engagement</span><strong>${engagement.length || "—"}</strong></div>
           <div><span>Last scan</span><strong>${lastScan}</strong></div>
         </div>
-        ${channels.length ? `<button class="btn-primary" id="btnScan" style="margin-top:18px">Scan Now</button><span id="scanStatus" style="margin-left:12px;font-size:13px;color:var(--text-mut)"></span>` : ''}
+        ${channels.length && canEdit ? `<button class="btn-primary" id="btnScan" style="margin-top:18px">Scan Now</button><span id="scanStatus" style="margin-left:12px;font-size:13px;color:var(--text-mut)"></span>` : ''}
       </section>
 
       <section style="padding:8px 0 30px"><div style="display:flex;flex-wrap:wrap;gap:16px;align-items:end">
@@ -462,22 +439,17 @@
       const st = $("#scanStatus"); if (btn) btn.disabled = true; if (st) st.textContent = "Scanning Discord...";
 
       try {
-        const { data: { session: s } } = await supabase.auth.getSession();
-        const res = await fetch(SCAN_FUNCTION_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${s?.access_token}` },
-          body: JSON.stringify({ channelIds: channels.map((c) => c.id) })
-        });
-        const result = await res.json();
-        if (result.error) { if (st) st.textContent = result.error; }
-        else { if (st) st.textContent = `Done: ${result.observations_found} observations, ${result.total_classified} total classified.`; }
+        const result = await api("POST", playtestUrl("/scan"));
+        if (st) st.textContent = `Done: ${result.total_classified} new message${result.total_classified===1?"":"s"} read, ${result.observations_found} new observation${result.observations_found===1?"":"s"}.` + (result.partial ? " Stopped early; scan again to continue." : "");
+        if (window.GOS && window.GOS.refresh) window.GOS.refresh();
+        setTimeout(() => { if (gameId() === forGame) renderDashboard(game); }, 1500);
       } catch (e) {
         if (st) st.textContent = "Scan failed: " + e.message;
       } finally {
         if (btn) btn.disabled = false;
-        setTimeout(() => renderDashboard(user), 2000);
       }
     });
+    $("#goSettings")?.addEventListener("click", (e) => { e.preventDefault(); currentView = "settings"; renderSettings(game); });
 
     // Bind filters
     bindDashboardFilters(playerObs, staff, engagement, channels, latestInsights, latestRecommendations);
@@ -953,33 +925,25 @@
   function escAttr(s) { return s.replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
 
   // ── Init ──
+  function boot() {
+    const G = window.GOS;
+    if (!G) { showMessage("Chicken Brûlée", "Couldn't load Game OS. Refresh the page to try again."); return; }
+    if (!G.user) {
+      showMessage("Sign in to Game OS", "Chicken Brûlée uses your Game OS account.", `<a class="btn-primary" style="display:inline-block;text-decoration:none" href="/login?callbackUrl=${encodeURIComponent(location.pathname)}">Sign in</a>`);
+      return;
+    }
+    if (!G.game) {
+      showMessage("Pick a game first", "Playtest feedback is saved to a game. Add your game on the Game OS dashboard, then come back here.", `<a class="btn-primary" style="display:inline-block;text-decoration:none" href="/game-os/">Go to the dashboard</a>`);
+      return;
+    }
+    if (currentGame && currentGame.id === G.game.id && $("#pageContent")) return;
+    showApp(G.game);
+  }
+
   window.addEventListener("DOMContentLoaded", () => {
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-      const app = $("#app-root"); if (app) app.innerHTML = `<div class="auth-container"><div class="auth-card"><h2>Configuration Required</h2><p>Set SUPABASE_URL and SUPABASE_ANON_KEY in assets/app.js to connect to your Supabase project.</p></div></div>`;
-      return;
-    }
-
-    supabase = (window).supabase?.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    if (!supabase) {
-      console.error("Supabase client not loaded. Add <script src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js'> to index.html");
-      return;
-    }
-
-    // Listen for auth changes
-    supabase.auth.onAuthStateChange((_event, s) => {
-      session = s;
-      if (s?.user) {
-        showApp(s.user);
-      } else {
-        showAuth();
-      }
-    });
-
-    // Check initial session
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
-      session = s;
-      if (s?.user) showApp(s.user);
-      else showAuth();
-    });
+    if (!window.GOS) { boot(); return; }
+    window.GOS.mountBar && window.GOS.mountBar("#gameBar", { toolId: "chicken-brulee" });
+    window.GOS.ready.then(boot, boot);
+    window.GOS.onChange(boot);
   });
 })();

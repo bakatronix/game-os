@@ -171,6 +171,62 @@ export const signals = pgTable("signal", {
 });
 
 /* ---------------------------------------------------------------------------
+   Chicken Brûlée — Discord playtest scanner, one setup per game.
+   The bot token is encrypted at rest (lib/secretbox.ts) and never sent back
+   to the browser.
+--------------------------------------------------------------------------- */
+
+export const playtestConfigs = pgTable("playtest_config", {
+  gameId: uuid("gameId")
+    .primaryKey()
+    .references(() => games.id, { onDelete: "cascade" }),
+  botToken: text("botToken"), // encrypted
+  channels: text("channels"), // JSON [{id,name,label}]
+  staffPrefixes: text("staffPrefixes"),
+  roleMapping: text("roleMapping"), // JSON {roleName: category}
+  gameContext: text("gameContext"), // JSON {game_name,description,mechanics[],goals}
+  updatedAt: timestamp("updatedAt", { mode: "date" }).defaultNow().notNull(),
+  updatedBy: text("updatedBy").references(() => users.id, { onDelete: "set null" }),
+});
+
+export const playtestScans = pgTable("playtest_scan", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  gameId: uuid("gameId")
+    .notNull()
+    .references(() => games.id, { onDelete: "cascade" }),
+  channelIds: text("channelIds"), // JSON
+  messagesFetched: integer("messagesFetched").default(0),
+  observationsFound: integer("observationsFound").default(0),
+  summary: text("summary"),
+  insights: text("insights"),
+  recommendations: text("recommendations"),
+  error: text("error"),
+  startedAt: timestamp("startedAt", { mode: "date" }).defaultNow().notNull(),
+  completedAt: timestamp("completedAt", { mode: "date" }),
+  createdBy: text("createdBy").references(() => users.id, { onDelete: "set null" }),
+});
+
+export const playtestObservations = pgTable("playtest_observation", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  gameId: uuid("gameId")
+    .notNull()
+    .references(() => games.id, { onDelete: "cascade" }),
+  scanId: uuid("scanId").references(() => playtestScans.id, { onDelete: "set null" }),
+  messageId: text("messageId").notNull(),
+  timestamp: timestamp("timestamp", { mode: "date" }).notNull(),
+  channelId: text("channelId").notNull(),
+  channelName: text("channelName").notNull(),
+  kind: text("kind").notNull().default("observation"), // observation | staff | engagement
+  speaker: text("speaker").notNull(),
+  role: text("role").notNull().default("Player"),
+  theme: text("theme").notNull(),
+  signal: text("signal").notNull(),
+  severity: text("severity").notNull().default("Medium"),
+  excerpt: text("excerpt").notNull(),
+  paraphrase: text("paraphrase"),
+});
+
+/* ---------------------------------------------------------------------------
    App registry — every tool/app Game OS serves, as data. Adding a future app
    is one row, not a code change. `access` governs who can open it.
 --------------------------------------------------------------------------- */

@@ -576,6 +576,20 @@
         label: score == null ? 'No data yet' : 'Live'
       };
     },
+    'chicken-brulee': function (G) {
+      var o = sig('playtest_observations');
+      var b = sig('playtest_blockers');
+      return {
+        metrics: [
+          { label: 'Observations', value: sigVal('playtest_observations') },
+          { label: 'Blockers', value: sigVal('playtest_blockers') },
+          { label: 'Positive', value: sigVal('playtest_positive_share') }
+        ],
+        spark: sigSpark('playtest_observations'),
+        kind: !o ? 'demo' : b && b.value > 0 ? 'watch' : 'healthy',
+        label: o ? 'Live' : 'No data yet'
+      };
+    },
     'thesis-builder': thesisTile,
     'thesis-view': thesisTile,
     'ledger-view': function (G) {
