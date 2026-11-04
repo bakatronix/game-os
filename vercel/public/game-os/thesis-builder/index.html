@@ -8,17 +8,20 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Source+Sans+3:wght@400;500;700&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/game-os/toolkit/tokens.css">
-  <link rel="stylesheet" href="/game-os/toolkit/sandstone.css">
-  <script src="/track.js" data-tool="thesis-builder" data-version="1"></script>
+  <link rel="stylesheet" href="/game-os/toolkit/sandstone.css?v=2">
+  <link rel="stylesheet" href="/game-os/thesis-builder/thesis-builder.css?v=2">
+  <script src="/track.js" data-tool="thesis-builder" data-version="2"></script>
 </head>
 <body>
   <div class="widget-shell">
-    <div class="widget-breadcrumb"><a href="/game-os">&larr; Game OS</a> · Seismic</div>
+    <div class="widget-breadcrumb"><a href="/game-os">&larr; Game OS</a> · Publishing Thesis</div>
+    <div id="gameBar"></div>
     <div id="widget-root"></div>
   </div>
   <script src="/game-os/toolkit/data.js"></script>
   <script src="/game-os/toolkit/toolkit.js"></script>
-  <script src="/game-os/thesis-builder/render.js"></script>
-  <script>bootWidget('thesis-builder');</script>
+  <script src="/game-os/toolkit/spine.js?v=1"></script>
+  <script src="/game-os/thesis-builder/render.js?v=2"></script>
+  <script>GOS.mountBar('#gameBar', { toolId: 'thesis-builder' }); bootWidget('thesis-builder');</script>
 </body>
 </html>

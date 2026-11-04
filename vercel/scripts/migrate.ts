@@ -67,6 +67,40 @@ async function main() {
       "steamAppId" TEXT,
       "createdAt" TIMESTAMP NOT NULL DEFAULT now()
     )`,
+    // --- Shared game spine (additive) ---
+    `ALTER TABLE "game" ADD COLUMN IF NOT EXISTS genre TEXT`,
+    `ALTER TABLE "game" ADD COLUMN IF NOT EXISTS stage INTEGER NOT NULL DEFAULT 1`,
+    `ALTER TABLE "game" ADD COLUMN IF NOT EXISTS "createdBy" TEXT REFERENCES "user"(id) ON DELETE SET NULL`,
+    `CREATE INDEX IF NOT EXISTS game_studio_idx ON "game" ("studioId")`,
+    `CREATE TABLE IF NOT EXISTS "thesis_version" (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      "gameId" UUID NOT NULL REFERENCES "game"(id) ON DELETE CASCADE,
+      version INTEGER NOT NULL,
+      audience TEXT,
+      hook TEXT,
+      "compSet" TEXT,
+      "priceHypothesis" TEXT,
+      targets TEXT,
+      "changedFields" TEXT,
+      source TEXT,
+      note TEXT,
+      "createdBy" TEXT REFERENCES "user"(id) ON DELETE SET NULL,
+      "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
+      UNIQUE ("gameId", version)
+    )`,
+    `CREATE TABLE IF NOT EXISTS "signal" (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      "gameId" UUID NOT NULL REFERENCES "game"(id) ON DELETE CASCADE,
+      "toolId" TEXT NOT NULL,
+      key TEXT NOT NULL,
+      label TEXT,
+      value DOUBLE PRECISION,
+      unit TEXT,
+      meta TEXT,
+      "observedAt" TIMESTAMP NOT NULL DEFAULT now(),
+      "createdBy" TEXT REFERENCES "user"(id) ON DELETE SET NULL
+    )`,
+    `CREATE INDEX IF NOT EXISTS signal_game_key_idx ON "signal" ("gameId", key, "observedAt" DESC)`,
     `CREATE TABLE IF NOT EXISTS "invitation" (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       "studioId" UUID NOT NULL REFERENCES "studio"(id) ON DELETE CASCADE,

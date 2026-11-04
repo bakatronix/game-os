@@ -530,7 +530,8 @@
     .nav-select { width: 100%; }
   }
 </style>
-<script src="/track.js" data-tool="price-calc" data-version="1"></script>
+<script src="/track.js" data-tool="price-calc" data-version="2"></script>
+<script src="/game-os/toolkit/spine.js?v=1"></script>
 </head>
 <body>
 
@@ -622,6 +623,7 @@
 </div>
 
 <main class="container">
+  <div id="gameBar"></div>
 
   <!-- TAB 0 — GAME PROFILE -->
   <section class="tab active" id="tab-profile">
@@ -1311,6 +1313,7 @@
     <h2>Pricing Summary</h2>
     <p class="subtitle">Your complete pricing decision recap. All data derived from your inputs across Steps 0–8.</p>
     <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px">
+      <button class="btn" id="send-thesis-btn" onclick="sendToGameOS()" title="Write this launch price and its projections into your game's Publishing Thesis and Signal Ledger">Send to thesis</button>
       <button class="btn" onclick="try{buildSummary();}catch(e){};setTimeout(function(){window.print()},400)" id="pdf-btn">Download PDF</button>
       <button class="btn-ghost wb-btn" id="save-workbook-btn" onclick="exportWorkbook()">Save workbook (.json)</button>
       <button class="btn-ghost wb-btn" onclick="document.getElementById('import-file-input').click()">Load workbook (.json)</button>
@@ -1320,6 +1323,7 @@
     </div>
     <div class="import-error" id="import-error"></div>
     <div class="share-feedback" id="share-feedback"></div>
+    <div class="share-feedback" id="send-thesis-feedback" role="status" aria-live="polite"></div>
     <div id="summary-content" aria-live="polite"></div>
   </section>
 </main>
@@ -1341,7 +1345,7 @@
   }
 
   @media print {
-    header, .stepper, .stepper-mobile, .wizard-nav, .summary-bar, #pdf-btn, nav, .nav-wrapper, .nav-select, footer, .wb-btn, .restore-banner, .import-error, .share-feedback, .ack-control, .scenario-actions { display: none !important; }
+    header, .stepper, .stepper-mobile, .wizard-nav, .summary-bar, #pdf-btn, #send-thesis-btn, #send-thesis-feedback, #gameBar, nav, .nav-wrapper, .nav-select, footer, .wb-btn, .restore-banner, .import-error, .share-feedback, .ack-control, .scenario-actions { display: none !important; }
     body { background: #fff; color: #000; font-size: 11px; line-height: 1.45; }
     .tab { display: block !important; }
     .tab:not(#tab-summary) { display: none !important; }
@@ -3530,7 +3534,7 @@ function renderIssueAck(i) {
 }
 
 function updateExportButtons(blocked) {
-  var btns = [document.getElementById('pdf-btn'), document.getElementById('save-workbook-btn'), document.getElementById('copy-link-btn')];
+  var btns = [document.getElementById('pdf-btn'), document.getElementById('save-workbook-btn'), document.getElementById('copy-link-btn'), document.getElementById('send-thesis-btn')];
   btns.forEach(function(b){ if (b) b.disabled = blocked; });
 }
 
@@ -4660,6 +4664,66 @@ if (location.search && location.search.indexOf('selftest=1') !== -1) { runSelfTe
 
   // tool_session_start + return_session signal
   window.gosTrack('tool_session_start', { entry_source: document.referrer || null });
+})();
+</script>
+<script>
+/* Game OS shared game spine — the Pricing Calculator writes its result into
+   the current game's Publishing Thesis (price hypothesis) and Signal Ledger,
+   where the dashboard and Thesis Builder read it. */
+(function () {
+  if (!window.GOS) return;
+
+  function feedback(msg, isErr) {
+    var el = document.getElementById('send-thesis-feedback');
+    if (!el) return;
+    el.textContent = msg;
+    el.style.display = 'block';
+    el.style.color = isErr ? '#963226' : '';
+  }
+
+  window.sendToGameOS = function () {
+    if (inDemo()) { feedback('This is the sample game. Start with your own game to send results to Game OS.', true); return; }
+    GOS.ready.then(function () {
+      if (!GOS.game) { feedback('Add your game in the bar at the top of this page first.', true); window.scrollTo(0, 0); return; }
+      var m = computeScenarioMetrics();
+      if (!(m.launchPrice > 0)) { feedback('Work out a launch price on the Pricing step first.', true); return; }
+      var list = [
+        { key: 'launch_price', label: 'Required launch price', value: m.launchPrice, unit: 'usd' },
+        { key: 'target_sale_price', label: 'Target sale price', value: m.targetSalePrice, unit: 'usd' },
+        { key: 'net_revenue_per_unit', label: 'Net revenue per unit', value: m.netRevenuePerUnit, unit: 'usd' }
+      ];
+      if (m.firstWeekUnitsCentral > 0) list.push({ key: 'week1_units', label: 'Week 1 units (central)', value: m.firstWeekUnitsCentral, unit: 'units',
+        meta: { conservative: m.firstWeekUnitsCons, optimistic: m.firstWeekUnitsOpt } });
+      if (m.netFirstWeekRevenue > 0) list.push({ key: 'week1_net_revenue', label: 'Week 1 net revenue', value: m.netFirstWeekRevenue, unit: 'usd' });
+      if (m.breakEvenUnits > 0) list.push({ key: 'break_even_units', label: 'Break-even units', value: m.breakEvenUnits, unit: 'units' });
+
+      var btn = document.getElementById('send-thesis-btn');
+      if (btn) btn.disabled = true;
+      feedback('Sending to ' + GOS.game.title + '…');
+      GOS.recordSignals('price-calc', list)
+        .then(function () {
+          return GOS.saveThesis({ priceHypothesis: m.launchPrice.toFixed(2) }, 'price-calc', 'Launch price from the Pricing Calculator');
+        })
+        .then(function (res) {
+          var v = res && res.thesis ? res.thesis.version : null;
+          feedback('Sent. ' + GOS.game.title + '’s thesis price is now $' + m.launchPrice.toFixed(2) +
+            (v ? ' (v' + v + ')' : '') + ' and ' + list.length + ' signals are in the ledger.');
+          if (typeof window.gosTrack === 'function') window.gosTrack('output_action', { action: 'send_to_thesis' });
+        })
+        .catch(function (err) { feedback('Could not send: ' + err.message, true); })
+        .then(function () { if (btn) btn.disabled = false; });
+    });
+  };
+
+  // Prefill the game name from the current Game OS game when it is empty.
+  GOS.mountBar('#gameBar', { toolId: 'price-calc' });
+  GOS.ready.then(function () {
+    var name = document.getElementById('profile-name');
+    if (GOS.game && name && !name.value && !inDemo()) {
+      name.value = GOS.game.title;
+      try { updateGameProfile(); } catch (e) {}
+    }
+  });
 })();
 </script>
 </body>

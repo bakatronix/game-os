@@ -249,12 +249,99 @@
      ============================================================ */
 
   function renderOverview() {
-    var s = loadSettings();
-    var kicker = 'Game OS \u00b7 ' + (s.gameTitle || 'Demo Game');
+    var g = window.GOS && window.GOS.game;
+    var kicker = 'Game OS \u00b7 ' + (g ? g.title : 'Your studio');
     return (
-      pageHeader(kicker, 'Studio Health', '<span class="ss-demo">Demo data</span>') +
+      pageHeader(kicker, 'Studio Health', '<span class="ss-demo">Tool tiles: demo data</span>') +
+      '<div id="gameBar"></div>' +
+      '<div id="gamePanel"></div>' +
       '<div id="widgetsSection" class="gos-meta">Loading widgets\u2026</div>'
     );
+  }
+
+  /* ============================================================
+     Shared game spine \u2014 current game, its thesis and signal ledger
+     (toolkit/spine.js). Rendered above the tool widgets.
+     ============================================================ */
+
+  var SIGNAL_TOOL_NAMES = {
+    'price-calc': 'Pricing Calculator',
+    'steam-page-audit': 'Steam Page Audit',
+    'thesis-builder': 'Thesis Builder',
+  };
+
+  function fmtSignal(s) {
+    var v = s.value;
+    if (v == null) return '\u2014';
+    switch (s.unit) {
+      case 'usd': return '$' + Number(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      case 'units': return Math.round(v).toLocaleString();
+      case 'score': return Math.round(v) + '/100';
+      case 'pct': return (Math.round(v * 10) / 10) + '%';
+      default: return String(Math.round(v * 100) / 100);
+    }
+  }
+
+  function fmtDate(d) {
+    try { return new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); } catch (e) { return ''; }
+  }
+
+  function renderGamePanel() {
+    var el = document.getElementById('gamePanel');
+    var G = window.GOS;
+    if (!el || !G) return;
+    if (!G.game) { el.innerHTML = ''; return; }
+
+    var t = G.thesis;
+    var thesisHtml = t
+      ? '<dl class="spine-facts">' +
+          '<div><dt>Price hypothesis</dt><dd>' + (t.priceHypothesis ? '$' + escapeHtml(t.priceHypothesis) : '\u2014') + '</dd></div>' +
+          '<div><dt>Comp set</dt><dd>' + ((t.compSet && t.compSet.length) ? t.compSet.length + ' games' : '\u2014') + '</dd></div>' +
+          '<div><dt>Version</dt><dd>v' + t.version + '</dd></div>' +
+        '</dl>' +
+        (t.hook ? '<p class="spine-hook">\u201c' + escapeHtml(t.hook) + '\u201d</p>' : '') +
+        (t.audience ? '<p class="module-desc">' + escapeHtml(t.audience.length > 220 ? t.audience.slice(0, 217) + '\u2026' : t.audience) + '</p>' : '') +
+        '<p class="gos-meta">Last revised ' + fmtDate(t.createdAt) + ' from ' + escapeHtml(SIGNAL_TOOL_NAMES[t.source] || t.source || 'manual') + '</p>'
+      : '<p class="module-desc">No thesis yet. Write down who it\u2019s for, the hook, and the price you\u2019re testing \u2014 every tool reads from it.</p>';
+
+    // Headline signals only: per-criterion page-audit scores live in the tool.
+    var ledger = (G.ledger || []).filter(function (s) { return !/^page_audit_(?!overall$)/.test(s.key); });
+    var ledgerHtml = ledger.length
+      ? '<ul class="spine-ledger">' + ledger.slice(0, 8).map(function (s) {
+          return '<li><span class="spine-ledger-label">' + escapeHtml(s.label || s.key) +
+            '<small>' + escapeHtml(SIGNAL_TOOL_NAMES[s.toolId] || s.toolId) + ' \u00b7 ' + fmtDate(s.observedAt) + '</small></span>' +
+            '<span class="spine-ledger-val">' + escapeHtml(fmtSignal(s)) + '</span></li>';
+        }).join('') + '</ul>'
+      : '<p class="module-desc">Empty so far. Run <a href="/game-os/steam-page-audit/">Steam Page Audit</a> or send a price from the <a href="/game-os/price-calc/">Pricing Calculator</a> and the results land here.</p>';
+
+    el.innerHTML =
+      '<div class="module-grid spine-grid">' +
+        '<div class="ss-card module-card">' +
+          '<div class="module-head"><div><h3>Publishing Thesis</h3><div class="module-q">What are we claiming, and why?</div></div>' +
+          '<span class="ss-badge healthy">Live</span></div>' +
+          thesisHtml +
+          '<div class="card-actions"><a class="ss-btn" href="/game-os/thesis-builder/">' + (t ? 'Revise thesis' : 'Write thesis') + ' \u2192</a></div>' +
+        '</div>' +
+        '<div class="ss-card module-card">' +
+          '<div class="module-head"><div><h3>Signal Ledger</h3><div class="module-q">What have we measured?</div></div>' +
+          '<span class="ss-badge healthy">Live</span></div>' +
+          ledgerHtml +
+        '</div>' +
+      '</div>';
+  }
+
+  function mountSpine() {
+    if (!window.GOS) return;
+    window.GOS.mountBar('#gameBar', { toolId: 'game-os' });
+    renderGamePanel();
+  }
+
+  if (window.GOS) {
+    window.GOS.onChange(function () {
+      renderGamePanel();
+      var k = document.querySelector('.ss-header-row .ss-header .k');
+      if (k && window.GOS.game) k.textContent = 'Game OS \u00b7 ' + window.GOS.game.title;
+    });
   }
 
   function renderDetailPage(key) {
@@ -382,6 +469,8 @@
       case 'overview':
       default:
         content.innerHTML = renderOverview();
+        mountSpine();
+        if (cachedApps) renderWidgets(cachedApps);
         break;
     }
 
@@ -534,12 +623,14 @@
      Session — unified identity (GET /api/me)
      ============================================================ */
 
+  var cachedApps = null;
+
   function loadSession() {
     fetch('/api/me', { credentials: 'same-origin' })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (data) {
         if (!data) return;
-        if (data.apps) renderWidgets(data.apps);
+        if (data.apps) { cachedApps = data.apps; renderWidgets(data.apps); }
         if (!data.user) return;
         var info = document.getElementById('sessionInfo');
         var acct = document.getElementById('accountLink');

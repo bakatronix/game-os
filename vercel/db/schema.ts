@@ -5,6 +5,7 @@ import {
   primaryKey,
   integer,
   uuid,
+  doublePrecision,
 } from "drizzle-orm/pg-core";
 import type { AdapterAccountType } from "next-auth/adapters";
 
@@ -122,7 +123,51 @@ export const games = pgTable("game", {
     .references(() => studios.id, { onDelete: "cascade" }),
   title: text("title").notNull(),
   steamAppId: text("steamAppId"),
+  genre: text("genre"),
+  stage: integer("stage").notNull().default(1), // Seismic lifecycle stage 1..8
+  createdBy: text("createdBy").references(() => users.id, { onDelete: "set null" }),
   createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
+});
+
+/* ---------------------------------------------------------------------------
+   The shared game spine (Seismic's shared objects, made real).
+   Every tool reads the current game's latest thesis and writes measurements
+   into its signal ledger, so one tool's output becomes another's input.
+--------------------------------------------------------------------------- */
+
+/* Publishing Thesis — one immutable row per version. Latest = max(version). */
+export const thesisVersions = pgTable("thesis_version", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  gameId: uuid("gameId")
+    .notNull()
+    .references(() => games.id, { onDelete: "cascade" }),
+  version: integer("version").notNull(),
+  audience: text("audience"),
+  hook: text("hook"),
+  compSet: text("compSet"), // JSON array [{name, appId?, price?}]
+  priceHypothesis: text("priceHypothesis"), // e.g. "19.99"
+  targets: text("targets"), // JSON object of per-stage targets
+  changedFields: text("changedFields"), // JSON array of field names changed in this version
+  source: text("source"), // tool id that wrote it, or "manual"
+  note: text("note"),
+  createdBy: text("createdBy").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
+});
+
+/* Signal Ledger — append-only measurements from every tool. */
+export const signals = pgTable("signal", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  gameId: uuid("gameId")
+    .notNull()
+    .references(() => games.id, { onDelete: "cascade" }),
+  toolId: text("toolId").notNull(),
+  key: text("key").notNull(), // e.g. "page_audit_overall", "launch_price"
+  label: text("label"),
+  value: doublePrecision("value"),
+  unit: text("unit"), // "usd" | "units" | "score" | "pct" | ...
+  meta: text("meta"), // JSON
+  observedAt: timestamp("observedAt", { mode: "date" }).defaultNow().notNull(),
+  createdBy: text("createdBy").references(() => users.id, { onDelete: "set null" }),
 });
 
 /* ---------------------------------------------------------------------------
