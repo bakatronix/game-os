@@ -78,15 +78,35 @@ export default {
     proxied.headers.set("Host", url.host);
     proxied.headers.set("X-Forwarded-Host", url.host);
     proxied.headers.set("X-Forwarded-Proto", "https");
-    return fetch(request.url, {
+    const res = await fetch(request.url, {
       method: request.method,
       headers: proxied.headers,
       body: request.body,
       redirect: "manual",
       cf: { resolveOverride: originIp, cacheEverything: false },
     });
+    return withSecurityHeaders(res);
   },
 };
+
+/* Same baseline headers the Next.js app sets (vercel/next.config.ts), added to
+ * the Namecheap marketing site's responses. Existing headers are kept. */
+const SECURITY_HEADERS = {
+  "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "SAMEORIGIN",
+  "Content-Security-Policy": "frame-ancestors 'self'; base-uri 'self'; object-src 'none'",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=()",
+};
+
+function withSecurityHeaders(res) {
+  const headers = new Headers(res.headers);
+  for (const [k, v] of Object.entries(SECURITY_HEADERS)) {
+    if (!headers.has(k)) headers.set(k, v);
+  }
+  return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
+}
 
 function misconfigured() {
   return new Response("Edge router misconfigured (missing origin)", {
