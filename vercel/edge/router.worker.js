@@ -7,6 +7,9 @@
  *   /game-os/*   -> Vercel   (the Next.js app in ../../vercel)
  *   /game-os     -> Vercel
  *   /api/*       -> Vercel   (same-origin APIs; set ROUTE_API=false to disable)
+ *   /card, /card/* -> served right here (visiting-card page, bundled from
+ *                     namecheap/card/ at deploy time — the printed QR code
+ *                     points at /card, so never remove this)
  *   everything   -> Namecheap origin (68.65.120.165)
  *
  * Config via Worker env vars:
@@ -15,12 +18,18 @@
  *   ROUTE_API        "true" | "false"  (default true)
  */
 
+import { CARD_HTML, CARD_VCF } from "./card.js";
+import CARD_PHOTO from "./abbas.png";
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const path = url.pathname;
 
     const routeApi = (env.ROUTE_API ?? "true") === "true";
+
+    const card = cardResponse(path);
+    if (card) return card;
 
     // App pages + tools served by the Next.js app (not the marketing site).
     const APP_PREFIXES = [
@@ -106,6 +115,24 @@ function withSecurityHeaders(res) {
     if (!headers.has(k)) headers.set(k, v);
   }
   return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
+}
+
+/* Visiting-card page (llamagriffin.com/card). */
+function cardResponse(path) {
+  const files = {
+    "/card": [CARD_HTML, "text/html; charset=utf-8"],
+    "/card/": [CARD_HTML, "text/html; charset=utf-8"],
+    "/card/index.html": [CARD_HTML, "text/html; charset=utf-8"],
+    "/card/abbas.png": [CARD_PHOTO, "image/png"],
+    "/card/abbas-saleem.vcf": [CARD_VCF, "text/vcard; charset=utf-8"],
+  };
+  const hit = files[path];
+  if (!hit) return null;
+  const headers = { "Content-Type": hit[1], "Cache-Control": "public, max-age=300" };
+  if (path.endsWith(".vcf")) {
+    headers["Content-Disposition"] = 'attachment; filename="abbas-saleem.vcf"';
+  }
+  return withSecurityHeaders(new Response(hit[0], { headers }));
 }
 
 function misconfigured() {
