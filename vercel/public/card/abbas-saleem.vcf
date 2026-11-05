@@ -1,0 +1,9 @@
+BEGIN:VCARD
+VERSION:3.0
+N:Saleem;Abbas;;;
+FN:Abbas Saleem
+ORG:Llama & Griffin
+EMAIL;TYPE=WORK:hello@llamagriffin.com
+URL:https://llamagriffin.com/card
+X-SOCIALPROFILE;TYPE=linkedin:https://linkedin.com/in/abbask
+END:VCARD

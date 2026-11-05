@@ -31,6 +31,7 @@ export default {
       "/_next",
       "/seismic",
       "/track.js",
+      "/card",
     ];
 
     const toVercel =
