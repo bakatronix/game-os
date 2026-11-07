@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Indie Game Pricing Dashboard</title>
+<title>Pricing Calculator — Game OS</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --cream: #0c0812;
@@ -530,22 +530,34 @@
     .nav-select { width: 100%; }
   }
 </style>
-<script src="/track.js" data-tool="price-calc" data-version="1"></script>
+<script src="/track.js" data-tool="price-calc" data-version="2"></script>
+<script src="/game-os/toolkit/spine.js?v=2"></script>
 </head>
 <body>
 
 <div class="landing-overlay" id="landing-overlay" style="display:none">
-  <div class="landing-card">
-    <div class="landing-brand">Indie Game Pricing Dashboard</div>
-    <h1>Price your game like you mean it</h1>
-    <p class="landing-problem"><strong>Indie pricing is hard.</strong> Most studios guess their launch price. Comp data is scattered across SteamDB, storefronts and old newsletters, and a wrong price is expensive to reverse after launch — you can drop a price, but raising it burns your launch window.</p>
-    <p class="landing-solution"><strong>This tool walks you through it.</strong> Comp analysis, weighted scoring, discount strategy, wishlist conversion, demo performance and regional pricing — so you land on a defensible number, not a guess.</p>
-    <div class="landing-arc" id="landing-arc" aria-label="The full journey"></div>
+  <div class="landing-top">
+    <a class="gos-brand" href="/game-os" aria-label="Game OS home"><img src="/game-os/assets/logo.svg?v=6" alt="Game OS"></a>
+    <a class="gos-back" href="/game-os">&larr; Back to dashboard</a>
+  </div>
+  <div class="landing-card" role="dialog" aria-labelledby="landing-title">
+    <div class="landing-brand">Pricing Calculator</div>
+    <h1 id="landing-title">Find a launch price you can defend</h1>
+    <p class="landing-lead">Tell us about your game and a handful of similar Steam games. You&rsquo;ll leave with the price to set on Steam, a discount plan that triggers wishlist emails, and a report you can share.</p>
+
+    <ol class="landing-steps" aria-label="How it works">
+      <li><span class="ls-num" aria-hidden="true">1</span><div><strong>Describe your game</strong><span>Genre, length, platforms and budget.</span></div></li>
+      <li><span class="ls-num" aria-hidden="true">2</span><div><strong>Add comparable games</strong><span>Paste Steam App IDs for 8&ndash;12 similar games; prices and reviews fill in for you.</span></div></li>
+      <li><span class="ls-num" aria-hidden="true">3</span><div><strong>Get your price</strong><span>Pick the sale price you&rsquo;re aiming for and see your launch price, discount staircase and break-even.</span></div></li>
+    </ol>
+    <p class="landing-optional"><strong>Optional, when you&rsquo;re ready:</strong> wishlist forecast, community signals, demo performance, Early Access, regional pricing and post-launch checks.</p>
+
     <div class="landing-cta">
-      <button class="btn" id="landing-start">Start with your game</button>
-      <button class="btn-ghost" id="landing-demo">See it with a sample game</button>
+      <button class="btn" id="landing-start">Start with your game &rarr;</button>
+      <button class="btn-ghost" id="landing-demo">See a finished example</button>
     </div>
-    <label class="landing-dismiss"><input type="checkbox" id="landing-dont-show"> Don't show this again</label>
+    <p class="landing-note">Your work saves automatically in this browser.</p>
+    <label class="landing-dismiss"><input type="checkbox" id="landing-dont-show"> Don&rsquo;t show this again</label>
   </div>
 </div>
 
@@ -562,20 +574,24 @@
 
 <header>
   <div class="container">
-    <h1>Indie Game Pricing Dashboard</h1>
+    <div class="gos-topbar">
+      <a class="gos-brand" href="/game-os" aria-label="Game OS home"><img src="/game-os/assets/logo.svg?v=6" alt="Game OS"></a>
+      <a class="gos-back" href="/game-os">&larr; Back to dashboard</a>
+    </div>
+    <h1>Pricing Calculator</h1>
     <br>
     <div class="nav-wrapper">
       <select class="nav-select" onchange="switchTab(this.value)">
-        <option value="profile">00 — Game Profile</option>
-        <option value="comp">01 — Comp Analysis</option>
-        <option value="variables">02 — Four Variables</option>
-        <option value="pricing">03 — Price &amp; Discount</option>
-        <option value="wishlist">04 — Wishlist Estimator</option>
-        <option value="demo">05 — Demo Performance</option>
-        <option value="ea">06 — Early Access</option>
-        <option value="regional">07 — Regional &amp; DLC</option>
-        <option value="monitoring">08 — Post-Launch</option>
-        <option value="sources">Sources &amp; Notes</option>
+        <option value="profile">1 — Game Profile</option>
+        <option value="comp">2 — Comp Analysis</option>
+        <option value="variables">3 — Four Variables</option>
+        <option value="pricing">4 — Price &amp; Discount</option>
+        <option value="wishlist">5 — Wishlist Estimator</option>
+        <option value="community">6 — Community Signals</option>
+        <option value="demo">7 — Demo Performance</option>
+        <option value="ea">8 — Early Access</option>
+        <option value="regional">9 — Regional &amp; DLC</option>
+        <option value="monitoring">10 — Post-Launch</option>
         <option value="summary">Pricing Summary</option>
       </select>
     </div>
@@ -585,43 +601,44 @@
       <button data-tab="variables">Variables</button>
       <button data-tab="pricing">Pricing</button>
       <button data-tab="wishlist">Wishlist</button>
+      <button data-tab="community">Community</button>
       <button data-tab="demo">Demo</button>
       <button data-tab="ea">EA</button>
       <button data-tab="regional">Regional</button>
       <button data-tab="monitoring">Monitor</button>
-      <button data-tab="sources">Sources</button>
       <button data-tab="summary">Summary</button>
     </nav>
   </div>
 </header>
 
 <div class="stepper" id="stepper-desktop" role="list" aria-label="Progress">
-  <button class="stepper-step active" data-step="0" data-tab="profile"><span class="dot">0</span>Profile</button>
+  <button class="stepper-step active" data-step="0" data-tab="profile"><span class="dot">1</span>Profile</button>
   <span class="stepper-divider"></span>
-  <button class="stepper-step" data-step="1" data-tab="comp"><span class="dot">1</span>Comp</button>
+  <button class="stepper-step" data-step="1" data-tab="comp"><span class="dot">2</span>Comp</button>
   <span class="stepper-divider"></span>
-  <button class="stepper-step" data-step="2" data-tab="variables"><span class="dot">2</span>Variables</button>
+  <button class="stepper-step" data-step="2" data-tab="variables"><span class="dot">3</span>Variables</button>
   <span class="stepper-divider"></span>
-  <button class="stepper-step" data-step="3" data-tab="pricing"><span class="dot">3</span>Pricing</button>
+  <button class="stepper-step" data-step="3" data-tab="pricing"><span class="dot">4</span>Pricing</button>
   <span class="stepper-divider"></span>
-  <button class="stepper-step" data-step="4" data-tab="wishlist"><span class="dot">4</span>Wishlist</button>
+  <button class="stepper-step" data-step="4" data-tab="wishlist"><span class="dot">5</span>Wishlist</button>
   <span class="stepper-divider"></span>
-  <button class="stepper-step" data-step="5" data-tab="demo"><span class="dot">5</span>Demo</button>
+  <button class="stepper-step" data-step="5" data-tab="community"><span class="dot">6</span>Community</button>
   <span class="stepper-divider"></span>
-  <button class="stepper-step" data-step="6" data-tab="ea"><span class="dot">6</span>EA</button>
+  <button class="stepper-step" data-step="6" data-tab="demo"><span class="dot">7</span>Demo</button>
   <span class="stepper-divider"></span>
-  <button class="stepper-step" data-step="7" data-tab="regional"><span class="dot">7</span>Regional</button>
+  <button class="stepper-step" data-step="7" data-tab="ea"><span class="dot">8</span>EA</button>
   <span class="stepper-divider"></span>
-  <button class="stepper-step" data-step="8" data-tab="monitoring"><span class="dot">8</span>Monitor</button>
+  <button class="stepper-step" data-step="8" data-tab="regional"><span class="dot">9</span>Regional</button>
   <span class="stepper-divider"></span>
-  <button class="stepper-step" data-step="9" data-tab="sources"><span class="dot">9</span>Sources</button>
+  <button class="stepper-step" data-step="9" data-tab="monitoring"><span class="dot">10</span>Monitor</button>
 </div>
 <div class="stepper-mobile" id="stepper-mobile">
-  Step <span id="stepper-current">0</span> of 10 · Game Profile
+  Step <span id="stepper-current">1</span> of 10 · <span id="stepper-label">Game Profile</span>
   <div class="progress-bar"><div class="progress-bar-fill" id="stepper-fill" style="width:12.5%"></div></div>
 </div>
 
 <main class="container">
+  <div id="gameBar"></div>
 
   <!-- TAB 0 — GAME PROFILE -->
   <section class="tab active" id="tab-profile">
@@ -980,7 +997,7 @@
           <input type="number" id="wishlist-count" value="" min="0" step="500" oninput="markManual('wishlist-count'); updateWishlist()">
           <div class="estimate-note heuristic" id="wishlist-estimate-note"></div>
           <p class="output-note" style="margin-top:4px">Use organic wishlist count only — exclude botted, fabricated, or incentivised wishlists. Steam's algorithm detects artificial activity and may penalise your Visibility Rounds.</p>
-          <div class="inline-prompt" id="wishlist-community-prompt">Wishlist count alone predicts launch success only ~17% of the time under 10,000 wishlists. <a onclick="document.getElementById('community-signals-details').open=true; document.getElementById('community-signals-details').scrollIntoView({behavior:'smooth'});">Add your community signals below</a> to strengthen this estimate.</div>
+          <div class="inline-prompt" id="wishlist-community-prompt"></div>
         </div>
         <div style="margin-bottom:14px">
           <p class="muted">Conversion rate tiers (GameDiscoverCo aggregate data):</p>
@@ -996,9 +1013,21 @@
           <p class="muted" style="margin-top:8px">Conversion drops ~30% if launch price is above $10. <span id="wishlist-tiers-src"></span></p>
         </div>
 
-        <details class="summary-bar" id="community-signals-details" style="margin-top:12px;border-left:3px solid var(--gold);background:rgba(255,184,77,0.06)">
-          <summary style="color:var(--dark);font-weight:600;font-size:11px">Community Signals (optional) — click to expand</summary>
-          <p class="muted" style="margin-bottom:12px;font-size:12px">Why this matters: GameDiscoverCo research shows wishlist count alone predicts launch success only ~17% of the time for games under 10,000 wishlists — community engagement and wishlist source quality are stronger secondary signals. Use these optional fields to sanity-check whether your wishlist count reflects real purchase intent.</p>
+      </div>
+      <div class="card">
+        <h3>Estimated Results</h3>
+        <div id="wishlist-outputs" aria-live="polite" aria-atomic="true"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMMUNITY SIGNALS (its own step, after Wishlist) -->
+  <section class="tab" id="tab-community">
+    <h2>Community Signals</h2>
+    <p class="subtitle">GameDiscoverCo research shows wishlist count alone predicts launch success only ~17% of the time for games under 10,000 wishlists — community engagement and wishlist source quality are stronger secondary signals. Use these optional fields to sanity-check whether your wishlist count reflects real purchase intent.</p>
+    <div class="grid-2">
+      <div class="card">
+        <h3>Your Community</h3>
           <p class="estimate-note heuristic" id="community-default-note" style="margin-bottom:12px"></p>
           <div style="margin-bottom:12px">
             <label class="stat-label">Discord Member Count</label>
@@ -1026,11 +1055,10 @@
               <option value="paid">Mostly paid ads / one-time spike (e.g. Next Fest)</option>
             </select>
           </div>
-        </details>
       </div>
       <div class="card">
-        <h3>Estimated Results</h3>
-        <div id="wishlist-outputs" aria-live="polite" aria-atomic="true"></div>
+        <h3>Effect on Your Wishlist Forecast</h3>
+        <div id="community-outputs" aria-live="polite"></div>
       </div>
     </div>
   </section>
@@ -1300,17 +1328,12 @@
     </div>
   </section>
 
-  <!-- TAB 9 — SOURCES -->
-  <section class="tab" id="tab-sources">
-    <h2>Sources &amp; Methodology Notes</h2>
-    <p class="subtitle">All data referenced in this workbook. Verify live data before finalizing pricing decisions.</p>
-    <div id="sources-body"></div>
-  </section>
 
   <section class="tab" id="tab-summary">
     <h2>Pricing Summary</h2>
-    <p class="subtitle">Your complete pricing decision recap. All data derived from your inputs across Steps 0–8.</p>
+    <p class="subtitle">Your complete pricing decision recap. Everything here comes from what you entered in the steps above.</p>
     <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px">
+      <button class="btn" id="send-thesis-btn" onclick="sendToGameOS()" title="Write this launch price and its projections into your game's Publishing Thesis and Signal Ledger">Send to thesis</button>
       <button class="btn" onclick="try{buildSummary();}catch(e){};setTimeout(function(){window.print()},400)" id="pdf-btn">Download PDF</button>
       <button class="btn-ghost wb-btn" id="save-workbook-btn" onclick="exportWorkbook()">Save workbook (.json)</button>
       <button class="btn-ghost wb-btn" onclick="document.getElementById('import-file-input').click()">Load workbook (.json)</button>
@@ -1320,6 +1343,7 @@
     </div>
     <div class="import-error" id="import-error"></div>
     <div class="share-feedback" id="share-feedback"></div>
+    <div class="share-feedback" id="send-thesis-feedback" role="status" aria-live="polite"></div>
     <div id="summary-content" aria-live="polite"></div>
   </section>
 </main>
@@ -1330,7 +1354,9 @@
   .print-cover .cover-brand { font-family: var(--mono); font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold-dark); margin-bottom: 20px; }
   .print-cover .cover-title { font-family: var(--serif); font-size: 36px; font-weight: 700; margin-bottom: 6px; color: var(--dark); }
   .print-cover .cover-subtitle { font-family: var(--sans); font-size: 14px; color: var(--mid); margin-bottom: 26px; }
-  .print-cover .cover-price { font-family: var(--serif); font-size: 20px; font-weight: 700; color: var(--dark); margin-bottom: 6px; }
+  .print-cover .cover-price { font-family: var(--serif); font-size: 28px; font-weight: 700; color: var(--dark); margin-bottom: 6px; }
+  .print-cover .cover-tier { font-family: var(--sans); font-size: 14px; color: var(--mid); margin-bottom: 10px; }
+  .print-cover .cover-tier.conflict { color: var(--coral-light); font-weight: 600; }
   .print-cover .cover-date { font-family: var(--mono); font-size: 11px; color: var(--mid); margin-bottom: 30px; }
   .print-cover .cover-attribution { font-family: var(--sans); font-size: 11px; color: var(--mid); }
 
@@ -1341,7 +1367,7 @@
   }
 
   @media print {
-    header, .stepper, .stepper-mobile, .wizard-nav, .summary-bar, #pdf-btn, nav, .nav-wrapper, .nav-select, footer, .wb-btn, .restore-banner, .import-error, .share-feedback, .ack-control, .scenario-actions { display: none !important; }
+    header, .stepper, .stepper-mobile, .wizard-nav, .summary-bar, #pdf-btn, #send-thesis-btn, #send-thesis-feedback, #gameBar, nav, .nav-wrapper, .nav-select, footer, .wb-btn, .restore-banner, .import-error, .share-feedback, .ack-control, .scenario-actions { display: none !important; }
     body { background: #fff; color: #000; font-size: 11px; line-height: 1.45; }
     .tab { display: block !important; }
     .tab:not(#tab-summary) { display: none !important; }
@@ -1452,6 +1478,7 @@
   input:focus-visible, select:focus-visible, button:focus-visible, .tier-row:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
   .tier-row[role="button"]:focus-visible td { background: rgba(255,184,77,0.06); }
 </style>
+<link rel="stylesheet" href="/game-os/price-calc/sandstone-skin.css?v=6">
 
 <script>
 window.manualFields = {};
@@ -1777,7 +1804,7 @@ var PricingModel = {
         if (devCost > 0) {
           unitDetail = ' At $' + lp.toFixed(2) + ' you need to sell about ' + Math.ceil(be.blendedUnits).toLocaleString() + ' units to recoup your $' + devCost.toLocaleString() + ' development cost' + (fwUnits > 0 ? ', versus ' + fwUnits.toLocaleString() + ' units implied by your first-week estimate (' + (be.blendedUnits / fwUnits).toFixed(1) + 'x).' : '.');
         }
-        issues.push({ id: 'price-tier-conflict', severity: 'blocking', title: 'Pricing conflict: Required Launch Price vs Recommended Tier', detail: 'Your Required Launch Price ($' + lp.toFixed(2) + ') is significantly ' + dir + ' your comp-based Recommended Tier (' + tier.price + ').' + unitDetail + ' Revisit your comp analysis, budget inputs, or expected content hours before finalizing.' });
+        issues.push({ id: 'price-tier-conflict', severity: 'blocking', title: 'Pricing conflict: Launch Price vs Recommended Tier', detail: 'Your launch price ($' + lp.toFixed(2) + ') is significantly ' + dir + ' your comp-based Recommended Tier (' + tier.price + ').' + unitDetail + ' Revisit your comp analysis, budget inputs, or expected content hours before finalizing.' });
       }
     }
 
@@ -1796,7 +1823,7 @@ var PricingModel = {
     }
 
     if (wl > 0 && inputs.roundWishlist && !signalsFilled) {
-      issues.push({ id: 'wishlist-round', severity: 'warning', title: 'Wishlist estimate unverified', detail: 'This looks like an estimate rather than a tracked number. Expand Community Signals to sanity-check wishlist quality, or confirm this is your best current projection.' });
+      issues.push({ id: 'wishlist-round', severity: 'warning', title: 'Wishlist estimate unverified', detail: 'This looks like an estimate rather than a tracked number. Fill in the Community Signals step to sanity-check wishlist quality, or confirm this is your best current projection.' });
     }
 
     if (demoExists === 'yes') {
@@ -1854,6 +1881,7 @@ function switchTab(tabName) {
   var sel = document.querySelector('.nav-select');
   if (sel) sel.value = tabName;
   if (tabName === 'wishlist') updateWishlist();
+  if (tabName === 'community') renderCommunityOutputs();
   updateContextBanner(tabName);
 }
 (function(){
@@ -1890,9 +1918,20 @@ function getLaunchPrice() {
   if (isNaN(target) || isNaN(discPct) || target <= 0 || discPct <= 0 || discPct >= 100) return 0;
   return target / (1 - discPct / 100);
 }
-function getValidatedLaunchPrice() {
+// The raw price back-solved from target sale price + discount depth.
+function getRawLaunchPrice() {
   var lp = getLaunchPrice();
   return (!isNaN(lp) && isFinite(lp) && lp > 0) ? lp : 0;
+}
+// The launch price used everywhere: the raw price rounded UP to the next valid
+// Steam price point, i.e. the price the studio actually sets. Rounding up keeps
+// the real discount at or above the chosen depth. Every output (net revenue,
+// staircase, strategies, summary, break-even, wishlist revenue) uses this.
+function getValidatedLaunchPrice() {
+  var raw = getRawLaunchPrice();
+  if (!raw) return 0;
+  var snapped = PricingModel.snapToSteamPriceUp(raw);
+  return snapped > 0 ? snapped : raw;
 }
 function getDevShare() {
   var el = document.getElementById('revenue-tier');
@@ -2549,23 +2588,24 @@ function updatePricing() {
   }
   var devShare = getDevShare();
   var dm = PricingModel.discountMath(target, discPct, devShare);
-  var launchPrice = dm.launchPrice;
-  var snappedLaunchUp = dm.snappedLaunchUp;
+  // One launch price for every output on this page: the Steam price to set.
+  var rawLaunchPrice = dm.launchPrice;
+  var launchPrice = dm.snappedLaunchUp > 0 ? dm.snappedLaunchUp : dm.launchPrice;
   var realDiscount = dm.realDiscount;
-  var netFull = dm.netFull;
+  var netFull = launchPrice * devShare;
   var netSale = dm.netSale;
-  var unitsNeeded = dm.unitsNeeded;
-  var deepDiscountPrice = dm.deepDiscountPrice;
-  var netDeepDiscount = dm.netDeepDiscount;
+  var unitsNeeded = netSale > 0 ? Math.round((netFull * 1000) / netSale) : 0;
+  var deepDiscountPrice = launchPrice * 0.5;
+  var netDeepDiscount = deepDiscountPrice * devShare;
 
   var launchPriceHtml = '$' + launchPrice.toFixed(2);
-  if (snappedLaunchUp != null && Math.round(snappedLaunchUp * 100) !== Math.round(launchPrice * 100)) {
-    launchPriceHtml += ' <span class="output-note">\u2192 set ' + '$' + snappedLaunchUp.toFixed(2) + '</span>';
-  }
+  var launchNote = Math.round(launchPrice * 100) !== Math.round(rawLaunchPrice * 100)
+    ? 'Back-solved $' + rawLaunchPrice.toFixed(2) + ' from your target sale price, rounded up to the next Steam price'
+    : 'Back-solved from your target sale price and discount depth';
 
   document.getElementById('pricing-outputs').innerHTML =
-    '<div class="output-row"><span class="output-label">Required Launch Price <span class="output-note">Back-solved target \u2014 not a price you set directly</span></span><span class="output-value">' + launchPriceHtml + '</span></div>' +
-    '<div class="output-row"><span class="output-label">Actual Discount at Snapped Price <span class="output-note">Should be \u226520% for wishlist emails</span></span><span class="output-value">' + (realDiscount * 100).toFixed(1) + '% ' + (realDiscount >= 0.2 ? '<span class="badge badge-teal">Meets 20%</span>' : '<span class="badge badge-coral">Below 20%</span>') + '</span></div>' +
+    '<div class="output-row"><span class="output-label">Launch Price to Set on Steam <span class="output-note">' + launchNote + '</span></span><span class="output-value">' + launchPriceHtml + '</span></div>' +
+    '<div class="output-row"><span class="output-label">Actual Discount at Target Sale <span class="output-note">Should be \u226520% for wishlist emails</span></span><span class="output-value">' + (realDiscount * 100).toFixed(1) + '% ' + (realDiscount >= 0.2 ? '<span class="badge badge-teal">Meets 20%</span>' : '<span class="badge badge-coral">Below 20%</span>') + '</span></div>' +
     (realDiscount < 0.2 ? '<p class="muted" style="color:var(--coral);margin-top:6px">\u26A0 Snapping the launch price pushed the effective discount below the 20% wishlist-email threshold.</p>' : '') +
     '<div class="output-row"><span class="output-label">Net Revenue per Unit (Full Price) <span class="output-note">After Steam cut (' + (devShare*100).toFixed(0) + '% to dev)</span></span><span class="output-value">$' + netFull.toFixed(2) + '</span></div>' +
     '<div class="output-row"><span class="output-label">Net Revenue per Unit (Sale Price)</span><span class="output-value">$' + netSale.toFixed(2) + '</span></div>' +
@@ -2733,6 +2773,7 @@ function getCommunityScore() {
 
 function updateWishlist() {
   renderReconciliation();
+  renderCommunityOutputs();
   var count = parseInt(document.getElementById('wishlist-count').value) || 0;
   var lp = getValidatedLaunchPrice();
   var devShare = getDevShare();
@@ -2945,7 +2986,7 @@ function renderSources() {
   var oldest = getOldestVerifiedDate();
   var html = '';
   if (oldest && daysSince(oldest) > 180) {
-    html += '<div class="card" style="border-left:3px solid var(--gold)"><h3 style="color:#ffcf7a">\u26A0 Benchmarks due for review</h3><p style="font-family:var(--sans);font-size:14px;color:#ffcf7a">The oldest cited benchmark was verified on ' + oldest + ' \u2014 more than six months ago. Confirm live figures before final pricing decisions.</p></div>';
+    html += '<div class="card" style="border-left:3px solid var(--gold)"><h3 style="color:var(--gold-dark)">\u26A0 Benchmarks due for review</h3><p style="font-family:var(--sans);font-size:14px;color:var(--gold-dark)">The oldest cited benchmark was verified on ' + oldest + ' \u2014 more than six months ago. Confirm live figures before final pricing decisions.</p></div>';
   }
   html += '<div class="card"><p class="muted">Oldest verified benchmark: <strong>' + (oldest || 'none dated') + '</strong>.</p></div>';
 
@@ -3037,6 +3078,27 @@ function getDemoConversionRate() {
   return downloads > 0 ? (playedWishlisted / downloads) * 100 : 0;
 }
 
+// Live readout on the Community Signals step: what these inputs do to the
+// wishlist conversion estimate (same model the Wishlist step uses).
+function renderCommunityOutputs() {
+  var el = document.getElementById('community-outputs');
+  if (!el) return;
+  // Keep the "Estimated default" tags honest: drop them once a field is the user's own.
+  refreshCommunityDefaults();
+  var c = getCommunityScore();
+  var pct = Math.round((c.multiplier - 1) * 100);
+  var headline = pct === 0 ? 'No adjustment' : (pct > 0 ? '+' + pct + '%' : '\u2212' + Math.abs(pct) + '%');
+  var verdict = pct > 4 ? 'Your community points to better-than-average conversion.'
+    : pct < -4 ? 'Your community points to weaker-than-average conversion.'
+    : 'Your community signals are neutral for now.';
+  var wl = parseInt(document.getElementById('wishlist-count').value) || 0;
+  el.innerHTML =
+    '<div class="output-row"><span class="output-label">Change to expected wishlist conversion <span class="output-note">' + verdict + '</span></span><span class="output-value">' + headline + '</span></div>' +
+    '<ul class="community-breakdown">' + c.breakdown.map(function (b) { return '<li>' + escapeHtml(b) + '</li>'; }).join('') + '</ul>' +
+    (wl > 0 ? '' : '<p class="muted">Add your projected wishlist count on the <a href="#" onclick="switchStep(stepOrder.indexOf(\'wishlist\')); window.scrollTo(0,0); return false;">Wishlist step</a> to include the follower ratio.</p>') +
+    '<p class="muted">Applied to your first-week sales estimate on the Wishlist step and in the Summary.</p>';
+}
+
 function isCommunitySignalsFilled() {
   return isManual('follower-count') || isManual('discord-activity') || isManual('wishlist-source') ||
     !!(document.getElementById('discord-count').value);
@@ -3085,7 +3147,7 @@ function renderReconciliation() {
   if (banner) {
     if (conflict) {
       banner.style.display = 'block';
-      banner.innerHTML = '<h4>\u26A0 Required Launch Price vs Recommended Tier</h4><p>' + conflict.detail + '</p>';
+      banner.innerHTML = '<h4>\u26A0 Launch Price vs Recommended Tier</h4><p>' + conflict.detail + '</p>';
     } else {
       banner.style.display = 'none';
       banner.innerHTML = '';
@@ -3111,7 +3173,7 @@ function renderWishlistPrompt() {
   var prompt = document.getElementById('wishlist-community-prompt');
   if (!prompt) return;
   var expanded = details && details.open;
-  var expandLink = '<a onclick="document.getElementById(\'community-signals-details\').open=true; document.getElementById(\'community-signals-details\').scrollIntoView({behavior:\'smooth\'});">Add your community signals below</a>';
+  var expandLink = '<a href="#" onclick="switchStep(stepOrder.indexOf(\'community\')); window.scrollTo(0,0); return false;">Add your community signals</a>';
   if (wl > 0 && !signalsFilled && !expanded) {
     if (isRoundWishlist(wl)) {
       prompt.innerHTML = 'This looks like an estimate rather than a tracked number. ' + expandLink + ' to sanity-check wishlist quality, or confirm this is your best current projection.';
@@ -3352,19 +3414,19 @@ function updateGameProfile() {
   refreshDerivedDefaults();
 }
 
-var stepOrder = ['profile','comp','variables','pricing','wishlist','demo','ea','regional','monitoring','sources'];
-var stepLabels = {'profile':'Game Profile','comp':'Comp Analysis','variables':'Four Variables','pricing':'Price & Discount','wishlist':'Wishlist','demo':'Demo Performance','ea':'Early Access','regional':'Regional & DLC','monitoring':'Post-Launch','sources':'Sources'};
+var stepOrder = ['profile','comp','variables','pricing','wishlist','community','demo','ea','regional','monitoring'];
+var stepLabels = {'profile':'Game Profile','comp':'Comp Analysis','variables':'Four Variables','pricing':'Price & Discount','wishlist':'Wishlist','community':'Community Signals','demo':'Demo Performance','ea':'Early Access','regional':'Regional & DLC','monitoring':'Post-Launch'};
 var stepWhys = {
   'profile': 'Set up who your game is and what it is.',
   'comp': 'Research comparable games so your price has real-world anchors.',
   'variables': 'Score the four variables that decide your recommended tier.',
   'pricing': 'Turn your comp data into a real launch price and discount plan.',
   'wishlist': 'Estimate first-week sales from your projected wishlist count.',
+  'community': 'Show how engaged your community is so the wishlist forecast reflects it.',
   'demo': 'Check whether your demo is a sales asset or a liability.',
   'ea': 'Decide how to price Early Access versus your 1.0 launch.',
   'regional': 'Set regional and DLC pricing without leaving money on the table.',
   'monitoring': 'Know what to watch after launch to course-correct.',
-  'sources': 'Review the benchmark data and methodology behind the numbers.',
   'summary': 'Your complete, defensible pricing decision recap.'
 };
 var TOTAL_STEPS = 11;
@@ -3384,7 +3446,6 @@ function switchStep(idx) {
     updateStepper();
     updateWizardButtons();
     populateSummaryBar();
-    if (stepOrder[idx] === 'sources') document.getElementById('tab-summary').classList.add('active');
   }
 }
 function goNext() {
@@ -3413,7 +3474,7 @@ function goPrev() { var cur = getCurrentStepIndex(); switchStep(Math.max(0, cur 
 function showSummary() {
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
   document.getElementById('tab-summary').classList.add('active');
-  visitedSteps.sources = true;
+  visitedSteps.summary = true;
   updateStepper();
   updateWizardButtons();
   buildSummary();
@@ -3433,6 +3494,8 @@ function updateStepper() {
     else dotSpan.textContent = (i + 1);
   }
   document.getElementById('stepper-current').textContent = cur + 1;
+  var stLabel = document.getElementById('stepper-label');
+  if (stLabel) stLabel.textContent = stepLabels[stepOrder[cur]] || '';
   document.getElementById('stepper-fill').style.width = ((cur + 1) / 10 * 100) + '%';
 }
 
@@ -3457,7 +3520,7 @@ function checkCompletion() {
   completedSteps.ea = !!visitedSteps.ea;
   completedSteps.regional = !!visitedSteps.regional;
   completedSteps.monitoring = !!visitedSteps.monitoring;
-  completedSteps.sources = !!visitedSteps.sources;
+  completedSteps.community = isCommunitySignalsFilled();
   updateStepper();
 }
 
@@ -3530,7 +3593,7 @@ function renderIssueAck(i) {
 }
 
 function updateExportButtons(blocked) {
-  var btns = [document.getElementById('pdf-btn'), document.getElementById('save-workbook-btn'), document.getElementById('copy-link-btn')];
+  var btns = [document.getElementById('pdf-btn'), document.getElementById('save-workbook-btn'), document.getElementById('copy-link-btn'), document.getElementById('send-thesis-btn')];
   btns.forEach(function(b){ if (b) b.disabled = blocked; });
 }
 
@@ -3674,7 +3737,7 @@ function renderScenarioComparison() {
   return html;
 }
 
-function coverBlock(gp, tierText) {
+function coverBlock(gp, tierText, lp, conflict) {
   var d = new Date();
   var dateStr = d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
   var title = (gp && gp.name) ? gp.name : 'Indie Game Pricing Report';
@@ -3682,7 +3745,10 @@ function coverBlock(gp, tierText) {
     '<div class="cover-brand">Llama &amp; Griffin</div>' +
     '<div class="cover-title">' + escapeHtml(title) + '</div>' +
     '<div class="cover-subtitle">Indie Game Pricing Dashboard</div>' +
-    '<div class="cover-price">Recommended price: ' + (tierText || '\u2014') + '</div>' +
+    '<div class="cover-price">' + (lp > 0 ? 'Launch price: $' + lp.toFixed(2) : 'Launch price: \u2014') + '</div>' +
+    (tierText ? '<div class="cover-tier' + (conflict ? ' conflict' : '') + '">' +
+      (conflict ? '\u26A0 Outside the comp-based tier of ' + escapeHtml(tierText) + ' \u2014 resolve below before relying on it'
+                : 'Within the comp-based tier of ' + escapeHtml(tierText)) + '</div>' : '') +
     '<div class="cover-date">Generated ' + dateStr + '</div>' +
     '<div class="cover-attribution">Based on the <a href="https://gamestudiounlocked.substack.com/">GameStudioUnlocked</a> pricing methodology. Design by <a href="https://llamagriffin.com/brand-guide/">Llama &amp; Griffin</a>.</div>' +
     '</div>';
@@ -3706,7 +3772,7 @@ function buildSummary() {
   var menaMethod = document.getElementById('mena-method');
   var menaMult = menaMethod ? menaMultipliers[menaMethod.value] : 0.47;
   var menaPrice = lp * menaMult;
-  var snappedLaunchUp = snapToSteamPriceUp(lp);
+  var rawLp = getRawLaunchPrice();
   var be = getBreakEven();
   var demoResult = getDemoHealthScore();
 
@@ -3750,7 +3816,7 @@ function buildSummary() {
   var wlScenarios = (wishlistCount > 0 && lp > 0) ? computeWishlistScenarios(wishlistCount, lp, devShare) : null;
 
   document.getElementById('summary-content').innerHTML =
-    coverBlock(gp, tierText) +
+    coverBlock(gp, tierText, lp, blockingIssues.some(function(i){ return i.id === 'price-tier-conflict'; })) +
     flagHtml + blockedHtml + ackHtml + issuesHtml +
     '<div class="card"><h3>Recommended Tier ' + srcLine('gdc', '2025-10-15') + '</h3><div style="font-family:var(--serif);font-size:28px;font-weight:700">' + (tierText || '—') + '</div>' +
     (gp.instinctPrice > 0 && tierText ? '<p class="muted">Your instinct: $' + gp.instinctPrice.toFixed(2) + ' vs. Calculated: ' + tierText + '</p>' : '') +
@@ -3767,8 +3833,8 @@ function buildSummary() {
     (gp.launchWindow ? '<div class="output-row"><span class="output-label">Launch Window</span><span class="output-value">' + gp.launchWindow + '</span></div>' : '') +
     '<div class="output-row"><span class="output-label">Publisher</span><span class="output-value">' + (gp.publisher || 'self') + '</span></div></div>') : '') +
     '<div class="card"><h3>Launch Price & Revenue ' + srcLine('steamworks', '2026-03-15') + '</h3>' +
-    '<div class="output-row"><span class="output-label">Required Launch Price</span><span class="output-value">' + (lp > 0 ? ('$' + lp.toFixed(2) + (snappedLaunchUp != null && Math.round(snappedLaunchUp * 100) !== Math.round(lp * 100) ? ' <span class="output-note">\u2192 set $' + snappedLaunchUp.toFixed(2) + '</span>' : '')) : '—') + '</span></div>' +
-    '<div class="output-row"><span class="output-label">Actual Discount at Target Sale</span><span class="output-value">' + (lp > 0 ? (discountFactor * 100).toFixed(1) + '%' : '—') + '</span></div>' +
+    '<div class="output-row"><span class="output-label">Launch Price to Set on Steam</span><span class="output-value">' + (lp > 0 ? ('$' + lp.toFixed(2) + (rawLp > 0 && Math.round(rawLp * 100) !== Math.round(lp * 100) ? ' <span class="output-note">back-solved $' + rawLp.toFixed(2) + '</span>' : '')) : '—') + '</span></div>' +
+    '<div class="output-row"><span class="output-label">Actual Discount at Target Sale</span><span class="output-value">' + (lp > 0 && target > 0 ? (((lp - target) / lp) * 100).toFixed(1) + '%' : '—') + '</span></div>' +
     '<div class="output-row"><span class="output-label">Net Revenue per Unit (Full)</span><span class="output-value">' + (lp > 0 ? '$' + netFull.toFixed(2) : '—') + '</span></div>' +
     '<div class="output-row"><span class="output-label">Steam Share Tier</span><span class="output-value">' + (devShare*100).toFixed(0) + '% to dev</span></div>' +
     '<div class="output-row"><span class="output-label">Price Floor</span><span class="output-value">' + floorPct + '% off max</span></div>' +
@@ -3801,7 +3867,7 @@ function buildSummary() {
   var sumWiz = document.querySelector('#tab-summary .wizard-nav');
   if (sumWiz) sumWiz.style.display = 'none';
   } catch(e) {
-    document.getElementById('summary-content').innerHTML = '<div class="card"><p class="muted">Fill in Steps 0\u20138 first, then the summary will populate automatically.</p></div>';
+    document.getElementById('summary-content').innerHTML = '<div class="card"><p class="muted">Fill in the steps first, then the summary will populate automatically.</p></div>';
   }
 }
 
@@ -3849,7 +3915,7 @@ function injectWizardUI() {
   var sumEl = document.getElementById('tab-summary');
   if (sumEl && !sumEl.querySelector('.wizard-nav')) {
     var wn = document.createElement('div'); wn.className = 'wizard-nav';
-    wn.innerHTML = '<button class="wizard-prev" onclick="switchStep(9)" aria-label="Back to Sources">← Back to Sources</button>';
+    wn.innerHTML = '<button class="wizard-prev" onclick="switchStep(stepOrder.length - 1)" aria-label="Back to Post-Launch">← Back to Post-Launch</button>';
     sumEl.appendChild(wn);
   }
 }
@@ -4378,7 +4444,7 @@ function loadDemoData() {
   updateVariables();
 
   // Pricing
-  var target = document.getElementById('target-sale-price'); if (target) target.value = '14.99';
+  var target = document.getElementById('target-sale-price'); if (target) target.value = '10.49';
   var depth = document.getElementById('discount-depth'); if (depth) depth.value = '30';
   var tier = document.getElementById('revenue-tier'); if (tier) tier.value = '0.70';
   var devCost = document.getElementById('dev-cost'); if (devCost) devCost.value = '150000';
@@ -4387,7 +4453,7 @@ function loadDemoData() {
   updatePricing();
 
   // Wishlist + community
-  var wl = document.getElementById('wishlist-count'); if (wl) wl.value = '18000';
+  var wl = document.getElementById('wishlist-count'); if (wl) wl.value = '18240';
   var followers = document.getElementById('follower-count'); if (followers) followers.value = '1500';
   var discord = document.getElementById('discord-activity'); if (discord) discord.value = 'high';
   var source = document.getElementById('wishlist-source'); if (source) source.value = 'organic';
@@ -4660,6 +4726,73 @@ if (location.search && location.search.indexOf('selftest=1') !== -1) { runSelfTe
 
   // tool_session_start + return_session signal
   window.gosTrack('tool_session_start', { entry_source: document.referrer || null });
+})();
+</script>
+<script>
+/* Game OS shared game spine — the Pricing Calculator writes its result into
+   the current game's Publishing Thesis (price hypothesis) and Signal Ledger,
+   where the dashboard and Thesis Builder read it. */
+(function () {
+  if (!window.GOS) return;
+
+  function feedback(msg, isErr) {
+    var el = document.getElementById('send-thesis-feedback');
+    if (!el) return;
+    el.textContent = msg;
+    el.style.display = 'block';
+    el.style.color = isErr ? '#963226' : '';
+  }
+
+  window.sendToGameOS = function () {
+    if (inDemo()) { feedback('This is the sample game. Start with your own game to send results to Game OS.', true); return; }
+    GOS.ready.then(function () {
+      if (!GOS.game) { feedback('Add your game in the bar at the top of this page first.', true); window.scrollTo(0, 0); return; }
+      var m = computeScenarioMetrics();
+      if (!(m.launchPrice > 0)) { feedback('Work out a launch price on the Pricing step first.', true); return; }
+      // The calculator tells the user to set the next Steam price tier up
+      // ("-> set $24.99"); that is the price that belongs in the thesis.
+      var steamPrice = PricingModel.snapToSteamPriceUp(m.launchPrice) || m.launchPrice;
+      var list = [
+        { key: 'launch_price', label: 'Launch price (Steam tier)', value: steamPrice, unit: 'usd', meta: { required_raw: Math.round(m.launchPrice * 100) / 100 } },
+        { key: 'target_sale_price', label: 'Target sale price', value: m.targetSalePrice, unit: 'usd' },
+        { key: 'net_revenue_per_unit', label: 'Net revenue per unit', value: m.netRevenuePerUnit, unit: 'usd' }
+      ];
+      if (m.firstWeekUnitsCentral > 0) list.push({ key: 'week1_units', label: 'Week 1 units (central)', value: m.firstWeekUnitsCentral, unit: 'units',
+        meta: { conservative: m.firstWeekUnitsCons, optimistic: m.firstWeekUnitsOpt } });
+      if (m.netFirstWeekRevenue > 0) list.push({ key: 'week1_net_revenue', label: 'Week 1 net revenue', value: m.netFirstWeekRevenue, unit: 'usd' });
+      if (m.breakEvenUnits > 0) list.push({ key: 'break_even_units', label: 'Break-even units', value: m.breakEvenUnits, unit: 'units' });
+
+      var btn = document.getElementById('send-thesis-btn');
+      if (btn) btn.disabled = true;
+      feedback('Sending to ' + GOS.game.title + '…');
+      GOS.recordSignals('price-calc', list)
+        .then(function () {
+          return GOS.saveThesis({ priceHypothesis: steamPrice.toFixed(2) }, 'price-calc', 'Launch price from the Pricing Calculator');
+        })
+        .then(function (res) {
+          var v = res && res.thesis ? res.thesis.version : null;
+          feedback('Sent. ' + GOS.game.title + '’s thesis price is now $' + steamPrice.toFixed(2) +
+            (v ? ' (v' + v + ')' : '') + ' and ' + list.length + ' signals are in the ledger.');
+          if (typeof window.gosTrack === 'function') window.gosTrack('output_action', { action: 'send_to_thesis' });
+        })
+        .catch(function (err) { feedback('Could not send: ' + err.message, true); })
+        .then(function () { if (btn) btn.disabled = false; });
+    });
+  };
+
+  // Prefill the game name from the current Game OS game when it is empty.
+  GOS.mountBar('#gameBar', { toolId: 'price-calc' });
+  GOS.ready.then(function () {
+    var start = document.getElementById('landing-start');
+    if (GOS.game && start && !inDemo()) start.textContent = 'Start pricing ' + GOS.game.title + ' \u2192';
+  });
+  GOS.ready.then(function () {
+    var name = document.getElementById('profile-name');
+    if (GOS.game && name && !name.value && !inDemo()) {
+      name.value = GOS.game.title;
+      try { updateGameProfile(); } catch (e) {}
+    }
+  });
 })();
 </script>
 </body>

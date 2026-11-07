@@ -5,6 +5,7 @@ import {
   primaryKey,
   integer,
   uuid,
+  doublePrecision,
 } from "drizzle-orm/pg-core";
 import type { AdapterAccountType } from "next-auth/adapters";
 
@@ -122,7 +123,107 @@ export const games = pgTable("game", {
     .references(() => studios.id, { onDelete: "cascade" }),
   title: text("title").notNull(),
   steamAppId: text("steamAppId"),
+  genre: text("genre"),
+  stage: integer("stage").notNull().default(1), // Seismic lifecycle stage 1..8
+  createdBy: text("createdBy").references(() => users.id, { onDelete: "set null" }),
   createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
+});
+
+/* ---------------------------------------------------------------------------
+   The shared game spine (Seismic's shared objects, made real).
+   Every tool reads the current game's latest thesis and writes measurements
+   into its signal ledger, so one tool's output becomes another's input.
+--------------------------------------------------------------------------- */
+
+/* Publishing Thesis — one immutable row per version. Latest = max(version). */
+export const thesisVersions = pgTable("thesis_version", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  gameId: uuid("gameId")
+    .notNull()
+    .references(() => games.id, { onDelete: "cascade" }),
+  version: integer("version").notNull(),
+  audience: text("audience"),
+  hook: text("hook"),
+  compSet: text("compSet"), // JSON array [{name, appId?, price?}]
+  priceHypothesis: text("priceHypothesis"), // e.g. "19.99"
+  targets: text("targets"), // JSON object of per-stage targets
+  changedFields: text("changedFields"), // JSON array of field names changed in this version
+  source: text("source"), // tool id that wrote it, or "manual"
+  note: text("note"),
+  createdBy: text("createdBy").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
+});
+
+/* Signal Ledger — append-only measurements from every tool. */
+export const signals = pgTable("signal", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  gameId: uuid("gameId")
+    .notNull()
+    .references(() => games.id, { onDelete: "cascade" }),
+  toolId: text("toolId").notNull(),
+  key: text("key").notNull(), // e.g. "page_audit_overall", "launch_price"
+  label: text("label"),
+  value: doublePrecision("value"),
+  unit: text("unit"), // "usd" | "units" | "score" | "pct" | ...
+  meta: text("meta"), // JSON
+  observedAt: timestamp("observedAt", { mode: "date" }).defaultNow().notNull(),
+  createdBy: text("createdBy").references(() => users.id, { onDelete: "set null" }),
+});
+
+/* ---------------------------------------------------------------------------
+   Chicken Brûlée — Discord playtest scanner, one setup per game.
+   The bot token is encrypted at rest (lib/secretbox.ts) and never sent back
+   to the browser.
+--------------------------------------------------------------------------- */
+
+export const playtestConfigs = pgTable("playtest_config", {
+  gameId: uuid("gameId")
+    .primaryKey()
+    .references(() => games.id, { onDelete: "cascade" }),
+  botToken: text("botToken"), // encrypted
+  channels: text("channels"), // JSON [{id,name,label}]
+  staffPrefixes: text("staffPrefixes"),
+  roleMapping: text("roleMapping"), // JSON {roleName: category}
+  gameContext: text("gameContext"), // JSON {game_name,description,mechanics[],goals}
+  updatedAt: timestamp("updatedAt", { mode: "date" }).defaultNow().notNull(),
+  updatedBy: text("updatedBy").references(() => users.id, { onDelete: "set null" }),
+});
+
+export const playtestScans = pgTable("playtest_scan", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  gameId: uuid("gameId")
+    .notNull()
+    .references(() => games.id, { onDelete: "cascade" }),
+  channelIds: text("channelIds"), // JSON
+  messagesFetched: integer("messagesFetched").default(0),
+  observationsFound: integer("observationsFound").default(0),
+  summary: text("summary"),
+  insights: text("insights"),
+  recommendations: text("recommendations"),
+  error: text("error"),
+  startedAt: timestamp("startedAt", { mode: "date" }).defaultNow().notNull(),
+  completedAt: timestamp("completedAt", { mode: "date" }),
+  createdBy: text("createdBy").references(() => users.id, { onDelete: "set null" }),
+});
+
+export const playtestObservations = pgTable("playtest_observation", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  gameId: uuid("gameId")
+    .notNull()
+    .references(() => games.id, { onDelete: "cascade" }),
+  scanId: uuid("scanId").references(() => playtestScans.id, { onDelete: "set null" }),
+  messageId: text("messageId").notNull(),
+  timestamp: timestamp("timestamp", { mode: "date" }).notNull(),
+  channelId: text("channelId").notNull(),
+  channelName: text("channelName").notNull(),
+  kind: text("kind").notNull().default("observation"), // observation | staff | engagement
+  speaker: text("speaker").notNull(),
+  role: text("role").notNull().default("Player"),
+  theme: text("theme").notNull(),
+  signal: text("signal").notNull(),
+  severity: text("severity").notNull().default("Medium"),
+  excerpt: text("excerpt").notNull(),
+  paraphrase: text("paraphrase"),
 });
 
 /* ---------------------------------------------------------------------------
