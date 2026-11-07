@@ -707,29 +707,45 @@
 
     if (!sorted.length) { el.innerHTML = ''; return; }
 
-    var cxo = sorted.filter(function (a) { return a.group === 'cxo'; });
-    var tools = sorted.filter(function (a) { return a.group !== 'cxo'; });
+    // Two sections: studio tools first, then everything that belongs to Seismic.
+    var isSeismic = function (a) { return a.id === 'seismic' || a.toolName === 'Seismic'; };
+    var studio = sorted.filter(function (a) { return !isSeismic(a); });
+    var seismic = sorted.filter(isSeismic);
 
     var html = '';
 
-    // Top CXO tiles.
-    if (cxo.length) {
+    if (studio.length) {
       html += '<div class="module-grid">' +
-        cxo.map(widgetCard).join('') +
+        studio.map(widgetCard).join('') +
         '</div>';
     }
 
-    // Everything else — one continuous responsive grid so widgets sit
-    // beside each other (not stacked per stage). Stage is a small in-card tag.
-    if (tools.length) {
-      html += '<h2 class="tools-heading">More tools</h2>' +
+    if (seismic.length) {
+      html += '<h2 class="tools-heading">Seismic (Under Construction)</h2>' +
         '<div class="module-grid module-grid-tools">' +
-        tools.map(widgetCard).join('') +
+        seismic.map(widgetCard).join('') +
         '</div>';
     }
 
     el.innerHTML = html;
+    evenTiles();
   }
+
+  /* Every tile on the dashboard gets the height of the tallest one. */
+  function evenTiles() {
+    var cards = document.querySelectorAll('#widgetsSection .module-card');
+    if (!cards.length) return;
+    var max = 0;
+    cards.forEach(function (c) { c.style.minHeight = ''; });
+    cards.forEach(function (c) { max = Math.max(max, c.offsetHeight); });
+    cards.forEach(function (c) { c.style.minHeight = max + 'px'; });
+  }
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(evenTiles);
+  var evenTimer = null;
+  window.addEventListener('resize', function () {
+    clearTimeout(evenTimer);
+    evenTimer = setTimeout(evenTiles, 120);
+  });
 
   /* ============================================================
      Session — unified identity (GET /api/me)

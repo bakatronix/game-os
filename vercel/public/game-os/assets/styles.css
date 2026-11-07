@@ -381,3 +381,8 @@ a:hover { color: var(--orange-deep); }
 .module-card.is-construction { filter: grayscale(1); opacity: .62; border-style: dashed; border-color: var(--ink-muted); transition: opacity .15s; }
 .module-card.is-construction:hover, .module-card.is-construction:focus-within { opacity: .9; }
 .ss-badge.construction { color: var(--ink-muted); background: transparent; border: 1.5px dashed var(--ink-muted); }
+
+/* Even tiles: same height everywhere (JS sets min-height), buttons pinned to the bottom. */
+.module-grid { align-items: stretch; }
+.module-card { display: flex; flex-direction: column; box-sizing: border-box; }
+.module-card .card-actions { margin-top: auto; padding-top: 12px; }
