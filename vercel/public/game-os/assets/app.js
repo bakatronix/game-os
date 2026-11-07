@@ -710,7 +710,9 @@
     // Two sections: studio tools first, then everything that belongs to Seismic.
     var isSeismic = function (a) { return a.id === 'seismic' || a.toolName === 'Seismic'; };
     var studio = sorted.filter(function (a) { return !isSeismic(a); });
-    var seismic = sorted.filter(isSeismic);
+    // Working Seismic tools first, then the ones under construction.
+    var seismic = sorted.filter(function (a) { return isSeismic(a) && !UNDER_CONSTRUCTION[a.id]; })
+      .concat(sorted.filter(function (a) { return isSeismic(a) && UNDER_CONSTRUCTION[a.id]; }));
 
     var html = '';
 
