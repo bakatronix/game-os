@@ -628,17 +628,32 @@
     return LIVE_TILES[a.id](G);
   }
 
+  /* Seismic tools that still run on demo data only. Their tiles are greyed
+     out and marked "Under construction", but still open for a preview.
+     Remove an id once that tool reads and writes the game spine. */
+  var UNDER_CONSTRUCTION = {
+    'seismic': 1, 'market-scope': 1, 'audience-map': 1, 'page-engine': 1,
+    'community-scaffold': 1, 'test-loop': 1, 'festival-radar': 1,
+    'playtest-pipeline': 1, 'creator-match': 1, 'sentiment-radar': 1,
+    'demo-command': 1, 'window-planner': 1, 'launch-runbook': 1,
+    'long-tail-engine': 1, 'sequel-signal': 1, 'gate-log': 1
+  };
+
   function widgetCard(a) {
     var name = a.name || a.id;
     var toolName = a.toolName && a.toolName !== name ? a.toolName : null;
     var href = a.path + (a.anchor || '');
-    var live = liveTile(a);
+    var building = !!UNDER_CONSTRUCTION[a.id];
+    var live = building ? null : liveTile(a);
     // Only tiles backed by the current game's data get a health status;
     // everything else is honestly labelled as demo data.
-    var badge = live ? statusBadge(live.kind, live.label) : statusBadge('demo', 'Demo data');
+    var badge = building
+      ? statusBadge('construction', 'Under construction')
+      : live ? statusBadge(live.kind, live.label) : statusBadge('demo', 'Demo data');
 
-    var metrics = live ? live.metrics : (parseJSON(a.metrics) || []);
-    var spark = live ? live.spark : parseJSON(a.spark);
+    // Under-construction tiles hide their demo numbers.
+    var metrics = building ? [] : live ? live.metrics : (parseJSON(a.metrics) || []);
+    var spark = building ? null : live ? live.spark : parseJSON(a.spark);
     var metricsHtml = metrics.length
       ? '<div class="metrics-grid">' +
           metrics
@@ -661,7 +676,7 @@
       : '';
 
     return (
-      '<div class="ss-card module-card' + (live ? ' is-live' : '') + '">' +
+      '<div class="ss-card module-card' + (live ? ' is-live' : '') + (building ? ' is-construction' : '') + '">' +
       '<div class="module-head">' +
       '<div>' +
       '<h3>' + escapeHtml(name) + (toolName ? ' \u2014 ' + escapeHtml(toolName) : '') + '</h3>' +
@@ -673,7 +688,9 @@
       metricsHtml +
       sparkHtml +
       '<div class="card-actions">' +
-      '<a class="ss-btn" href="' + escapeHtml(href) + '">Open \u2192</a>' +
+      (building
+        ? '<a class="ss-btn ghost" href="' + escapeHtml(href) + '" aria-label="Preview ' + escapeHtml(name) + ' (under construction)">Preview \u2192</a>'
+        : '<a class="ss-btn" href="' + escapeHtml(href) + '">Open \u2192</a>') +
       (stageTag ? stageTag : '') +
       '</div>' +
       '</div>'

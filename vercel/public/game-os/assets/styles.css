@@ -376,3 +376,8 @@ a:hover { color: var(--orange-deep); }
 .ss-badge.demo { color: var(--ink-muted); background: var(--sand-deep); }
 .module-card.is-live { border-width: 1.5px; border-color: var(--teal); }
 .module-head .ss-badge { flex: none; white-space: nowrap; }
+
+/* Seismic tools still on demo data: greyed out, still clickable for a preview. */
+.module-card.is-construction { filter: grayscale(1); opacity: .62; border-style: dashed; border-color: var(--ink-muted); transition: opacity .15s; }
+.module-card.is-construction:hover, .module-card.is-construction:focus-within { opacity: .9; }
+.ss-badge.construction { color: var(--ink-muted); background: transparent; border: 1.5px dashed var(--ink-muted); }
