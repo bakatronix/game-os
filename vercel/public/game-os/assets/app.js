@@ -297,21 +297,20 @@
       ? '<dl class="spine-facts">' +
           '<div><dt>Price hypothesis</dt><dd>' + (t.priceHypothesis ? '$' + escapeHtml(t.priceHypothesis) : '\u2014') + '</dd></div>' +
           '<div><dt>Comp set</dt><dd>' + ((t.compSet && t.compSet.length) ? t.compSet.length + ' games' : '\u2014') + '</dd></div>' +
-          '<div><dt>Version</dt><dd>v' + t.version + '</dd></div>' +
         '</dl>' +
-        (t.hook ? '<p class="spine-hook">\u201c' + escapeHtml(t.hook) + '\u201d</p>' : '') +
-        (t.audience ? '<p class="module-desc">' + escapeHtml(t.audience.length > 220 ? t.audience.slice(0, 217) + '\u2026' : t.audience) + '</p>' : '') +
-        '<p class="gos-meta">Last revised ' + fmtDate(t.createdAt) + ' from ' + escapeHtml(SIGNAL_TOOL_NAMES[t.source] || t.source || 'manual') + '</p>'
+        (t.hook ? '<p class="spine-hook">\u201c' + escapeHtml(t.hook) + '\u201d</p>' : '')
       : '<p class="module-desc">No thesis yet. Write down who it\u2019s for, the hook, and the price you\u2019re testing \u2014 every tool reads from it.</p>';
 
     // Headline signals only: per-criterion page-audit scores live in the tool.
     var ledger = (G.ledger || []).filter(function (s) { return !/^page_audit_(?!overall$)/.test(s.key); });
     var ledgerHtml = ledger.length
-      ? '<ul class="spine-ledger">' + ledger.slice(0, 8).map(function (s) {
-          return '<li><span class="spine-ledger-label">' + escapeHtml(s.label || s.key) +
-            '<small>' + escapeHtml(SIGNAL_TOOL_NAMES[s.toolId] || s.toolId) + ' \u00b7 ' + fmtDate(s.observedAt) + '</small></span>' +
+      ? '<ul class="spine-ledger">' + ledger.slice(0, 5).map(function (s) {
+          return '<li title="' + escapeHtml((SIGNAL_TOOL_NAMES[s.toolId] || s.toolId) + ' \u00b7 ' + fmtDate(s.observedAt)) + '">' +
+            '<span class="spine-ledger-label">' + escapeHtml(s.label || s.key) +
+            ' <small>' + escapeHtml(SIGNAL_TOOL_NAMES[s.toolId] || s.toolId) + '</small></span>' +
             '<span class="spine-ledger-val">' + escapeHtml(fmtSignal(s)) + '</span></li>';
-        }).join('') + '</ul>'
+        }).join('') + '</ul>' +
+        (ledger.length > 5 ? '<p class="spine-more">+ ' + (ledger.length - 5) + ' more signal' + (ledger.length - 5 === 1 ? '' : 's') + '</p>' : '')
       : '<p class="module-desc">Empty so far. Run <a href="/game-os/steam-page-audit/">Steam Page Audit</a> or send a price from the <a href="/game-os/price-calc/">Pricing Calculator</a> and the results land here.</p>';
 
     el.innerHTML =
@@ -320,7 +319,9 @@
           '<div class="module-head"><div><h3>Publishing Thesis</h3><div class="module-q">What are we claiming, and why?</div></div>' +
           '<span class="ss-badge healthy">Live</span></div>' +
           thesisHtml +
-          '<div class="card-actions"><a class="ss-btn" href="/game-os/thesis-builder/">' + (t ? 'Revise thesis' : 'Write thesis') + ' \u2192</a></div>' +
+          '<div class="card-actions"><a class="ss-btn" href="/game-os/thesis-builder/">' + (t ? 'Revise thesis' : 'Write thesis') + ' \u2192</a>' +
+          (t ? '<span class="gos-meta">v' + t.version + ' \u00b7 ' + fmtDate(t.createdAt) + ' from ' + escapeHtml(SIGNAL_TOOL_NAMES[t.source] || t.source || 'manual') + '</span>' : '') +
+          '</div>' +
         '</div>' +
         '<div class="ss-card module-card">' +
           '<div class="module-head"><div><h3>Signal Ledger</h3><div class="module-q">What have we measured?</div></div>' +
