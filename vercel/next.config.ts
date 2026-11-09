@@ -14,6 +14,23 @@ const nextConfig: NextConfig = {
       ],
     },
   },
+  // Baseline security headers on every response. A full script CSP is left
+  // out on purpose: the static tools use inline scripts and several CDNs.
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "Content-Security-Policy", value: "frame-ancestors 'self'; base-uri 'self'; object-src 'none'" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=()" },
+        ],
+      },
+    ];
+  },
   async rewrites() {
     return [
       // ---- Static tools (served from /public) ----

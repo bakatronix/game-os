@@ -10,7 +10,8 @@
   <link rel="stylesheet" href="/game-os/steam-page-audit/assets/tokens.css?v=1">
   <link rel="stylesheet" href="/game-os/steam-page-audit/assets/components.css?v=1">
   <link rel="stylesheet" href="/game-os/steam-page-audit/assets/styles.css?v=1">
-  <script src="/track.js" data-tool="steam-page-audit" data-version="1"></script>
+  <script src="/track.js" data-tool="steam-page-audit" data-version="2"></script>
+  <script src="/game-os/toolkit/spine.js?v=2"></script>
 </head>
 <body>
   <div class="topbar"></div>
@@ -25,6 +26,8 @@
     <h1 class="title">Steam Page Audit</h1>
     <p class="kicker">Score your store page before players do.</p>
 
+    <div id="gameBar"></div>
+
     <form class="search" id="auditForm">
       <div class="field">
         <label for="appid">Steam App ID</label>
@@ -35,8 +38,10 @@
 
     <div id="status" class="muted"></div>
     <div id="report"></div>
+    <div id="ledgerNote" class="muted" role="status" aria-live="polite"></div>
   </div>
 
-  <script src="/game-os/steam-page-audit/assets/app.js?v=1"></script>
+  <script src="/game-os/steam-page-audit/assets/app.js?v=2"></script>
+  <script src="/game-os/steam-page-audit/assets/spine-glue.js?v=1"></script>
 </body>
 </html>

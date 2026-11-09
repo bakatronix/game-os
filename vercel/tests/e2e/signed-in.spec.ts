@@ -15,7 +15,7 @@ const hasState = existsSync(STATE);
 test.describe("Signed-in journey", () => {
   test.skip(!hasState, "No saved auth state (tests/.auth/state.json). See tests/e2e/README.md.");
 
-  test.use({ storageState: hasState });
+  test.use({ storageState: hasState ? STATE : undefined });
 
   test("dashboard loads for a signed-in user", async ({ page }) => {
     await page.goto("/game-os");

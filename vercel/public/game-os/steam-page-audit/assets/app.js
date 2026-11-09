@@ -22,6 +22,13 @@
   var btn = document.getElementById("runBtn");
 
   input.value = localStorage.getItem("gos_last_appid") || "";
+  // Prefer the current Game OS game's own App ID when it has one.
+  if (window.GOS) {
+    window.GOS.ready.then(function () {
+      var g = window.GOS.game;
+      if (g && g.steamAppId && !reportEl.innerHTML) input.value = g.steamAppId;
+    });
+  }
 
   form.addEventListener("submit", function (e) {
     e.preventDefault();
@@ -51,6 +58,7 @@
         }
         statusEl.textContent = "";
         render(res.body);
+        if (typeof window.gosAfterAudit === "function") window.gosAfterAudit(appId, res.body);
         once("viewed", function () {
           track("journey_step", { step_name: "audit_viewed", step_index: 2 });
           track("audit_viewed", { app_id: Number(appId), overall: res.body.overall, grade: res.body.grade });
