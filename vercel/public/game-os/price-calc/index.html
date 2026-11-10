@@ -891,7 +891,7 @@
       <p class="muted" style="margin-bottom:12px">Use expected content hours as a sanity check. Benchmarks from GameDiscoverCo and Chris Zukowski's How To Market A Game.</p>
       <div style="display:flex;align-items:center;gap:16px;margin-bottom:14px;flex-wrap:wrap">
         <div style="flex:1;min-width:180px">
-          <label class="stat-label">Content Hours</label>
+          <label class="stat-label">Content Hours <span class="estimate-tag heuristic" id="content-hours-tag">Assumption: replace with yours</span></label>
           <input type="text" inputmode="decimal" data-num="dec" autocomplete="off" id="content-hours-input" value="10" min="0.5" step="0.5" oninput="markManual('content-hours-input'); updateContentCheck()" style="max-width:160px">
         </div>
         <div style="flex-shrink:0">
@@ -950,7 +950,7 @@
           <input type="text" inputmode="numeric" data-num="int" autocomplete="off" id="lifetime-revenue" value="0" min="0" step="100000" oninput="autoSelectTier(); updateAllLinked()">
         </div>
         <div style="margin-bottom:0">
-          <label class="stat-label">Total Development Cost to Recoup (USD) <span class="estimate-tag heuristic" id="dev-cost-tag" style="display:none">Estimated default</span> <span class="tooltip-icon" title="Everything you need to recoup — dev, art, marketing, contractor time. Drives the break-even analysis below. Pre-filled from your Step 0 budget band; replace with your actual figure.">?</span></label>
+          <label class="stat-label">Total Development Cost to Recoup (USD) <span class="estimate-tag heuristic" id="dev-cost-tag" style="display:none">Assumption: replace with yours</span> <span class="tooltip-icon" title="Everything you need to recoup — dev, art, marketing, contractor time. Drives the break-even analysis below. Pre-filled from your Step 0 budget band; replace with your actual figure.">?</span></label>
           <input type="text" inputmode="numeric" data-num="int" autocomplete="off" id="dev-cost" value="" min="0" step="1000" placeholder="e.g. 150000" oninput="markManual('dev-cost'); updateAllLinked()">
           <div class="output-note">Pre-filled from your budget band in Step 0 — replace with your actual figure.</div>
         </div>
@@ -1004,7 +1004,7 @@
       <div class="card">
         <h3>Your Inputs</h3>
         <div style="margin-bottom:14px">
-          <label class="stat-label">Projected Wishlist Count at Launch</label>
+          <label class="stat-label">Projected Wishlist Count at Launch <span class="estimate-tag heuristic" id="wishlist-count-tag">Assumption: replace with yours</span></label>
           <input type="text" inputmode="numeric" data-num="int" autocomplete="off" id="wishlist-count" value="" min="0" step="500" oninput="markManual('wishlist-count'); updateWishlist()">
           <div class="estimate-note heuristic" id="wishlist-estimate-note"></div>
           <p class="output-note" style="margin-top:4px">Use organic wishlist count only — exclude botted, fabricated, or incentivised wishlists. Steam's algorithm detects artificial activity and may penalise your Visibility Rounds.</p>
@@ -2034,9 +2034,18 @@ function clampInput(el, min, max) {
   if (clamped) el.value = v;
   if (warnEl) warnEl.style.display = clamped ? 'block' : 'none';
 }
+function showPricingWarnings() {
+  var t = document.getElementById('target-sale-price'), d = document.getElementById('discount-depth');
+  var wt = document.getElementById('warn-target-price'), wd = document.getElementById('warn-discount');
+  var tv = parseFloat(t.value), dv = parseFloat(d.value);
+  var tMsg = String(t.value).trim() === '' ? '' : isNaN(tv) ? '' : tv <= 0 ? 'The sale price must be above $0.' : tv > 999.99 ? 'The sale price can\u2019t be above $999.99.' : '';
+  var dMsg = String(d.value).trim() === '' || isNaN(dv) ? '' : (dv <= 0 || dv >= 100) ? 'The discount must be between 1% and 99%.' : '';
+  if (wt) { wt.textContent = tMsg; wt.style.display = tMsg ? 'block' : 'none'; }
+  if (wd) { wd.textContent = dMsg; wd.style.display = dMsg ? 'block' : 'none'; }
+  t.classList.toggle('num-invalid', !!tMsg); d.classList.toggle('num-invalid', !!dMsg);
+}
 function validatePricingInputs() {
-  clampInput(document.getElementById('target-sale-price'), 0.01, 999.99);
-  clampInput(document.getElementById('discount-depth'), 0, 100);
+  showPricingWarnings();
   updatePricing();
   updateRegionalTable();
   updateDlcTable();
@@ -2481,9 +2490,14 @@ function updateCompStats() {
   updateCompCount();
   var prices = [];
   document.querySelectorAll('.comp-launch').forEach(function(inp){
-    var raw = String(inp.value || '');
-    var v = parseFloat(raw.replace(/[^0-9.]/g, ''));
-    if (!isNaN(v) && v > 0) prices.push(v);
+    var raw = String(inp.value || '').trim();
+    var v = parseFloat(raw.replace(/[^0-9.\-]/g, ''));
+    var bad = raw !== '' && (isNaN(v) || v <= 0);
+    inp.classList.toggle('num-invalid', bad);
+    var h = inp.parentNode && inp.parentNode.querySelector('.comp-price-error');
+    if (bad && !h) { h = document.createElement('div'); h.className = 'num-hint is-error comp-price-error'; inp.insertAdjacentElement('afterend', h); }
+    if (h) h.textContent = bad ? 'Enter a price above $0. This comp is left out of the averages.' : '';
+    if (!bad && !isNaN(v) && v > 0) prices.push(v);
   });
   // Fallback: if no launch prices exist, use current prices (from Steam API fetches)
   var useFallback = prices.length === 0;
@@ -2652,15 +2666,40 @@ function fmtSnappedPrice(raw) {
   return '$' + snapped.toFixed(2) + ' <span class="output-note">(raw ' + raw.toFixed(2) + ')</span>';
 }
 
+// The price a founder actually sets: snapped down to a Steam price point.
+// Every net figure is computed from this shown price, never the raw one.
+function shownPrice(raw) {
+  if (!(raw > 0)) return 0;
+  var s = snapToSteamPrice(raw);
+  return s == null ? PricingModel.STEAM_PRICE_GRID[0] : s;
+}
+function pricingInvalidReason() {
+  var t = String(document.getElementById('target-sale-price').value).trim();
+  var d = String(document.getElementById('discount-depth').value).trim();
+  var target = parseFloat(t), disc = parseFloat(d);
+  if (t === '') return 'Enter a target sale price.';
+  if (isNaN(target)) return 'The target sale price must be a number, for example 14.99.';
+  if (target <= 0) return 'The target sale price must be above $0.';
+  if (target > 999.99) return 'The target sale price can\u2019t be above $999.99.';
+  if (d === '' || isNaN(disc)) return 'Enter a discount depth between 1% and 99%.';
+  if (disc <= 0 || disc >= 100) return 'The discount depth must be between 1% and 99%.';
+  return '';
+}
+
 // === PRICE & DISCOUNT MODEL ===
 function updatePricing() {
   var target = parseFloat(document.getElementById('target-sale-price').value);
   var discPct = parseFloat(document.getElementById('discount-depth').value);
-  if (isNaN(target) || isNaN(discPct) || target <= 0 || discPct <= 0 || discPct >= 100) {
-    document.getElementById('pricing-outputs').innerHTML = '<p class="muted">Enter a valid target sale price and discount depth above.</p>';
+  var bad = pricingInvalidReason();
+  if (bad) {
+    var msg = '<p class="muted pricing-invalid">' + bad + ' Results are hidden until it\u2019s fixed.</p>';
+    document.getElementById('pricing-outputs').innerHTML = msg;
     document.getElementById('staircase-body').innerHTML = '';
     document.getElementById('discount-compare').innerHTML = '';
     document.getElementById('floor-warning').style.display = 'none';
+    var beEl = document.getElementById('break-even-outputs');
+    if (beEl) beEl.innerHTML = msg;
+    renderReconciliation();
     return;
   }
   var devShare = getDevShare();
@@ -2673,7 +2712,7 @@ function updatePricing() {
   var netSale = dm.netSale;
   var unitsNeeded = netSale > 0 ? Math.round((netFull * 1000) / netSale) : 0;
   var deepDiscountPrice = launchPrice * 0.5;
-  var netDeepDiscount = deepDiscountPrice * devShare;
+  var netDeepDiscount = shownPrice(deepDiscountPrice) * devShare;
 
   var launchPriceHtml = '$' + launchPrice.toFixed(2);
   var launchNote = Math.round(launchPrice * 100) !== Math.round(rawLaunchPrice * 100)
@@ -2694,7 +2733,7 @@ function updatePricing() {
 
   var launchDiscPrice = launchPrice * 0.875;
   var fullNetComp = launchPrice * devShare;
-  var discLaunchNet = launchDiscPrice * devShare;
+  var discLaunchNet = shownPrice(launchDiscPrice) * devShare;
   document.getElementById('discount-compare').innerHTML =
     '<div class="compare-card"><h4>(A) Full Price Launch, Discount Later</h4>' +
     '<div class="output-row"><span class="output-label">Launch Price</span><span class="output-value">' + fmtSnappedPrice(launchPrice) + '</span></div>' +
@@ -2713,15 +2752,21 @@ function updatePricing() {
     { stage: 'One Year Post-Launch', when: '12 months', pct: 0.45, purpose: 'Catalog monetization. Standard for mature titles.' },
     { stage: '2+ Years / Bundles', when: '24+ months', pct: 0.60, purpose: 'Long-tail revenue.' },
   ];
-  var violations = staircase.filter(function(s){return (s.pct * 100) > floorPct;});
+  staircase.forEach(function (s) {
+    s.price = shownPrice(launchPrice * (1 - s.pct));
+    s.realPct = launchPrice > 0 ? 1 - s.price / launchPrice : s.pct;
+  });
+  var violations = staircase.filter(function(s){return (s.realPct * 100) > floorPct + 0.05;});
   var floorWarn = document.getElementById('floor-warning');
   if (violations.length > 0) {
     floorWarn.style.display = 'block';
-    floorWarn.textContent = violations.map(function(v){return v.stage + ' (' + (v.pct*100).toFixed(0) + '%)';}).join(', ') + ' exceed floor of ' + floorPct + '%.';
+    floorWarn.textContent = violations.map(function(v){return v.stage + ' (' + Math.round(v.realPct*100) + '%)';}).join(', ') + ' exceed floor of ' + floorPct + '%.';
   } else { floorWarn.style.display = 'none'; }
   document.getElementById('staircase-body').innerHTML =
     staircase.map(function(s){
-      return '<tr><td data-label="Stage"><strong>' + s.stage + '</strong></td><td data-label="When">' + s.when + '</td><td data-label="Discount">' + (s.pct*100).toFixed(0) + '%</td><td data-label="Price" style="color:var(--teal);font-weight:500">' + fmtSnappedPrice(launchPrice * (1 - s.pct)) + '</td><td data-label="Purpose">' + s.purpose + '</td></tr>';
+      var real = Math.round(s.realPct * 100), planned = Math.round(s.pct * 100);
+      var discCell = real + '%' + (real !== planned ? ' <span class="output-note">(planned ' + planned + '%; rounding to a Steam price changes it)</span>' : '');
+      return '<tr><td data-label="Stage"><strong>' + s.stage + '</strong></td><td data-label="When">' + s.when + '</td><td data-label="Discount">' + discCell + '</td><td data-label="Price" style="color:var(--teal);font-weight:500">$' + s.price.toFixed(2) + '</td><td data-label="Purpose">' + s.purpose + '</td></tr>';
     }).join('') +
     '<tr class="floor-row"><td data-label="Stage"><strong>Price Floor</strong></td><td data-label="When">Long-term minimum</td><td data-label="Discount">' + floorPct + '%</td><td data-label="Price">' + fmtSnappedPrice(launchPrice * (1 - floorPct/100)) + '</td><td data-label="Purpose">Permanent price floor threshold</td></tr>';
   updateRegionalTable();
@@ -2762,6 +2807,8 @@ function renderBreakEven() {
   var be = getBreakEven();
   var el = document.getElementById('break-even-outputs');
   if (!el) return;
+  var badPricing = pricingInvalidReason();
+  if (badPricing) { el.innerHTML = '<p class="muted pricing-invalid">' + badPricing + ' Results are hidden until it\u2019s fixed.</p>'; return; }
   if (be.devCost <= 0) {
     el.innerHTML = '<p class="muted">Enter your total development cost to recoup (in Your Inputs above) to see break-even units.</p>';
     return;
@@ -2785,6 +2832,7 @@ function renderBreakEven() {
     '<div class="output-row"><span class="output-label">Units to Break Even (Full Price)</span><span class="output-value">' + Math.ceil(be.fullPriceUnits).toLocaleString() + '</span></div>' +
     '<div class="output-row"><span class="output-label">Units to Break Even (Sale Price)</span><span class="output-value">' + Math.ceil(be.salePriceUnits).toLocaleString() + '</span></div>' +
     '<div class="output-row"><span class="output-label">Units to Break Even (Blended)</span><span class="output-value">' + Math.ceil(be.blendedUnits).toLocaleString() + '</span></div>' +
+    (!isManual('dev-cost') ? '<p class="assumption-line">Using an assumed development cost of ' + fmtMoney(be.devCost) + ' from your budget band. Replace it with your real figure above.</p>' : '') +
     '<div class="output-row"><span class="output-label">Blended Split Assumption</span><span class="output-value">' + be.fullShare.toFixed(0) + '% full / ' + (100 - be.fullShare).toFixed(0) + '% discounted</span></div>' +
     multipleHtml;
 }
@@ -2971,7 +3019,7 @@ function updateEaCalc() {
   document.getElementById('ea-launch-price-ref').textContent = lp > 0 ? '$' + lp.toFixed(2) : '—';
   var eaDiscPct = parseInt(document.getElementById('ea-discount-input').value) || 20;
   var eaPrice = lp > 0 ? lp * (1 - eaDiscPct / 100) : 0;
-  var eaNet = eaPrice * devShare;
+  var eaNet = shownPrice(eaPrice) * devShare;
   var fullNet = lp * devShare;
   var ratio = eaNet > 0 ? Math.round(fullNet / eaNet * 100) / 100 : 0;
   document.getElementById('ea-calc-outputs').innerHTML = lp > 0 ?
@@ -3282,7 +3330,7 @@ function renderDemoGating() {
 }
 
 // === DERIVED DEFAULTS (heuristic vs benchmark) ===
-function markManual(fieldId) { window.manualFields[fieldId] = true; }
+function markManual(fieldId) { window.manualFields[fieldId] = true; if (typeof refreshAssumptionTags === 'function') refreshAssumptionTags(); }
 function isManual(fieldId) { return !!window.manualFields[fieldId]; }
 
 function getAvgCompReviews() {
@@ -3431,7 +3479,21 @@ function refreshDemoDefaults() {
   }
 }
 
+// Show which inputs are still the tool's assumptions rather than the founder's numbers.
+function refreshAssumptionTags() {
+  var playtime = (AppState.gameProfile || {}).playtime || 0;
+  var ch = document.getElementById('content-hours-tag');
+  if (ch) {
+    var manual = isManual('content-hours-input');
+    ch.style.display = manual ? 'none' : 'inline';
+    ch.textContent = playtime > 0 ? 'From your Step 1 playtime' : 'Assumption: replace with yours';
+    ch.className = 'estimate-tag ' + (playtime > 0 ? 'benchmark' : 'heuristic');
+  }
+  var wl = document.getElementById('wishlist-count-tag');
+  if (wl) wl.style.display = isManual('wishlist-count') ? 'none' : 'inline';
+}
 function refreshDerivedDefaults() {
+  refreshAssumptionTags();
   if (!isManual('wishlist-count')) {
     document.getElementById('wishlist-count').value = deriveWishlistEstimate();
   }
@@ -3475,7 +3537,11 @@ function updateGameProfile() {
   AppState.gameProfile = p;
 
   // Sync playtime to content-hours in Step 2
-  if (p.playtime > 0 && !isManual('content-hours-input')) document.getElementById('content-hours-input').value = p.playtime;
+  if (p.playtime > 0 && !isManual('content-hours-input')) {
+    document.getElementById('content-hours-input').value = p.playtime;
+    if (typeof updateContentCheck === 'function') updateContentCheck();
+  }
+  refreshAssumptionTags();
 
   // Visibility gating
   var showDlc = (p.monetization === 'premium_dlc' || p.monetization === 'subscription') && p.dlcPlan !== 'no';
@@ -4592,6 +4658,10 @@ function runSelfTest() {
   var npc = PricingModel.netPerCopy(19.99, 0.70, 0.92, 0.70, 0.96);
   t('netPerCopy(19.99) steps 13.99 / 12.87 / 9.01 / 8.65', npc.afterSteam.toFixed(2) === '13.99' && npc.afterRefunds.toFixed(2) === '12.87' && npc.afterDiscounts.toFixed(2) === '9.01' && npc.net.toFixed(2) === '8.65');
 
+  // Shown (rounded) prices drive the net: 17.49 shows as 16.99
+  t('shownPrice(17.49) == 16.99', shownPrice(17.49) === 16.99);
+  t('shownPrice(12.495) == 11.99', shownPrice(12.495) === 11.99);
+
   // Conversion rate tiers at boundaries
   t('conversion 4999 -> 0.15', PricingModel.getWishlistConversion(4999) === 0.15);
   t('conversion 5000 -> 0.18', PricingModel.getWishlistConversion(5000) === 0.18);
@@ -4906,6 +4976,7 @@ if (location.search && location.search.indexOf('selftest=1') !== -1) { runSelfTe
       }
     }
     var ok = s === '' || /^-?\d*\.?\d*$/.test(s);
+    if (ok && /^-/.test(s)) return { value: s, ok: false, keep: true, note: 'Must be 0 or more' };
     return { value: s, ok: ok, note: ok ? notes.join('. ') : 'Use numbers only, for example 19.99' };
   }
   window.normalizeNum = normalizeNum;
@@ -4921,7 +4992,7 @@ if (location.search && location.search.indexOf('selftest=1') !== -1) { runSelfTe
     var el = e.target;
     if (!el || !el.hasAttribute || !el.hasAttribute('data-num')) return;
     var r = normalizeNum(el.value, el.getAttribute('data-num'));
-    if (r.ok && r.value !== el.value) el.value = r.value;
+    if ((r.ok || r.keep) && r.value !== el.value) el.value = r.value;
     var h = hintFor(el);
     h.textContent = r.note;
     h.classList.toggle('is-error', !r.ok);
@@ -4936,6 +5007,8 @@ if (location.search && location.search.indexOf('selftest=1') !== -1) { runSelfTe
   .num-hint:empty { display: none; }
   .num-hint.is-error { color: var(--coral, #c0502b); font-weight: 600; }
   input.num-invalid { border-color: var(--coral, #c0502b) !important; }
+  .assumption-line { font-size: 12px; color: var(--purple, #304d4f); background: #d9e2df; padding: 6px 8px; border-radius: 6px; margin: 6px 0; }
+  .pricing-invalid { color: var(--coral, #c0502b) !important; font-weight: 600; }
   .net-factors { border: 1px solid var(--border, #e6d6b7); border-radius: 8px; padding: 10px 12px; margin: 0 0 14px; display: grid; gap: 8px; }
   .net-factors legend { padding: 0 4px; }
   .net-factors label { display: block; font-size: 13px; }
