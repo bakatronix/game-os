@@ -1,4 +1,5 @@
 import { signIn } from "@/auth";
+import { safeCallback } from "@/lib/safe-callback";
 
 const SAND = "#f0e3c3";
 const SAND_DEEP = "#e6d6b7";
@@ -9,11 +10,12 @@ const TEAL = "#3b8d83";
 const ORANGE = "#e3683f";
 const ORANGE_DEEP = "#b84c27";
 
-export default function LoginPage({
+export default async function LoginPage({
   searchParams,
 }: {
   searchParams: Promise<{ callbackUrl?: string }>;
 }) {
+  const redirectTo = safeCallback((await searchParams).callbackUrl);
   return (
     <main
       style={{
@@ -89,7 +91,7 @@ export default function LoginPage({
         <form
           action={async () => {
             "use server";
-            await signIn("google", { redirectTo: "/game-os" });
+            await signIn("google", { redirectTo });
           }}
         >
           <button type="submit" style={buttonStyle(ORANGE_DEEP, CREAM)}>
@@ -99,7 +101,7 @@ export default function LoginPage({
         <form
           action={async () => {
             "use server";
-            await signIn("discord", { redirectTo: "/game-os" });
+            await signIn("discord", { redirectTo });
           }}
         >
           <button type="submit" style={buttonStyle(TEAL, CREAM)}>

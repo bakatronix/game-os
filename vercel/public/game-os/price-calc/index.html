@@ -1345,7 +1345,7 @@
     <p class="subtitle">Your complete pricing decision recap. Everything here comes from what you entered in the steps above.</p>
     <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px">
       <button class="btn" id="send-thesis-btn" onclick="sendToGameOS()" title="Write this launch price and its projections into your game's Publishing Thesis and Signal Ledger">Send to thesis</button>
-      <button class="btn" onclick="try{buildSummary();}catch(e){};setTimeout(function(){window.print()},400)" id="pdf-btn">Download PDF</button>
+      <button class="btn" onclick="downloadPdf()" id="pdf-btn">Download PDF</button>
       <button class="btn-ghost wb-btn" id="save-workbook-btn" onclick="exportWorkbook()">Save workbook (.json)</button>
       <button class="btn-ghost wb-btn" onclick="document.getElementById('import-file-input').click()">Load workbook (.json)</button>
       <button class="btn-ghost wb-btn" id="copy-link-btn" onclick="copyShareableLink()">Copy shareable link</button>
@@ -1356,6 +1356,7 @@
     <div class="share-feedback" id="share-feedback"></div>
     <div class="share-feedback" id="send-thesis-feedback" role="status" aria-live="polite"></div>
     <div id="summary-content" aria-live="polite"></div>
+    <div class="print-appendix" id="print-appendix"></div>
   </section>
 </main>
 
@@ -1390,6 +1391,7 @@
     thead { display: table-header-group; }
     tr { break-inside: avoid; page-break-inside: avoid; }
     .print-cover { break-after: page; page-break-after: always; }
+    .print-appendix { display: block !important; }
 
     /* reflow wide tables instead of clipping */
     .scenario-table { font-size: 10px; table-layout: auto; }
@@ -1903,6 +1905,7 @@ function switchTab(tabName) {
   if (tabName === 'wishlist') updateWishlist();
   if (tabName === 'community') renderCommunityOutputs();
   updateContextBanner(tabName);
+  pushStepUrl(tabName);
 }
 (function(){
   var nav = document.getElementById('tab-nav');
@@ -2196,6 +2199,12 @@ function parseRawBundle(raw, appId) {
     if (g.length) result.genres = g.join(', ');
   }
 
+  // Without Steam's review summary, fall back to appdetails' recommendation
+  // count for the size estimate (approximate), and leave Reception unset.
+  if (!(raw.reviews && raw.reviews.query_summary) && d.recommendations && toNum(d.recommendations.total) > 0) {
+    result.totalReviews = toNum(d.recommendations.total);
+    result.reviewsApprox = true;
+  }
   if (raw.reviews && raw.reviews.query_summary) {
     var qs = raw.reviews.query_summary;
     var tp = toNum(qs.total_positive), tn = toNum(qs.total_negative);
@@ -2257,7 +2266,20 @@ function applyRowData(row, data) {
     row.querySelector('.reception-auto-note').textContent = 'Auto from Steam (' + data.reception.label + '). Override if needed.';
     row.querySelector('.comp-reception').dataset.autoSuggested = 'true';
   } else {
-    row.querySelector('.reception-auto-note').textContent = 'Review data unavailable \u2014 set manually.';
+    row.querySelector('.reception-auto-note').textContent = 'Steam\u2019s review score isn\u2019t available right now. Pick Reception yourself.' + (data.reviewsApprox ? ' Review count is approximate (Steam recommendations).' : '');
+  }
+  // Launch price: Steam has no launch-price history, so pre-fill today's full
+  // price and say so, with a link to SteamDB's price history to check it.
+  var lpIn = row.querySelector('.comp-launch');
+  var full = data.initialPrice || (data.currentPrice && !(data.discountPercent > 0) ? data.currentPrice : null);
+  var appIdForRow = extractAppId((row.querySelector('.comp-appid') || {}).value || '');
+  var lpNote = row.querySelector('.launch-prefill-note');
+  if (lpIn && !String(lpIn.value).trim() && full) {
+    lpIn.value = full;
+    lpIn.setAttribute('data-prefilled', 'true');
+    if (!lpNote) { lpNote = document.createElement('div'); lpNote.className = 'launch-prefill-note'; lpIn.closest('.comp-card-manual').insertAdjacentElement('afterend', lpNote); }
+    lpNote.innerHTML = 'Launch price pre-filled with today\u2019s full price ($' + full + '). If it changed since launch, check the price history on ' +
+      (appIdForRow ? '<a href="https://steamdb.info/app/' + encodeURIComponent(appIdForRow) + '/" target="_blank" rel="noopener">SteamDB</a>' : 'SteamDB') + ' and correct it.';
   }
   row.querySelector('.steam-badge').style.display = 'inline-block';
   row.dataset.fetched = 'true';
@@ -2392,7 +2414,7 @@ function showRowStatus(row, msg, type) {
   if (type) statusEl.classList.add(type);
 }
 function addCompRow(title, launch, current, quality, reception, hours) {
-  title = title || ''; launch = launch || ''; current = current || ''; quality = quality || 'Equal'; reception = reception || 'Mixed'; hours = hours || '';
+  title = title || ''; launch = launch || ''; current = current || ''; quality = quality || 'Equal'; reception = reception || ''; hours = hours || '';
   compRowCount++;
   var card = document.createElement('div');
   card.className = 'comp-card';
@@ -2418,12 +2440,12 @@ function addCompRow(title, launch, current, quality, reception, hours) {
     '<div class="comp-card-genres genres-tags"></div>' +
     '<div class="comp-card-review reception-auto-note"></div>' +
     '<div class="comp-card-manual">' +
-      '<label class="comp-field"><span class="comp-field-label">Launch Price <span class="tooltip-icon" title="Steam API does not expose historical launch prices. Use SteamDB manually.">?</span></span>' +
+      '<label class="comp-field"><span class="comp-field-label">Launch Price <span class="tooltip-icon" title="Steam doesn\u2019t publish launch prices. Fetch pre-fills today\u2019s full price; check the price history on SteamDB (steamdb.info/app/ID) if it has changed.">?</span></span>' +
         '<input type="text" inputmode="decimal" data-num="dec" autocomplete="off" value="' + launch + '" step="0.01" min="0" placeholder="0.00" class="comp-launch" aria-label="Launch price (USD)" oninput="this.removeAttribute(\'data-fetched\'); updateCompStats()"></label>' +
       '<label class="comp-field"><span class="comp-field-label">Quality</span>' +
         '<select class="comp-quality" aria-label="Quality vs. mine"><option' + (quality==='Better'?' selected':'') + '>Better</option><option' + (quality==='Equal'?' selected':'') + '>Equal</option><option' + (quality==='Worse'?' selected':'') + '>Worse</option></select></label>' +
       '<label class="comp-field"><span class="comp-field-label">Reception</span>' +
-        '<select class="comp-reception" aria-label="Community reception"><option' + (reception==='Positive'?' selected':'') + '>Positive</option><option' + (reception==='Mixed'?' selected':'') + '>Mixed</option><option' + (reception==='Negative'?' selected':'') + '>Negative</option></select></label>' +
+        '<select class="comp-reception" aria-label="Community reception"><option value=""' + (!reception?' selected':'') + '>Not set</option><option' + (reception==='Positive'?' selected':'') + '>Positive</option><option' + (reception==='Mixed'?' selected':'') + '>Mixed</option><option' + (reception==='Negative'?' selected':'') + '>Negative</option></select></label>' +
       '<label class="comp-field"><span class="comp-field-label">Hours</span>' +
         '<input type="text" inputmode="decimal" data-num="dec" autocomplete="off" value="' + hours + '" step="0.5" min="0" placeholder="0" class="comp-hours" aria-label="Content hours"></label>' +
     '</div>' +
@@ -3593,8 +3615,86 @@ function switchStep(idx) {
     populateSummaryBar();
   }
 }
+// ---- Step in the URL (#/pricing): refresh returns to the same step, Back goes to the previous step ----
+var stepUrlReady = false, stepFromHistory = false;
+function pushStepUrl(tabName) {
+  if (!stepUrlReady || stepFromHistory || inDemo()) return;
+  var h = '#/' + tabName;
+  if (location.hash !== h) { try { history.pushState({ step: tabName }, '', h); } catch (e) {} }
+}
+function stepFromHash() {
+  var m = (location.hash || '').match(/^#\/([a-z-]+)$/);
+  if (!m) return null;
+  return (m[1] === 'summary' || stepOrder.indexOf(m[1]) !== -1) ? m[1] : null;
+}
+function goToStepName(name) {
+  if (name === 'summary') showSummary();
+  else switchStep(stepOrder.indexOf(name));
+}
+function initStepUrl() {
+  var start = stepFromHash();
+  if (start) { if (typeof dismissLanding === 'function') dismissLanding(); goToStepName(start); }
+  stepUrlReady = true;
+  if (!/^#s=/.test(location.hash)) {
+    var cur = document.getElementById('tab-summary').classList.contains('active') ? 'summary' : stepOrder[getCurrentStepIndex()];
+    try { history.replaceState({ step: cur }, '', '#/' + cur); } catch (e) {}
+  }
+  window.addEventListener('popstate', function () {
+    var name = stepFromHash();
+    if (!name) return;
+    stepFromHistory = true;
+    try { goToStepName(name); window.scrollTo(0, 0); } finally { stepFromHistory = false; }
+  });
+}
+
+// ---- Continue is blocked while the step has invalid or missing numbers ----
+function fieldName(el) {
+  if (el.getAttribute('aria-label')) return el.getAttribute('aria-label');
+  var wrap = el.closest('div, label, fieldset');
+  var lab = el.closest('label') || (wrap && wrap.querySelector('.stat-label'));
+  var t = lab ? (lab.childNodes[0] && lab.childNodes[0].textContent || lab.textContent) : (el.placeholder || el.id);
+  return String(t).replace(/\?/g, '').replace(/\s+/g, ' ').trim();
+}
+function stepProblems(tabName) {
+  var sec = document.getElementById('tab-' + tabName);
+  var out = [];
+  if (!sec) return out;
+  sec.querySelectorAll('input[data-num]').forEach(function (el) {
+    if (el.offsetParent === null) return;
+    var raw = String(el.value).trim();
+    if (raw === '') return;
+    var r = normalizeNum(raw, el.getAttribute('data-num'));
+    var name = fieldName(el);
+    if (!r.ok) { out.push({ el: el, msg: name + ': ' + r.note.toLowerCase() + '.' }); return; }
+    var v = parseFloat(r.value), mn = el.getAttribute('min'), mx = el.getAttribute('max');
+    if (mn !== null && v < parseFloat(mn)) out.push({ el: el, msg: name + ': must be at least ' + mn + '.' });
+    else if (mx !== null && v > parseFloat(mx)) out.push({ el: el, msg: name + ': must be at most ' + mx + '.' });
+    else if (el.classList.contains('comp-launch') && v <= 0) out.push({ el: el, msg: 'Comp launch price: must be above $0.' });
+  });
+  if (tabName === 'pricing') { var bad = pricingInvalidReason(); if (bad) out.push({ el: document.getElementById('target-sale-price'), msg: bad }); }
+  return out;
+}
+function showStepErrors(tabName, probs) {
+  var sec = document.getElementById('tab-' + tabName);
+  if (!sec) return;
+  var box = sec.querySelector('.step-errors');
+  if (!box) {
+    box = document.createElement('div'); box.className = 'step-errors'; box.setAttribute('role', 'alert');
+    var nav = sec.querySelector('.wizard-nav');
+    if (nav) nav.parentNode.insertBefore(box, nav); else sec.appendChild(box);
+  }
+  if (!probs.length) { box.innerHTML = ''; box.style.display = 'none'; return; }
+  box.style.display = 'block';
+  box.innerHTML = '<strong>Fix ' + (probs.length === 1 ? 'this' : 'these') + ' before you continue:</strong><ul>' +
+    probs.map(function (p) { return '<li>' + escapeHtml(p.msg) + '</li>'; }).join('') + '</ul>';
+  probs.forEach(function (p) { p.el.classList.add('num-invalid'); });
+}
 function goNext() {
   var cur = getCurrentStepIndex();
+  var curName = stepOrder[cur];
+  var probs = stepProblems(curName);
+  showStepErrors(curName, probs);
+  if (probs.length) { try { probs[0].el.focus(); probs[0].el.scrollIntoView({ block: 'center' }); } catch (e) {} return; }
   if (cur >= 9) {
     var issues = computeReconciliation();
     var conflict = issues.filter(function(i){ return i.id === 'price-tier-conflict' && i.severity === 'blocking'; })[0];
@@ -3617,6 +3717,7 @@ function goNext() {
 }
 function goPrev() { var cur = getCurrentStepIndex(); switchStep(Math.max(0, cur - 1)); window.scrollTo(0,0); }
 function showSummary() {
+  pushStepUrl('summary');
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
   document.getElementById('tab-summary').classList.add('active');
   visitedSteps.summary = true;
@@ -4112,7 +4213,7 @@ function migrateCompRow(r) {
     historical: '',
     releaseDate: '',
     quality: r.quality || 'Equal',
-    reception: r.reception || 'Mixed',
+    reception: r.reception || '',
     hours: r.hours || '',
     totalReviews: '',
     genres: '',
@@ -4149,7 +4250,7 @@ function showMigrationNotice(savedAt) {
   var banner = document.createElement('div');
   banner.className = 'restore-banner';
   banner.innerHTML = '<span><strong>Prices need re-fetching.</strong> Restored your session' + (savedAt ? ' \u2014 ' + relativeTime(savedAt) : '') + '. Fetched comp prices were cleared because a Steam price-unit bug was corrected, so re-fetch your comps to reload correct prices. Your manually entered data was kept.</span>' +
-    '<button class="btn-ghost" onclick="clearLocalStorage(); location.hash=\'\'; location.reload();">Start fresh</button>' +
+    '<button class="btn-ghost" onclick="startFresh()">Start fresh</button>' +
     '<button class="restore-dismiss" onclick="this.parentNode.remove()" aria-label="Dismiss">\u00D7</button>';
   var header = document.querySelector('header');
   if (header && header.parentNode) document.body.insertBefore(banner, header);
@@ -4186,7 +4287,7 @@ function serialiseState() {
       onSale: tr.classList.contains('on-sale'),
       releaseDate: (tr.querySelector('.comp-release-date') || {}).getAttribute('data-value') || '',
       quality: (tr.querySelector('.comp-quality') || {}).value || 'Equal',
-      reception: (tr.querySelector('.comp-reception') || {}).value || 'Mixed',
+      reception: (tr.querySelector('.comp-reception') || {}).value || '',
       hours: (tr.querySelector('.comp-hours') || {}).value || '',
       totalReviews: tr.getAttribute('data-total-reviews') || '',
       genres: (tr.querySelector('.genres-tags') || {}).textContent || '',
@@ -4297,18 +4398,90 @@ function clearLocalStorage() {
   try { localStorage.removeItem(PERSIST_KEY); } catch(e) {}
 }
 
+function startFresh() {
+  clearLocalStorage();
+  var go = function () { location.hash = ''; location.reload(); };
+  if (accountUser) {
+    fetch(ACCOUNT_URL, { method: 'PUT', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ state: { schema: PERSIST_SCHEMA, cleared: true, savedAt: Date.now() } }) }).then(go, go);
+  } else go();
+}
 function clearWorkbook() {
   var comps = document.querySelectorAll('#comp-tbody .comp-card').length;
   var msg = 'Clear this workbook?\n\nThis deletes all ' + comps + ' comp' + (comps === 1 ? '' : 's') + ', every value you have entered, and your saved session, then resets the tool to its defaults. This cannot be undone.';
   if (!window.confirm(msg)) return;
-  clearLocalStorage();
   try { if (location.hash && location.hash.indexOf('#s=') === 0) location.hash = ''; } catch(e) {}
-  location.reload();
+  startFresh();
 }
 
 function scheduleAutosave() {
   if (autosaveTimer) clearTimeout(autosaveTimer);
   autosaveTimer = setTimeout(function(){ saveToLocalStorage(); }, 400);
+  scheduleAccountSave();
+}
+
+// ---- Account save: the workbook follows the signed-in user, not the browser ----
+var ACCOUNT_URL = '/api/tool-state/price-calc';
+var accountTimer = null, accountReady = false, accountUser = false;
+function accountPayload() {
+  var st = serialiseState();
+  delete st.fetchCache; // a session cache, not workbook state
+  st.savedAt = Date.now();
+  return st;
+}
+function setAccountStatus(text, kind) {
+  var el = document.getElementById('account-save-status');
+  if (!el) {
+    el = document.createElement('div'); el.id = 'account-save-status'; el.setAttribute('role', 'status');
+    document.body.appendChild(el);
+  }
+  el.textContent = text; el.className = 'account-save-status ' + (kind || '');
+}
+function scheduleAccountSave() {
+  if (!accountReady || !accountUser || inDemo()) return;
+  if (accountTimer) clearTimeout(accountTimer);
+  setAccountStatus('Saving\u2026', 'busy');
+  accountTimer = setTimeout(function () { accountTimer = null; saveToAccount(); }, 2000);
+}
+function saveToAccount(keepalive) {
+  if (!accountUser || inDemo()) return;
+  var body;
+  try { body = JSON.stringify({ state: accountPayload() }); } catch (e) { return; }
+  fetch(ACCOUNT_URL, { method: 'PUT', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: body, keepalive: !!keepalive && body.length < 60000 })
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function () { setAccountStatus('Saved to your account', 'ok'); })
+    .catch(function () { setAccountStatus('Couldn\u2019t save to your account. Your work is still in this browser; use Save workbook (.json) to keep a copy.', 'error'); });
+}
+function initAccountSave() {
+  if (inDemo() || !window.GOS || !GOS.ready) return;
+  GOS.ready.then(function () {
+    accountUser = !!GOS.user;
+    if (!accountUser) {
+      setAccountStatus('Not signed in: your work is saved in this browser only. Use Save workbook (.json) to keep a copy.', 'warn');
+      return;
+    }
+    return fetch(ACCOUNT_URL, { credentials: 'same-origin' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) {
+        var server = j && j.state;
+        var localAt = (window.__localSavedAt || 0);
+        var sharing = /^#s=/.test(location.hash);
+        if (server && !server.cleared && !sharing && (server.savedAt || 0) > localAt + 1000) {
+          var migrated = migrateState(server);
+          if (migrated) {
+            restoreState(migrated, { savedAt: server.savedAt, source: 'account' });
+            restorePinnedScenarios(migrated);
+            saveToLocalStorage();
+            var b = document.querySelector('.restore-banner'); if (b) b.remove();
+            showRestoreBanner(server.savedAt, 'Restored your work from your account');
+            if (typeof dismissLanding === 'function') dismissLanding();
+          }
+        }
+        accountReady = true;
+        if (server && !server.cleared) setAccountStatus('Saved to your account', 'ok');
+        else if (window.__localSavedAt) saveToAccount(); // first save of an existing browser workbook
+      });
+  }).catch(function () {});
+  try { window.addEventListener('pagehide', function () { if (accountReady && accountTimer) { clearTimeout(accountTimer); saveToAccount(true); } }); } catch (e) {}
 }
 
 function relativeTime(ts) {
@@ -4324,15 +4497,71 @@ function relativeTime(ts) {
   return d + ' days ago';
 }
 
-function showRestoreBanner(savedAt) {
+function showRestoreBanner(savedAt, lead) {
   var banner = document.createElement('div');
   banner.className = 'restore-banner';
-  banner.innerHTML = '<span>Restored your previous session \u2014 ' + relativeTime(savedAt) + '.</span>' +
-    '<button class="btn-ghost" onclick="clearLocalStorage(); location.hash=\'\'; location.reload();">Start fresh</button>' +
+  banner.innerHTML = '<span>' + (lead || 'Restored your previous session') + ' \u2014 ' + relativeTime(savedAt) + '.</span>' +
+    '<button class="btn-ghost" onclick="startFresh()">Start fresh</button>' +
     '<button class="restore-dismiss" onclick="this.parentNode.remove()" aria-label="Dismiss">\u00D7</button>';
   var header = document.querySelector('header');
   if (header && header.parentNode) document.body.insertBefore(banner, header);
   else document.body.appendChild(banner);
+}
+
+// ---- PDF: a real file download that includes the staircase and regional table ----
+function buildPrintAppendix() {
+  try { updatePricing(); } catch (e) {}
+  try { updateRegionalTable(); } catch (e) {}
+  var ap = document.getElementById('print-appendix');
+  if (!ap) return null;
+  var stair = document.getElementById('staircase-body'), reg = document.getElementById('regional-body');
+  var html = '';
+  if (stair && stair.children.length) html += '<div class="card"><h3>Discount Staircase</h3>' + stair.closest('table').outerHTML.replace(' id="staircase-body"', '') + '</div>';
+  if (reg && reg.children.length) html += '<div class="card"><h3>Regional Prices</h3>' + reg.closest('table').outerHTML.replace(' id="regional-body"', '') + '</div>';
+  ap.innerHTML = html;
+  return ap;
+}
+var html2pdfLoading = null;
+function loadHtml2Pdf() {
+  if (window.html2pdf) return Promise.resolve(window.html2pdf);
+  if (html2pdfLoading) return html2pdfLoading;
+  html2pdfLoading = new Promise(function (resolve, reject) {
+    var sc = document.createElement('script');
+    sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+    sc.onload = function () { window.html2pdf ? resolve(window.html2pdf) : reject(new Error('PDF library missing')); };
+    sc.onerror = function () { html2pdfLoading = null; reject(new Error('PDF library failed to load')); };
+    document.head.appendChild(sc);
+  });
+  return html2pdfLoading;
+}
+function downloadPdf() {
+  var btn = document.getElementById('pdf-btn');
+  try { buildSummary(); } catch (e) {}
+  buildPrintAppendix();
+  var d = new Date();
+  var filename = 'pricing-' + gameSlug() + '-' + d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) + '.pdf';
+  var wrap = document.createElement('div');
+  wrap.className = 'pdf-export';
+  wrap.innerHTML = '<h2 style="margin:0 0 12px">Pricing Summary' + (AppState.gameProfile && AppState.gameProfile.name ? ': ' + escapeHtml(AppState.gameProfile.name) : '') + '</h2>' +
+    document.getElementById('summary-content').innerHTML +
+    document.getElementById('print-appendix').innerHTML;
+  wrap.querySelectorAll('button, .ack-control, .scenario-actions, input[type=file]').forEach(function (n) { n.remove(); });
+  if (btn) { btn.disabled = true; btn.textContent = 'Making PDF\u2026'; }
+  var done = function () { if (btn) { btn.disabled = false; btn.textContent = 'Download PDF'; } };
+  loadHtml2Pdf().then(function (h2p) {
+    return h2p().set({
+      margin: [10, 10, 12, 10],
+      filename: filename,
+      image: { type: 'jpeg', quality: 0.95 },
+      html2canvas: { scale: 2, backgroundColor: '#ffffff', useCORS: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['css', 'legacy'], avoid: ['.card', 'tr', '.output-row'] }
+    }).from(wrap).save();
+  }).then(done, function () {
+    done();
+    // Library couldn't load (offline or blocked): fall back to the print dialog.
+    setTimeout(function () { window.print(); }, 100);
+  });
 }
 
 function pad2(n) { return (n < 10 ? '0' : '') + n; }
@@ -4412,8 +4641,10 @@ function copyTextToClipboard(text) {
     var ta = document.createElement('textarea');
     ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
     document.body.appendChild(ta); ta.select();
-    try { document.execCommand('copy'); resolve(); } catch(e) { reject(e); }
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch(e) { ok = false; }
     document.body.removeChild(ta);
+    if (ok) resolve(); else reject(new Error('copy blocked'));
   });
 }
 function showShareFeedback(msg, isError) {
@@ -4434,9 +4665,17 @@ function copyShareableLink() {
     }
     var url = location.href.split('#')[0] + '#s=' + encoded;
     copyTextToClipboard(url).then(function(){
-      showShareFeedback('Shareable link copied to clipboard.');
+      showShareFeedback('Copied. The link is on your clipboard, ready to paste.');
     }).catch(function(){
-      showShareFeedback('Could not copy automatically. Here is your link:\n' + url, true);
+      var el = document.getElementById('share-feedback');
+      if (!el) return;
+      el.className = 'share-feedback share-manual';
+      el.innerHTML = '<strong>Your browser blocked automatic copying.</strong> The link is selected below: press Ctrl+C (or \u2318C on a Mac) to copy it.' +
+        '<input type="text" readonly class="share-link-box" aria-label="Shareable link">';
+      var box = el.querySelector('.share-link-box');
+      box.value = url;
+      box.addEventListener('focus', function () { box.select(); });
+      box.focus(); box.select();
     });
   } catch(e) { showShareFeedback('Failed to generate link: ' + e.message, true); }
 }
@@ -4477,6 +4716,8 @@ function initPersistence() {
     var migratedSaved = migrateState(saved);
     if (migratedSaved) {
       restoreState(migratedSaved, { savedAt: saved.savedAt || null, source: 'session' });
+      window.__restoredSession = true;
+      window.__localSavedAt = saved.savedAt || 0;
       restorePinnedScenarios(migratedSaved);
       if (migratedSaved.__migrated) showMigrationNotice(saved.savedAt);
       else showRestoreBanner(saved.savedAt);
@@ -4487,6 +4728,8 @@ function initPersistence() {
   initContextBanner();
 }
 initPersistence();
+try { initStepUrl(); } catch (e) {}
+try { initAccountSave(); } catch (e) {}
 
 // === ONBOARDING (landing / demo / context header) ===
 function initOnboarding() {
@@ -4515,7 +4758,7 @@ function initOnboarding() {
 
   var onboarded = false;
   try { onboarded = localStorage.getItem(ONBOARD_KEY) === '1'; } catch(e) {}
-  if (!onboarded) landing.style.display = 'flex';
+  if (!onboarded && !window.__restoredSession) landing.style.display = 'flex';
 }
 
 function dismissLanding() {
@@ -4997,6 +5240,8 @@ if (location.search && location.search.indexOf('selftest=1') !== -1) { runSelfTe
     h.textContent = r.note;
     h.classList.toggle('is-error', !r.ok);
     el.classList.toggle('num-invalid', !r.ok);
+    var sec = el.closest('section.tab'); var box = sec && sec.querySelector('.step-errors');
+    if (box && box.style.display !== 'none' && typeof stepProblems === 'function') showStepErrors(sec.id.replace('tab-', ''), stepProblems(sec.id.replace('tab-', '')));
     clearTimeout(el._numHintT);
     if (r.ok && r.note) el._numHintT = setTimeout(function () { h.textContent = ''; }, 4000);
   }, true);
@@ -5007,6 +5252,21 @@ if (location.search && location.search.indexOf('selftest=1') !== -1) { runSelfTe
   .num-hint:empty { display: none; }
   .num-hint.is-error { color: var(--coral, #c0502b); font-weight: 600; }
   input.num-invalid { border-color: var(--coral, #c0502b) !important; }
+  .launch-prefill-note { font-size: 12px; color: var(--mid, #655e4b); margin: 4px 0 0; }
+  .step-errors { display: none; border: 1px solid var(--coral, #c0502b); border-left: 4px solid var(--coral, #c0502b); background: rgba(192,80,43,.06); border-radius: 6px; padding: 10px 14px; margin: 16px 0 0; font-size: 14px; }
+  .step-errors ul { margin: 6px 0 0 18px; padding: 0; }
+  .share-manual { white-space: normal; }
+  .share-link-box { display: block; width: 100%; margin-top: 6px; font-family: var(--mono, monospace); font-size: 12px; }
+  .print-appendix { display: none; }
+  .account-save-status { position: fixed; left: 12px; bottom: 12px; z-index: 50; max-width: 360px; font-size: 12px; padding: 6px 10px; border-radius: 6px; background: #fbf1dc; border: 1px solid #e6d6b7; color: #655e4b; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .account-save-status.ok::before { content: "\2713  "; color: #3b8d83; font-weight: 700; }
+  .account-save-status.error, .account-save-status.warn { border-color: #c0502b; color: #8a3a1f; }
+  @media print { .account-save-status { display: none !important; } }
+  .pdf-export { background: #fff; color: #111; width: 690px; padding: 4px; font-size: 12px; box-sizing: border-box; }
+  .pdf-export * { box-sizing: border-box; max-width: 100%; }
+  .pdf-export .card { border: 1px solid #bbb; box-shadow: none; background: #fff; margin-bottom: 10px; }
+  .pdf-export table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  .pdf-export th, .pdf-export td { border-bottom: 1px solid #ddd; padding: 4px 6px; text-align: left; }
   .assumption-line { font-size: 12px; color: var(--purple, #304d4f); background: #d9e2df; padding: 6px 8px; border-radius: 6px; margin: 6px 0; }
   .pricing-invalid { color: var(--coral, #c0502b) !important; font-weight: 600; }
   .net-factors { border: 1px solid var(--border, #e6d6b7); border-radius: 8px; padding: 10px 12px; margin: 0 0 14px; display: grid; gap: 8px; }

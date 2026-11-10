@@ -319,3 +319,18 @@ export const discordSnapshots = pgTable("discord_snapshot", {
   playNightAttendance: integer("playNightAttendance"),
   granularity: text("granularity").default("daily"), // daily | weekly
 });
+
+/** Per-user saved workbook for a tool (e.g. the price calculator), so work
+ *  follows the account across browsers instead of living in localStorage. */
+export const toolStates = pgTable(
+  "tool_state",
+  {
+    userId: text("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    toolId: text("toolId").notNull(),
+    data: text("data").notNull(), // JSON workbook
+    savedAt: timestamp("savedAt", { mode: "date" }).defaultNow().notNull(),
+  },
+  (t) => ({ pk: primaryKey({ columns: [t.userId, t.toolId] }) }),
+);

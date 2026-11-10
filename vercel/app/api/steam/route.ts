@@ -36,16 +36,32 @@ export async function GET(request: NextRequest) {
       ? `https://store.steampowered.com/appreviews/${encodeURIComponent(appid)}?json=1`
       : `https://store.steampowered.com/api/appdetails?appids=${encodeURIComponent(appid)}`;
 
+  // Steam's review endpoint often redirects automated requests to its home
+  // page. Reviews are optional for callers, so answer that case with a clear
+  // "unavailable" body (200, short cache) instead of a 502 they would retry.
+  const reviewsUnavailable = (why: string) =>
+    NextResponse.json(
+      { success: 0, unavailable: true, reason: why },
+      { headers: { "Cache-Control": "public, max-age=600" } },
+    );
+
   try {
     const steamResp = await fetch(steamUrl, {
       headers: { Accept: "application/json" },
+      redirect: type === "reviews" ? "manual" : "follow",
+      signal: AbortSignal.timeout(10000),
     });
+    const isJson = (steamResp.headers.get("content-type") || "").includes("json");
+    if (type === "reviews" && (!steamResp.ok || !isJson)) {
+      return reviewsUnavailable(`Steam returned ${steamResp.status}`);
+    }
     if (!steamResp.ok) {
       return json({ error: `Steam API returned ${steamResp.status}` }, 502);
     }
     const data = await steamResp.json();
     return json(data);
   } catch {
+    if (type === "reviews") return reviewsUnavailable("Steam unreachable");
     return json({ error: "Failed to reach Steam API" }, 502);
   }
 }

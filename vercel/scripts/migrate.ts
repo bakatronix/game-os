@@ -146,6 +146,13 @@ async function main() {
       UNIQUE ("gameId", "messageId")
     )`,
     `CREATE INDEX IF NOT EXISTS playtest_obs_game_ts_idx ON "playtest_observation" ("gameId", "timestamp" DESC)`,
+    `CREATE TABLE IF NOT EXISTS "tool_state" (
+      "userId" TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+      "toolId" TEXT NOT NULL,
+      data TEXT NOT NULL,
+      "savedAt" TIMESTAMP NOT NULL DEFAULT now(),
+      PRIMARY KEY ("userId", "toolId")
+    )`,
     `CREATE TABLE IF NOT EXISTS "invitation" (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       "studioId" UUID NOT NULL REFERENCES "studio"(id) ON DELETE CASCADE,
