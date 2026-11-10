@@ -211,9 +211,9 @@
      Component helpers
      ============================================================ */
 
-  function statusBadge(kind, label) {
+  function statusBadge(kind, label, tip) {
     var glyphMap = { healthy: '\u25CF', watch: '\u25B2', concern: '\u25A0', demo: '' };
-    return '<span class="ss-badge ' + kind + '">' + (glyphMap[kind] ? glyphMap[kind] + ' ' : '') + escapeHtml(label) + '</span>';
+    return '<span class="ss-badge ' + kind + '"' + (tip ? ' title="' + escapeHtml(tip) + '"' : '') + '>' + (glyphMap[kind] ? glyphMap[kind] + ' ' : '') + escapeHtml(label) + '</span>';
   }
 
   function pageHeader(kicker, page, right) {
@@ -650,7 +650,7 @@
     // everything else is honestly labelled as demo data.
     var badge = building
       ? statusBadge('construction', 'Under construction')
-      : live ? statusBadge(live.kind, live.label) : statusBadge('demo', 'Demo data');
+      : live ? statusBadge(live.kind, live.label) : statusBadge('demo', 'Sample numbers', 'Example figures so you can see what this tool shows. They are not your game\u2019s data yet.');
 
     // Under-construction tiles hide their demo numbers.
     var metrics = building ? [] : live ? live.metrics : (parseJSON(a.metrics) || []);

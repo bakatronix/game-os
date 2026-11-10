@@ -1,5 +1,5 @@
 import { signIn } from "@/auth";
-import { safeCallback } from "@/lib/safe-callback";
+import { safeCallback, toolNameFor } from "@/lib/safe-callback";
 
 const SAND = "#f0e3c3";
 const SAND_DEEP = "#e6d6b7";
@@ -16,6 +16,7 @@ export default async function LoginPage({
   searchParams: Promise<{ callbackUrl?: string }>;
 }) {
   const redirectTo = safeCallback((await searchParams).callbackUrl);
+  const tool = toolNameFor(redirectTo);
   return (
     <main
       style={{
@@ -75,7 +76,18 @@ export default async function LoginPage({
             color: INK_MUTED,
           }}
         >
-          Sign in to open your studio dashboard.
+          {tool ? `Sign in to open ${tool}.` : "Sign in to open your studio dashboard."}
+        </p>
+        <p
+          style={{
+            margin: "6px auto 0",
+            maxWidth: 380,
+            fontSize: 13,
+            color: INK_MUTED,
+          }}
+        >
+          Game OS is a set of tools from Llama &amp; Griffin that helps indie studios price, test and launch
+          their games.
         </p>
       </div>
 
@@ -111,7 +123,11 @@ export default async function LoginPage({
       </div>
 
       <p style={{ fontSize: 12, color: INK_MUTED, maxWidth: 360, textAlign: "center" }}>
-        By signing in you agree to the terms and privacy policy. Demo data only.
+        We only use your Google or Discord name and email to sign you in. Read our{" "}
+        <a href="/login/privacy" style={{ color: ORANGE_DEEP }}>
+          privacy policy
+        </a>
+        .
       </p>
     </main>
   );
