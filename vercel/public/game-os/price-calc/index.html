@@ -677,7 +677,7 @@
         </div>
         <div style="margin-bottom:14px">
           <label class="stat-label">Target Playtime (hours)</label>
-          <input type="number" id="profile-playtime" value="" min="0.5" step="0.5" placeholder="e.g. 15" oninput="updateGameProfile()">
+          <input type="text" inputmode="decimal" data-num="dec" autocomplete="off" id="profile-playtime" value="" min="0.5" step="0.5" placeholder="e.g. 15" oninput="updateGameProfile()">
         </div>
       </div>
       <div style="margin-bottom:14px">
@@ -710,7 +710,8 @@
       </div>
       <div style="margin-bottom:0">
         <label class="stat-label">Price Tier Instinct (what you think it should cost)</label>
-        <input type="number" id="profile-instinct-price" value="" min="0.99" step="0.01" placeholder="e.g. 19.99" oninput="updateGameProfile()">
+        <input type="text" inputmode="decimal" data-num="dec" autocomplete="off" id="profile-instinct-price" value="" min="0.99" step="0.01" placeholder="e.g. 19.99" oninput="updateGameProfile(); applyInstinctPrice()">
+        <div class="output-note">Sets your starting sale price in the pricing step, so the launch price starts at your guess. You can change it there.</div>
       </div>
     </div>
 
@@ -719,7 +720,7 @@
       <div class="grid-2">
         <div style="margin-bottom:14px">
           <label class="stat-label">Team Size</label>
-          <input type="number" id="profile-team-size" value="" min="1" step="1" placeholder="e.g. 3" oninput="updateGameProfile()">
+          <input type="text" inputmode="numeric" data-num="int" autocomplete="off" id="profile-team-size" value="" min="1" step="1" placeholder="e.g. 3" oninput="updateGameProfile()">
         </div>
         <div style="margin-bottom:14px">
           <label class="stat-label">Budget Band</label>
@@ -891,7 +892,7 @@
       <div style="display:flex;align-items:center;gap:16px;margin-bottom:14px;flex-wrap:wrap">
         <div style="flex:1;min-width:180px">
           <label class="stat-label">Content Hours</label>
-          <input type="number" id="content-hours-input" value="10" min="0.5" step="0.5" oninput="markManual('content-hours-input'); updateContentCheck()" style="max-width:160px">
+          <input type="text" inputmode="decimal" data-num="dec" autocomplete="off" id="content-hours-input" value="10" min="0.5" step="0.5" oninput="markManual('content-hours-input'); updateContentCheck()" style="max-width:160px">
         </div>
         <div style="flex-shrink:0">
           <span class="output-value" id="content-check-result">—</span>
@@ -917,12 +918,13 @@
         <h3>Your Inputs</h3>
         <div style="margin-bottom:14px">
           <label class="stat-label">Target Sale Price (USD) <span class="tooltip-icon" title="The price customers actually pay during your launch and seasonal discounts. Your Required Launch Price is back-solved from this so the discount buffer is built in from day one.">?</span></label>
-          <input type="number" id="target-sale-price" value="14.99" step="0.01" min="0.99" oninput="updateAllLinked()">
+          <input type="text" inputmode="decimal" data-num="dec" autocomplete="off" id="target-sale-price" value="14.99" step="0.01" min="0.99" oninput="markManual('target-sale-price'); updateAllLinked()">
+          <div class="output-note" id="instinct-source-note" style="display:none"></div>
           <div class="input-warning" id="warn-target-price">Price cannot be negative.</div>
         </div>
         <div style="margin-bottom:14px">
           <label class="stat-label">Desired Minimum Discount Depth (%) <span class="tooltip-icon" title="The minimum discount you want available at launch. 20% is the Steam threshold that triggers wishlist-notification emails — the single biggest launch-day conversion lever. Source: Steamworks discount documentation.">?</span></label>
-          <input type="number" id="discount-depth" value="30" step="1" min="0" max="100" oninput="updateAllLinked()">
+          <input type="text" inputmode="decimal" data-num="dec" autocomplete="off" id="discount-depth" value="30" step="1" min="0" max="100" oninput="updateAllLinked()">
           <div class="input-warning" id="warn-discount">Must be between 0% and 100%.</div>
         </div>
         <div style="margin-bottom:14px">
@@ -934,13 +936,22 @@
           </select>
           <div class="output-note">Valve tiered structure. Defaults to 70% for most indies.</div>
         </div>
+        <fieldset class="net-factors">
+          <legend class="stat-label">What you keep after the Steam cut <span class="estimate-tag heuristic">Assumptions: replace with your own</span></legend>
+          <label>Refunds: share kept (%) <span class="tooltip-icon" title="Steam refunds a share of copies. 92% kept means about 8% of copies are refunded.">?</span>
+            <input type="text" inputmode="decimal" data-num="dec" autocomplete="off" id="net-refund-keep" value="92" min="1" max="100" step="1" oninput="updateAllLinked()"></label>
+          <label>Discounts and regional prices: share kept (%) <span class="tooltip-icon" title="Most copies sell on sale or at lower regional prices. 70% kept means the average copy earns 70% of the US list price.">?</span>
+            <input type="text" inputmode="decimal" data-num="dec" autocomplete="off" id="net-discount-keep" value="70" min="1" max="100" step="1" oninput="updateAllLinked()"></label>
+          <label>Tax / VAT: share kept (%) <span class="tooltip-icon" title="Sales tax and VAT taken before payout in some regions. 96% kept is a common blended figure.">?</span>
+            <input type="text" inputmode="decimal" data-num="dec" autocomplete="off" id="net-tax-keep" value="96" min="1" max="100" step="1" oninput="updateAllLinked()"></label>
+        </fieldset>
         <div style="margin-bottom:14px">
           <label class="stat-label">Lifetime Revenue to Date (USD) <span class="output-note">Optional</span> <span class="tooltip-icon" title="Total revenue you've already earned from this game. Optional — used to auto-select the correct Steam revenue share tier.">?</span></label>
-          <input type="number" id="lifetime-revenue" value="0" min="0" step="100000" oninput="autoSelectTier(); updateAllLinked()">
+          <input type="text" inputmode="numeric" data-num="int" autocomplete="off" id="lifetime-revenue" value="0" min="0" step="100000" oninput="autoSelectTier(); updateAllLinked()">
         </div>
         <div style="margin-bottom:0">
           <label class="stat-label">Total Development Cost to Recoup (USD) <span class="estimate-tag heuristic" id="dev-cost-tag" style="display:none">Estimated default</span> <span class="tooltip-icon" title="Everything you need to recoup — dev, art, marketing, contractor time. Drives the break-even analysis below. Pre-filled from your Step 0 budget band; replace with your actual figure.">?</span></label>
-          <input type="number" id="dev-cost" value="" min="0" step="1000" placeholder="e.g. 150000" oninput="markManual('dev-cost'); updateAllLinked()">
+          <input type="text" inputmode="numeric" data-num="int" autocomplete="off" id="dev-cost" value="" min="0" step="1000" placeholder="e.g. 150000" oninput="markManual('dev-cost'); updateAllLinked()">
           <div class="output-note">Pre-filled from your budget band in Step 0 — replace with your actual figure.</div>
         </div>
       </div>
@@ -954,7 +965,7 @@
       <h3>Break-Even Analysis</h3>
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap">
         <label class="stat-label">Full-price share of sales (%) <span class="tooltip-icon" title="Your assumption of what percentage of units sell at full price vs at the discounted price. 60% is a common default for indies. Drives the blended break-even estimate.">?</span></label>
-        <input type="number" id="be-full-share" value="60" min="0" max="100" step="5" oninput="updateAllLinked()" style="width:72px">
+        <input type="text" inputmode="decimal" data-num="dec" autocomplete="off" id="be-full-share" value="60" min="0" max="100" step="5" oninput="updateAllLinked()" style="width:72px">
         <span class="muted">Assumption: remaining sales at the discounted price</span>
       </div>
       <div id="break-even-outputs"></div>
@@ -970,7 +981,7 @@
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap">
         <div>
           <label class="stat-label">Price Floor (% off max) <span class="tooltip-icon" title="The deepest discount you'll ever run long-term. Protects your price so a $19.99 game doesn't drift to $4.99 forever. The staircase below warns you when a stage would cross this floor.">?</span></label>
-          <input type="number" id="price-floor" value="50" min="0" max="95" step="1" oninput="updatePricing()" style="width:72px">
+          <input type="text" inputmode="decimal" data-num="dec" autocomplete="off" id="price-floor" value="50" min="0" max="95" step="1" oninput="updatePricing()" style="width:72px">
         </div>
         <span class="muted">Won't discount below this long-term</span>
       </div>
@@ -994,7 +1005,7 @@
         <h3>Your Inputs</h3>
         <div style="margin-bottom:14px">
           <label class="stat-label">Projected Wishlist Count at Launch</label>
-          <input type="number" id="wishlist-count" value="" min="0" step="500" oninput="markManual('wishlist-count'); updateWishlist()">
+          <input type="text" inputmode="numeric" data-num="int" autocomplete="off" id="wishlist-count" value="" min="0" step="500" oninput="markManual('wishlist-count'); updateWishlist()">
           <div class="estimate-note heuristic" id="wishlist-estimate-note"></div>
           <p class="output-note" style="margin-top:4px">Use organic wishlist count only — exclude botted, fabricated, or incentivised wishlists. Steam's algorithm detects artificial activity and may penalise your Visibility Rounds.</p>
           <div class="inline-prompt" id="wishlist-community-prompt"></div>
@@ -1031,7 +1042,7 @@
           <p class="estimate-note heuristic" id="community-default-note" style="margin-bottom:12px"></p>
           <div style="margin-bottom:12px">
             <label class="stat-label">Discord Member Count</label>
-            <input type="number" id="discord-count" value="" min="0" step="10" placeholder="e.g. 500" oninput="updateWishlist()">
+            <input type="text" inputmode="numeric" data-num="int" autocomplete="off" id="discord-count" value="" min="0" step="10" placeholder="e.g. 500" oninput="updateWishlist()">
           </div>
           <div style="margin-bottom:12px">
             <label class="stat-label">Discord Activity Level <span class="estimate-tag heuristic" id="discord-activity-tag" style="display:none">Estimated default</span></label>
@@ -1044,7 +1055,7 @@
           </div>
           <div style="margin-bottom:12px">
             <label class="stat-label">Steam / Social Follower Count <span class="estimate-tag heuristic" id="follower-tag" style="display:none">Estimated default</span></label>
-            <input type="number" id="follower-count" value="" min="0" step="10" placeholder="e.g. 1200" oninput="markManual('follower-count'); updateWishlist()">
+            <input type="text" inputmode="numeric" data-num="int" autocomplete="off" id="follower-count" value="" min="0" step="10" placeholder="e.g. 1200" oninput="markManual('follower-count'); updateWishlist()">
           </div>
           <div style="margin-bottom:4px">
             <label class="stat-label">Primary Wishlist Source <span class="estimate-tag heuristic" id="wishlist-source-tag" style="display:none">Estimated default</span></label>
@@ -1084,15 +1095,15 @@
       <h3>Traffic &amp; Reach</h3>
       <div style="margin-bottom:14px">
         <label class="stat-label">Total Store Page Visitors During Tracking Period</label>
-        <input type="number" id="demo-visitors" value="" min="0" step="10" placeholder="e.g. 5000" oninput="markManual('demo-visitors'); updateDemoStats()">
+        <input type="text" inputmode="numeric" data-num="int" autocomplete="off" id="demo-visitors" value="" min="0" step="10" placeholder="e.g. 5000" oninput="markManual('demo-visitors'); updateDemoStats()">
       </div>
       <div style="margin-bottom:14px">
         <label class="stat-label">Total Demo Downloads / Plays</label>
-        <input type="number" id="demo-downloads" value="" min="0" step="10" placeholder="e.g. 1500" oninput="markManual('demo-downloads'); updateDemoStats()">
+        <input type="text" inputmode="numeric" data-num="int" autocomplete="off" id="demo-downloads" value="" min="0" step="10" placeholder="e.g. 1500" oninput="markManual('demo-downloads'); updateDemoStats()">
       </div>
       <div style="margin-bottom:0">
         <label class="stat-label">Total Wishlist Additions During Tracking Period</label>
-        <input type="number" id="demo-wishlists" value="" min="0" step="10" placeholder="e.g. 300" oninput="markManual('demo-wishlists'); updateDemoStats()">
+        <input type="text" inputmode="numeric" data-num="int" autocomplete="off" id="demo-wishlists" value="" min="0" step="10" placeholder="e.g. 300" oninput="markManual('demo-wishlists'); updateDemoStats()">
       </div>
     </div>
 
@@ -1100,15 +1111,15 @@
       <h3>Engagement Depth</h3>
       <div style="margin-bottom:14px">
         <label class="stat-label">Average Session Length (minutes)</label>
-        <input type="number" id="demo-avg-session" value="" min="0" step="0.5" placeholder="e.g. 18" oninput="markManual('demo-avg-session'); updateDemoStats()">
+        <input type="text" inputmode="decimal" data-num="dec" autocomplete="off" id="demo-avg-session" value="" min="0" step="0.5" placeholder="e.g. 18" oninput="markManual('demo-avg-session'); updateDemoStats()">
       </div>
       <div style="margin-bottom:14px">
         <label class="stat-label">Target / Intended Session Length (minutes)</label>
-        <input type="number" id="demo-target-session" value="" min="0" step="0.5" placeholder="e.g. 20" oninput="markManual('demo-target-session'); updateDemoStats()">
+        <input type="text" inputmode="decimal" data-num="dec" autocomplete="off" id="demo-target-session" value="" min="0" step="0.5" placeholder="e.g. 20" oninput="markManual('demo-target-session'); updateDemoStats()">
       </div>
       <div style="margin-bottom:0">
         <label class="stat-label">Demo Completion Rate (%)</label>
-        <input type="number" id="demo-completion" value="" min="0" max="100" step="1" placeholder="e.g. 35" oninput="markManual('demo-completion'); updateDemoStats()">
+        <input type="text" inputmode="decimal" data-num="dec" autocomplete="off" id="demo-completion" value="" min="0" max="100" step="1" placeholder="e.g. 35" oninput="markManual('demo-completion'); updateDemoStats()">
       </div>
     </div>
 
@@ -1116,7 +1127,7 @@
       <h3>Conversion Events</h3>
       <div style="margin-bottom:14px">
         <label class="stat-label">Players Who Played the Demo AND Wishlisted</label>
-        <input type="number" id="demo-played-wishlisted" value="" min="0" step="1" placeholder="e.g. 75" oninput="markManual('demo-played-wishlisted'); updateDemoStats()">
+        <input type="text" inputmode="numeric" data-num="int" autocomplete="off" id="demo-played-wishlisted" value="" min="0" step="1" placeholder="e.g. 75" oninput="markManual('demo-played-wishlisted'); updateDemoStats()">
       </div>
       <div>
         <label class="stat-label">Wishlist Additions From Non-Demo Players (auto-calc)</label>
@@ -1197,7 +1208,7 @@
         <label class="stat-label">EA Discount vs. 1.0 Price (%)</label>
         <div style="display:flex;align-items:center;gap:12px">
           <input type="range" id="ea-discount-slider" min="0" max="50" value="20" step="1" oninput="document.getElementById('ea-discount-input').value=this.value; updateEaCalc()" style="flex:1">
-          <input type="number" id="ea-discount-input" value="20" min="0" max="50" step="1" oninput="validateEaDiscount(); document.getElementById('ea-discount-slider').value=this.value; updateEaCalc()" style="width:72px;text-align:center">
+          <input type="text" inputmode="decimal" data-num="dec" autocomplete="off" id="ea-discount-input" value="20" min="0" max="50" step="1" oninput="validateEaDiscount(); document.getElementById('ea-discount-slider').value=this.value; updateEaCalc()" style="width:72px;text-align:center">
           <span class="muted">%</span>
         </div>
         <div class="input-warning" id="warn-ea-discount">Must be between 0% and 50%.</div>
@@ -1763,6 +1774,15 @@ var PricingModel = {
     var launchDiscPrice = launchPrice * 0.875;
     return { launchPrice: launchPrice, snappedLaunchUp: snappedLaunchUp, realDiscount: realDiscount, netFull: netFull, netSale: netSale, unitsNeeded: unitsNeeded, deepDiscountPrice: deepDiscountPrice, netDeepDiscount: netDeepDiscount, launchDiscPrice: launchDiscPrice };
   },
+  // Real money per copy: list price, then Steam's cut, refunds, discounts and
+  // regional pricing, and tax/VAT. Each keep factor is a share from 0 to 1.
+  netPerCopy: function(price, devShare, refundKeep, discountKeep, taxKeep) {
+    var afterSteam = price * devShare;
+    var afterRefunds = afterSteam * refundKeep;
+    var afterDiscounts = afterRefunds * discountKeep;
+    var afterTax = afterDiscounts * taxKeep;
+    return { price: price, afterSteam: afterSteam, afterRefunds: afterRefunds, afterDiscounts: afterDiscounts, net: afterTax };
+  },
   breakEven: function(devCost, launchPrice, target, devShare, fullShare) {
     if (isNaN(fullShare)) fullShare = 60;
     fullShare = Math.max(0, Math.min(100, fullShare));
@@ -1936,6 +1956,63 @@ function getValidatedLaunchPrice() {
 function getDevShare() {
   var el = document.getElementById('revenue-tier');
   return el ? parseFloat(el.value) || 0.70 : 0.70;
+}
+// Keep factors for the all-in net per copy. Invalid input -> null (output hidden).
+var NET_DEFAULTS = { 'net-refund-keep': 92, 'net-discount-keep': 70, 'net-tax-keep': 96 };
+function getNetFactors() {
+  var out = {};
+  for (var id in NET_DEFAULTS) {
+    var el = document.getElementById(id);
+    var raw = el ? String(el.value).trim() : '';
+    var v = raw === '' ? NET_DEFAULTS[id] : parseFloat(raw);
+    if (isNaN(v) || v <= 0 || v > 100) return null;
+    out[id] = v / 100;
+  }
+  return { refund: out['net-refund-keep'], discount: out['net-discount-keep'], tax: out['net-tax-keep'] };
+}
+function getNetPerCopy(price) {
+  var f = getNetFactors();
+  if (!f || !(price > 0)) return null;
+  return PricingModel.netPerCopy(price, getDevShare(), f.refund, f.discount, f.tax);
+}
+function steamOnlyNote() {
+  return 'After Steam\u2019s ' + Math.round((1 - getDevShare()) * 100) + '% only';
+}
+function netPerCopyHtml(lp) {
+  var n = getNetPerCopy(lp);
+  if (!n) return '<div class="output-row"><span class="output-label">Net per Copy, All-In</span><span class="output-value">\u2014</span></div>' +
+    '<p class="muted" style="color:var(--coral);margin-top:4px">Enter a share between 1% and 100% for refunds, discounts and tax/VAT.</p>';
+  var f = getNetFactors();
+  var pct = function (x) { return Math.round(x * 100) + '%'; };
+  return '<div class="output-row net-all-in"><span class="output-label">Net per Copy, All-In <span class="output-note">What you actually keep from each copy on average</span></span><span class="output-value">$' + n.net.toFixed(2) + '</span></div>' +
+    '<ol class="net-steps">' +
+      '<li><span>List price</span><b>$' + n.price.toFixed(2) + '</b></li>' +
+      '<li><span>After Steam\u2019s cut (' + pct(1 - getDevShare()) + ')</span><b>$' + n.afterSteam.toFixed(2) + '</b></li>' +
+      '<li><span>After refunds (keep ' + pct(f.refund) + ')</span><b>$' + n.afterRefunds.toFixed(2) + '</b></li>' +
+      '<li><span>After discounts and regional prices (keep ' + pct(f.discount) + ')</span><b>$' + n.afterDiscounts.toFixed(2) + '</b></li>' +
+      '<li><span>After tax / VAT (keep ' + pct(f.tax) + ')</span><b>$' + n.net.toFixed(2) + '</b></li>' +
+    '</ol>';
+}
+// Step 1's price instinct sets the starting sale price (instinct minus the
+// discount depth), so the back-solved launch price starts at the founder's
+// guess. Once they type a sale price themselves, it is left alone.
+function applyInstinctPrice() {
+  var inst = parseFloat((document.getElementById('profile-instinct-price') || {}).value);
+  var note = document.getElementById('instinct-source-note');
+  if (isManual('target-sale-price') || !(inst > 0)) { if (note && !(inst > 0)) note.style.display = 'none'; return; }
+  var disc = parseFloat(document.getElementById('discount-depth').value);
+  if (!(disc > 0 && disc < 100)) disc = 30;
+  var sale = Math.round(inst * (1 - disc / 100) * 100) / 100;
+  document.getElementById('target-sale-price').value = sale.toFixed(2);
+  if (note) { note.textContent = 'Started from your price instinct ($' + inst.toFixed(2) + ' minus ' + disc + '%).'; note.style.display = ''; }
+  updateAllLinked();
+}
+function instinctCompareHtml(lp) {
+  var inst = parseFloat((document.getElementById('profile-instinct-price') || {}).value);
+  if (!(inst > 0) || !(lp > 0)) return '';
+  var diff = lp - inst;
+  var said = Math.abs(diff) < 0.005 ? 'the same' : (diff > 0 ? '$' + diff.toFixed(2) + ' higher' : '$' + (-diff).toFixed(2) + ' lower');
+  return '<div class="output-row"><span class="output-label">Your Guess vs the Calculated Price <span class="output-note">Price instinct from Step 1</span></span><span class="output-value">$' + inst.toFixed(2) + ' \u2192 $' + lp.toFixed(2) + ' <span class="output-note">(' + said + ')</span></span></div>';
 }
 function autoSelectTier() {
   var rev = parseFloat(document.getElementById('lifetime-revenue').value) || 0;
@@ -2333,13 +2410,13 @@ function addCompRow(title, launch, current, quality, reception, hours) {
     '<div class="comp-card-review reception-auto-note"></div>' +
     '<div class="comp-card-manual">' +
       '<label class="comp-field"><span class="comp-field-label">Launch Price <span class="tooltip-icon" title="Steam API does not expose historical launch prices. Use SteamDB manually.">?</span></span>' +
-        '<input type="number" value="' + launch + '" step="0.01" min="0" placeholder="0.00" class="comp-launch" aria-label="Launch price (USD)" oninput="this.removeAttribute(\'data-fetched\'); updateCompStats()"></label>' +
+        '<input type="text" inputmode="decimal" data-num="dec" autocomplete="off" value="' + launch + '" step="0.01" min="0" placeholder="0.00" class="comp-launch" aria-label="Launch price (USD)" oninput="this.removeAttribute(\'data-fetched\'); updateCompStats()"></label>' +
       '<label class="comp-field"><span class="comp-field-label">Quality</span>' +
         '<select class="comp-quality" aria-label="Quality vs. mine"><option' + (quality==='Better'?' selected':'') + '>Better</option><option' + (quality==='Equal'?' selected':'') + '>Equal</option><option' + (quality==='Worse'?' selected':'') + '>Worse</option></select></label>' +
       '<label class="comp-field"><span class="comp-field-label">Reception</span>' +
         '<select class="comp-reception" aria-label="Community reception"><option' + (reception==='Positive'?' selected':'') + '>Positive</option><option' + (reception==='Mixed'?' selected':'') + '>Mixed</option><option' + (reception==='Negative'?' selected':'') + '>Negative</option></select></label>' +
       '<label class="comp-field"><span class="comp-field-label">Hours</span>' +
-        '<input type="number" value="' + hours + '" step="0.5" min="0" placeholder="0" class="comp-hours" aria-label="Content hours"></label>' +
+        '<input type="text" inputmode="decimal" data-num="dec" autocomplete="off" value="' + hours + '" step="0.5" min="0" placeholder="0" class="comp-hours" aria-label="Content hours"></label>' +
     '</div>' +
     '<div class="comp-card-status fetch-status"></div>';
   card.querySelector('.fetch-btn').addEventListener('click', function() {
@@ -2605,13 +2682,15 @@ function updatePricing() {
 
   document.getElementById('pricing-outputs').innerHTML =
     '<div class="output-row"><span class="output-label">Launch Price to Set on Steam <span class="output-note">' + launchNote + '</span></span><span class="output-value">' + launchPriceHtml + '</span></div>' +
+    instinctCompareHtml(launchPrice) +
     '<div class="output-row"><span class="output-label">Actual Discount at Target Sale <span class="output-note">Should be \u226520% for wishlist emails</span></span><span class="output-value">' + (realDiscount * 100).toFixed(1) + '% ' + (realDiscount >= 0.2 ? '<span class="badge badge-teal">Meets 20%</span>' : '<span class="badge badge-coral">Below 20%</span>') + '</span></div>' +
     (realDiscount < 0.2 ? '<p class="muted" style="color:var(--coral);margin-top:6px">\u26A0 Snapping the launch price pushed the effective discount below the 20% wishlist-email threshold.</p>' : '') +
-    '<div class="output-row"><span class="output-label">Net Revenue per Unit (Full Price) <span class="output-note">After Steam cut (' + (devShare*100).toFixed(0) + '% to dev)</span></span><span class="output-value">$' + netFull.toFixed(2) + '</span></div>' +
-    '<div class="output-row"><span class="output-label">Net Revenue per Unit (Sale Price)</span><span class="output-value">$' + netSale.toFixed(2) + '</span></div>' +
+    netPerCopyHtml(launchPrice) +
+    '<div class="output-row"><span class="output-label">Net Revenue per Unit (Full Price) <span class="output-note">' + steamOnlyNote() + '</span></span><span class="output-value">$' + netFull.toFixed(2) + '</span></div>' +
+    '<div class="output-row"><span class="output-label">Net Revenue per Unit (Sale Price) <span class="output-note">' + steamOnlyNote() + '</span></span><span class="output-value">$' + netSale.toFixed(2) + '</span></div>' +
     '<div class="output-row"><span class="output-label">Units at Sale Price to Match 1,000 Full-Price Units</span><span class="output-value">' + unitsNeeded.toLocaleString() + '</span></div>' +
     '<div class="output-row"><span class="output-label">50% Deep-Discount Price <span class="output-note">2nd-year seasonal sale floor</span></span><span class="output-value">' + fmtSnappedPrice(deepDiscountPrice) + '</span></div>' +
-    '<div class="output-row"><span class="output-label">Net Revenue at 50% Discount <span class="output-note">Post Steam cut</span></span><span class="output-value">$' + netDeepDiscount.toFixed(2) + '</span></div>';
+    '<div class="output-row"><span class="output-label">Net Revenue at 50% Discount <span class="output-note">' + steamOnlyNote() + '</span></span><span class="output-value">$' + netDeepDiscount.toFixed(2) + '</span></div>';
 
   var launchDiscPrice = launchPrice * 0.875;
   var fullNetComp = launchPrice * devShare;
@@ -2619,11 +2698,11 @@ function updatePricing() {
   document.getElementById('discount-compare').innerHTML =
     '<div class="compare-card"><h4>(A) Full Price Launch, Discount Later</h4>' +
     '<div class="output-row"><span class="output-label">Launch Price</span><span class="output-value">' + fmtSnappedPrice(launchPrice) + '</span></div>' +
-    '<div class="output-row"><span class="output-label">Net Revenue per Unit</span><span class="output-value">$' + fullNetComp.toFixed(2) + '</span></div>' +
+    '<div class="output-row"><span class="output-label">Net Revenue per Unit <span class="output-note">' + steamOnlyNote() + '</span></span><span class="output-value">$' + fullNetComp.toFixed(2) + '</span></div>' +
     '<div class="tradeoff">Higher per-unit margin. Signals confidence. Less conversion lift from launch discount hype.</div></div>' +
     '<div class="compare-card"><h4>(B) Launch With 10\u201415% Discount</h4>' +
     '<div class="output-row"><span class="output-label">Launch Price</span><span class="output-value">' + fmtSnappedPrice(launchDiscPrice) + '</span></div>' +
-    '<div class="output-row"><span class="output-label">Net Revenue per Unit</span><span class="output-value">$' + discLaunchNet.toFixed(2) + '</span></div>' +
+    '<div class="output-row"><span class="output-label">Net Revenue per Unit <span class="output-note">' + steamOnlyNote() + '</span></span><span class="output-value">$' + discLaunchNet.toFixed(2) + '</span></div>' +
     '<div class="tradeoff">Triggers wishlist notification on day one if ≥20%. Lower margin but can drive higher volume.</div></div>';
 
   var floorPct = parseFloat(document.getElementById('price-floor').value) || 50;
@@ -2701,8 +2780,8 @@ function renderBreakEven() {
       '<p class="muted" style="margin-top:6px">Break-even needs ' + mult.toFixed(1) + 'x your projected first-week units. First-week units are typically a fraction of lifetime units, so a multiple above 1 is normal \u2014 the number to watch is how large it is.</p>';
   }
   el.innerHTML =
-    '<div class="output-row"><span class="output-label">Net Revenue per Unit (Full Price)</span><span class="output-value">' + fmtMoney(be.netFull) + '</span></div>' +
-    '<div class="output-row"><span class="output-label">Net Revenue per Unit (Sale Price)</span><span class="output-value">' + fmtMoney(be.netSale) + '</span></div>' +
+    '<div class="output-row"><span class="output-label">Net Revenue per Unit (Full Price) <span class="output-note">' + steamOnlyNote() + '</span></span><span class="output-value">' + fmtMoney(be.netFull) + '</span></div>' +
+    '<div class="output-row"><span class="output-label">Net Revenue per Unit (Sale Price) <span class="output-note">' + steamOnlyNote() + '</span></span><span class="output-value">' + fmtMoney(be.netSale) + '</span></div>' +
     '<div class="output-row"><span class="output-label">Units to Break Even (Full Price)</span><span class="output-value">' + Math.ceil(be.fullPriceUnits).toLocaleString() + '</span></div>' +
     '<div class="output-row"><span class="output-label">Units to Break Even (Sale Price)</span><span class="output-value">' + Math.ceil(be.salePriceUnits).toLocaleString() + '</span></div>' +
     '<div class="output-row"><span class="output-label">Units to Break Even (Blended)</span><span class="output-value">' + Math.ceil(be.blendedUnits).toLocaleString() + '</span></div>' +
@@ -3622,7 +3701,7 @@ function computeScenarioMetrics() {
     targetSalePrice: target,
     discountDepth: discPct,
     tierText: tier ? tier.price : '\u2014',
-    netRevenuePerUnit: lp * devShare,
+    netRevenuePerUnit: (getNetPerCopy(lp) || { net: 0 }).net,
     firstWeekUnitsCons: wlScen ? wlScen.conservative.units : 0,
     firstWeekUnitsCentral: wlScen ? wlScen.central.units : 0,
     firstWeekUnitsOpt: wlScen ? wlScen.optimistic.units : 0,
@@ -3687,7 +3766,7 @@ function renderScenarioComparison() {
     { key: 'targetSalePrice', label: 'Target Sale Price', dir: null },
     { key: 'discountDepth', label: 'Discount Depth', dir: null },
     { key: 'tierText', label: 'Recommended Tier', dir: null },
-    { key: 'netRevenuePerUnit', label: 'Net Revenue / Unit', dir: 'higher' },
+    { key: 'netRevenuePerUnit', label: 'Net per Copy (All-In)', dir: 'higher' },
     { key: 'firstWeekUnitsCons', label: 'First-Week Units (Conservative)', dir: 'higher' },
     { key: 'firstWeekUnitsCentral', label: 'First-Week Units (Central)', dir: 'higher' },
     { key: 'firstWeekUnitsOpt', label: 'First-Week Units (Optimistic)', dir: 'higher' },
@@ -3835,7 +3914,8 @@ function buildSummary() {
     '<div class="card"><h3>Launch Price & Revenue ' + srcLine('steamworks', '2026-03-15') + '</h3>' +
     '<div class="output-row"><span class="output-label">Launch Price to Set on Steam</span><span class="output-value">' + (lp > 0 ? ('$' + lp.toFixed(2) + (rawLp > 0 && Math.round(rawLp * 100) !== Math.round(lp * 100) ? ' <span class="output-note">back-solved $' + rawLp.toFixed(2) + '</span>' : '')) : '—') + '</span></div>' +
     '<div class="output-row"><span class="output-label">Actual Discount at Target Sale</span><span class="output-value">' + (lp > 0 && target > 0 ? (((lp - target) / lp) * 100).toFixed(1) + '%' : '—') + '</span></div>' +
-    '<div class="output-row"><span class="output-label">Net Revenue per Unit (Full)</span><span class="output-value">' + (lp > 0 ? '$' + netFull.toFixed(2) : '—') + '</span></div>' +
+    (lp > 0 ? netPerCopyHtml(lp) : '') +
+    '<div class="output-row"><span class="output-label">Net Revenue per Unit (Full) <span class="output-note">' + steamOnlyNote() + '</span></span><span class="output-value">' + (lp > 0 ? '$' + netFull.toFixed(2) : '—') + '</span></div>' +
     '<div class="output-row"><span class="output-label">Steam Share Tier</span><span class="output-value">' + (devShare*100).toFixed(0) + '% to dev</span></div>' +
     '<div class="output-row"><span class="output-label">Price Floor</span><span class="output-value">' + floorPct + '% off max</span></div>' +
     (be.devCost > 0 ? '<div class="output-row"><span class="output-label">Break-Even Units <span class="output-note">Blended ' + be.fullShare.toFixed(0) + '%/' + (100 - be.fullShare).toFixed(0) + '% split</span></span><span class="output-value">' + Math.ceil(be.blendedUnits).toLocaleString() + '</span></div>' : '') +
@@ -4508,6 +4588,10 @@ function runSelfTest() {
   t('discountMath launch price == 21.4143', Math.abs(dm.launchPrice - 14.99 / 0.7) < 0.001);
   t('discount round-trip back to target', Math.abs(dm.launchPrice * (1 - 0.30) - 14.99) < 0.001);
 
+  // All-in net per copy: $19.99 with 70% share, 92% refunds, 70% discounts, 96% tax -> $8.65
+  var npc = PricingModel.netPerCopy(19.99, 0.70, 0.92, 0.70, 0.96);
+  t('netPerCopy(19.99) steps 13.99 / 12.87 / 9.01 / 8.65', npc.afterSteam.toFixed(2) === '13.99' && npc.afterRefunds.toFixed(2) === '12.87' && npc.afterDiscounts.toFixed(2) === '9.01' && npc.net.toFixed(2) === '8.65');
+
   // Conversion rate tiers at boundaries
   t('conversion 4999 -> 0.15', PricingModel.getWishlistConversion(4999) === 0.15);
   t('conversion 5000 -> 0.18', PricingModel.getWishlistConversion(5000) === 0.18);
@@ -4755,7 +4839,7 @@ if (location.search && location.search.indexOf('selftest=1') !== -1) { runSelfTe
       var list = [
         { key: 'launch_price', label: 'Launch price (Steam tier)', value: steamPrice, unit: 'usd', meta: { required_raw: Math.round(m.launchPrice * 100) / 100 } },
         { key: 'target_sale_price', label: 'Target sale price', value: m.targetSalePrice, unit: 'usd' },
-        { key: 'net_revenue_per_unit', label: 'Net revenue per unit', value: m.netRevenuePerUnit, unit: 'usd' }
+        { key: 'net_revenue_per_unit', label: 'Net per copy (all-in)', value: m.netRevenuePerUnit, unit: 'usd' }
       ];
       if (m.firstWeekUnitsCentral > 0) list.push({ key: 'week1_units', label: 'Week 1 units (central)', value: m.firstWeekUnitsCentral, unit: 'units',
         meta: { conservative: m.firstWeekUnitsCons, optimistic: m.firstWeekUnitsOpt } });
@@ -4795,5 +4879,70 @@ if (location.search && location.search.indexOf('selftest=1') !== -1) { runSelfTe
   });
 })();
 </script>
+
+<script>
+/* Number entry: accept a comma as the decimal point ("19,99") and Arabic-Indic
+   digits ("١٩٫٩٩"), rewriting the field to plain "19.99" before any handler reads it.
+   Count fields (wishlists, costs) treat commas as thousands separators. */
+(function () {
+  var AR = '٠١٢٣٤٥٦٧٨٩', FA = '۰۱۲۳۴۵۶۷۸۹';
+  function normalizeNum(raw, kind) {
+    var s = String(raw), notes = [];
+    var mapped = s.replace(/[٠-٩۰-۹]/g, function (d) { var i = AR.indexOf(d); return String(i >= 0 ? i : FA.indexOf(d)); })
+                  .replace(/٫/g, '.').replace(/٬/g, ',');
+    if (mapped !== s) notes.push('Arabic digits converted');
+    s = mapped.replace(/[\s $€£]/g, '');
+    if (kind === 'int') {
+      if (/,/.test(s)) s = s.replace(/,/g, '');
+      else if (/^\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, '');
+    } else if (/,/.test(s)) {
+      if (/\./.test(s)) {
+        // Both: the last one is the decimal point.
+        s = s.lastIndexOf(',') > s.lastIndexOf('.') ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, '');
+      } else if (/^-?\d{1,3}(,\d{3})+$/.test(s) && s.split(',').length > 2) {
+        s = s.replace(/,/g, '');
+      } else if ((s.match(/,/g) || []).length === 1) {
+        s = s.replace(',', '.'); notes.push('Comma read as a decimal point');
+      }
+    }
+    var ok = s === '' || /^-?\d*\.?\d*$/.test(s);
+    return { value: s, ok: ok, note: ok ? notes.join('. ') : 'Use numbers only, for example 19.99' };
+  }
+  window.normalizeNum = normalizeNum;
+  function hintFor(el) {
+    var h = el.nextElementSibling;
+    if (!h || !h.classList || !h.classList.contains('num-hint')) {
+      h = document.createElement('div'); h.className = 'num-hint'; h.setAttribute('role', 'status');
+      el.insertAdjacentElement('afterend', h);
+    }
+    return h;
+  }
+  document.addEventListener('input', function (e) {
+    var el = e.target;
+    if (!el || !el.hasAttribute || !el.hasAttribute('data-num')) return;
+    var r = normalizeNum(el.value, el.getAttribute('data-num'));
+    if (r.ok && r.value !== el.value) el.value = r.value;
+    var h = hintFor(el);
+    h.textContent = r.note;
+    h.classList.toggle('is-error', !r.ok);
+    el.classList.toggle('num-invalid', !r.ok);
+    clearTimeout(el._numHintT);
+    if (r.ok && r.note) el._numHintT = setTimeout(function () { h.textContent = ''; }, 4000);
+  }, true);
+})();
+</script>
+<style>
+  .num-hint { font-size: 12px; color: var(--mid, #655e4b); min-height: 0; margin-top: 2px; }
+  .num-hint:empty { display: none; }
+  .num-hint.is-error { color: var(--coral, #c0502b); font-weight: 600; }
+  input.num-invalid { border-color: var(--coral, #c0502b) !important; }
+  .net-factors { border: 1px solid var(--border, #e6d6b7); border-radius: 8px; padding: 10px 12px; margin: 0 0 14px; display: grid; gap: 8px; }
+  .net-factors legend { padding: 0 4px; }
+  .net-factors label { display: block; font-size: 13px; }
+  .net-factors input { display: block; max-width: 120px; margin-top: 4px; }
+  .net-steps { list-style: none; margin: 4px 0 10px; padding: 8px 10px; border-left: 3px solid var(--teal, #2f7f7a); background: rgba(0,0,0,.025); font-size: 13px; }
+  .net-steps li { display: flex; justify-content: space-between; gap: 12px; padding: 2px 0; }
+  .net-steps li:last-child { font-weight: 700; border-top: 1px solid var(--border, #e6d6b7); margin-top: 2px; padding-top: 4px; }
+</style>
 </body>
 </html>
