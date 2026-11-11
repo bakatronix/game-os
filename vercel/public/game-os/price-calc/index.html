@@ -4125,6 +4125,21 @@ function radioLabel(name, value) {
   return el && el.parentNode ? el.parentNode.textContent.trim() : value;
 }
 var PLATFORM_NAMES = { windows: 'Windows', mac: 'macOS', linux: 'Linux', deck: 'Steam Deck', switch: 'Switch', ps: 'PlayStation', xbox: 'Xbox' };
+// The comps behind the price, so a reader can see what it was based on.
+function compTableHtml() {
+  var rows = [];
+  document.querySelectorAll('#comp-tbody .comp-card').forEach(function (c) {
+    var title = (c.querySelector('.comp-title') || {}).value || '';
+    var launch = parseFloat((c.querySelector('.comp-launch') || {}).value);
+    var cur = c.getAttribute('data-usd') === 'true' ? parseFloat((c.querySelector('.comp-current') || {}).getAttribute('data-value')) : NaN;
+    var rec = (c.querySelector('.comp-reception') || {}).value || '';
+    var hrs = parseFloat((c.querySelector('.comp-hours') || {}).value);
+    if (!title.trim() && !(launch > 0)) return;
+    rows.push('<tr><td>' + escapeHtml(title.trim() || 'Untitled comp') + '</td><td>' + (launch > 0 ? '$' + launch.toFixed(2) : 'Not entered') + '</td><td>' + (cur > 0 ? '$' + cur.toFixed(2) : '\u2014') + '</td><td>' + (rec ? escapeHtml(rec) : '\u2014') + '</td><td>' + (hrs > 0 ? hrs + ' hrs' : '\u2014') + '</td></tr>');
+  });
+  if (!rows.length) return '';
+  return '<table class="comp-summary-table"><thead><tr><th>Comp game</th><th>Launch price (USD)</th><th>Current US price</th><th>Reception</th><th>Hours</th></tr></thead><tbody>' + rows.join('') + '</tbody></table>';
+}
 function coverBlock(gp, tierText, lp, conflict) {
   var d = new Date();
   var dateStr = d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
@@ -4232,8 +4247,11 @@ function buildSummary() {
     '</div>' +
     '<div class="card"><h3>Comps & Wishlist ' + srcLine('gdc-wishlist', '2025-06-01') + '</h3>' +
     '<div class="output-row"><span class="output-label">Comp Games Analyzed</span><span class="output-value">' + compCount + '</span></div>' +
+    compTableHtml() +
     '<div class="output-row"><span class="output-label">Projected Wishlist Count</span><span class="output-value">' + (wishlistCount > 0 ? wishlistCount.toLocaleString() : '—') + '</span></div>' +
     (wlScenarios ? (
+      '<div class="output-row net-all-in"><span class="output-label">First-Week Units, Central <span class="output-note">Most likely case</span></span><span class="output-value">' + wlScenarios.central.units.toLocaleString() + '</span></div>' +
+      '<div class="output-row net-all-in"><span class="output-label">First-Week Net Revenue, Central <span class="output-note">' + wlScenarios.central.units.toLocaleString() + ' units \u00D7 ' + fmtMoney(wlScenarios.netPerCopy) + ' Net per Copy, All-In</span></span><span class="output-value">' + fmtMoney(wlScenarios.central.revenue) + '</span></div>' +
       '<div class="output-row"><span class="output-label">First-Week Units <span class="output-note">Conservative\u2013Optimistic</span></span><span class="output-value">' + wlScenarios.conservative.units.toLocaleString() + '\u2013' + wlScenarios.optimistic.units.toLocaleString() + '</span></div>' +
       '<div class="output-row"><span class="output-label">First-Week Net Revenue <span class="output-note">Units \u00D7 Net per Copy, All-In</span></span><span class="output-value">' + fmtMoney(wlScenarios.conservative.revenue) + '\u2013' + fmtMoney(wlScenarios.optimistic.revenue) + '</span></div>' +
       (wlScenarios.centralCapped ? '<p class="muted" style="color:var(--coral);margin-top:8px">\u26A0 Central estimate was capped \u2014 stacked multipliers pushed it outside the 5\u201335% benchmark envelope.</p>' : '')
@@ -5573,6 +5591,9 @@ if (location.search && location.search.indexOf('selftest=1') !== -1) { runSelfTe
   .share-manual { white-space: normal; }
   .share-link-box { display: block; width: 100%; margin-top: 6px; font-family: var(--mono, monospace); font-size: 12px; }
   .print-appendix { display: none; }
+  .comp-summary-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 8px 0 12px; }
+  .comp-summary-table th, .comp-summary-table td { text-align: left; padding: 5px 6px; border-bottom: 1px solid var(--border, #e6d6b7); }
+  @media (max-width: 600px) { .comp-summary-table { font-size: 12px; } .comp-summary-table th:nth-child(4), .comp-summary-table td:nth-child(4) { display: none; } }
   .slider-ends { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; color: var(--mid, #655e4b); margin-top: 2px; }
   input[type="range"].unscored { opacity: .45; }
   .genre-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
