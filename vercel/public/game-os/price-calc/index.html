@@ -977,7 +977,8 @@
 
     <div class="card">
       <h3>Break-Even Analysis</h3>
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap">
+      <p class="muted" style="margin-bottom:12px">How many copies you must sell to earn back your development cost, using Net per Copy, All-In from above.</p>
+      <div style="display:none">
         <label class="stat-label">Full-price share of sales (%) <span class="tooltip-icon" title="Your assumption of what percentage of units sell at full price vs at the discounted price. 60% is a common default for indies. Drives the blended break-even estimate.">?</span></label>
         <input type="text" inputmode="decimal" data-num="dec" autocomplete="off" id="be-full-share" value="60" min="0" max="100" step="5" oninput="updateAllLinked()" style="width:72px">
         <span class="muted">Assumption: remaining sales at the discounted price</span>
@@ -1018,8 +1019,8 @@
       <div class="card">
         <h3>Your Inputs</h3>
         <div style="margin-bottom:14px">
-          <label class="stat-label">Projected Wishlist Count at Launch <span class="estimate-tag heuristic" id="wishlist-count-tag">Assumption: replace with yours</span></label>
-          <input type="text" inputmode="numeric" data-num="int" autocomplete="off" id="wishlist-count" value="" min="0" step="500" oninput="markManual('wishlist-count'); updateWishlist()">
+          <label class="stat-label">Projected Wishlist Count at Launch <span class="estimate-tag heuristic" id="wishlist-count-tag" style="display:none"></span></label>
+          <input type="text" inputmode="numeric" data-num="int" autocomplete="off" id="wishlist-count" value="" min="0" step="500" placeholder="Enter your wishlist count" oninput="markManual('wishlist-count'); updateWishlist()">
           <div class="estimate-note heuristic" id="wishlist-estimate-note"></div>
           <p class="output-note" style="margin-top:4px">Use organic wishlist count only — exclude botted, fabricated, or incentivised wishlists. Steam's algorithm detects artificial activity and may penalise your Visibility Rounds.</p>
           <div class="inline-prompt" id="wishlist-community-prompt"></div>
@@ -1913,8 +1914,13 @@ var PricingModel = {
   // certainly a unit error (e.g. a missing /100), so it is rejected and the
   // caller leaves the field for manual entry.
   normaliseSteamPrice: function(priceOverview) {
-    var out = { currentPrice: null, initialPrice: null, discountPercent: null, priceRejected: false };
+    var out = { currentPrice: null, initialPrice: null, discountPercent: null, priceRejected: false, nonUsd: false, currency: null };
     if (!priceOverview) return out;
+    // Only US dollars are accepted. Any other (or missing) currency is never
+    // shown as a "$" amount: the caller leaves the fields empty.
+    var cur = typeof priceOverview.currency === 'string' ? priceOverview.currency.toUpperCase() : '';
+    if (cur !== 'USD') { out.nonUsd = true; out.currency = cur || 'unknown'; return out; }
+    out.currency = 'USD';
     function num(v) { var n = Number(v); return (v != null && v !== '' && !isNaN(n)) ? n : null; }
     var final = num(priceOverview.final);
     if (final != null) {
@@ -2139,7 +2145,7 @@ function mapReception(desc, positive, negative) {
 var FETCH_CACHE_TTL = 24 * 60 * 60 * 1000;
 // Bump when the raw-cache shape or the normalisation logic changes; a version
 // mismatch is treated as a cache miss so stale derived data is never reused.
-var NORMALISER_VERSION = 2;
+var NORMALISER_VERSION = 3; // 3: US-dollar check; older cached responses may be in another currency
 
 function cacheGet(appId) {
   var e = window.fetchCache[appId];
@@ -2189,6 +2195,7 @@ function toNum(v) {
 
 // Per-row status for a completed fetch.
 function rowStatusForFetch(data) {
+  if (data.nonUsd) return { msg: 'Steam did not return a US-dollar price. Enter the US launch price yourself.', type: 'error' };
   if (data.priceRejected) return { msg: 'Price implausible \u2014 enter manually', type: 'error' };
   return { msg: 'Fetched from Steam', type: 'ok' };
 }
@@ -2199,7 +2206,7 @@ function rowStatusForFetch(data) {
 // read, so a parser fix applies immediately to previously cached data.
 async function fetchRawBundle(appId, row, signal) {
   var base = steamProxyUrl.replace(/\/+$/, '').replace(/\?.*$/, '');
-  var detailsUrl = base + '?appid=' + appId;
+  var detailsUrl = base + '?appid=' + appId + '&cc=us'; // cc also keeps old non-US cached responses from being reused
   var reviewsUrl = base + '?appid=' + appId + '&type=reviews';
   var raw = { details: null, reviews: null };
 
@@ -2223,7 +2230,9 @@ function parseRawBundle(raw, appId) {
   var d = gameData.data || {};
   if (typeof d.name === 'string' && d.name) result.title = d.name;
   var norm = PricingModel.normaliseSteamPrice(d.price_overview);
-  if (norm.priceRejected) {
+  if (norm.nonUsd) {
+    result.nonUsd = true; result.currency = norm.currency;
+  } else if (norm.priceRejected) {
     result.priceRejected = true;
   } else if (norm.currentPrice != null) {
     result.currentPrice = norm.currentPrice.toFixed(2);
@@ -2269,7 +2278,13 @@ function applyRowData(row, data) {
     ti.value = data.title; ti.dataset.fetched = 'true';
   }
   var cp = row.querySelector('.comp-current');
-  if (data.currentPrice) {
+  row.setAttribute('data-usd', data.nonUsd ? 'false' : 'true');
+  if (data.nonUsd) {
+    cp.setAttribute('data-value', '');
+    cp.textContent = 'Not in US dollars';
+    var fiN = row.querySelector('.comp-full');
+    if (fiN) { fiN.setAttribute('data-value', ''); fiN.textContent = ''; }
+  } else if (data.currentPrice) {
     cp.setAttribute('data-value', data.currentPrice);
     cp.textContent = '$' + data.currentPrice;
     if (data.discountPercent > 0) row.querySelector('.comp-launch').placeholder = 'On sale (-' + data.discountPercent + '%)';
@@ -2309,23 +2324,24 @@ function applyRowData(row, data) {
   } else {
     row.querySelector('.reception-auto-note').textContent = 'Steam\u2019s review score isn\u2019t available right now. Pick Reception yourself.' + (data.reviewsApprox ? ' Review count is approximate (Steam recommendations).' : '');
   }
-  // Launch price: Steam has no launch-price history, so pre-fill today's full
-  // price and say so, with a link to SteamDB's price history to check it.
-  var lpIn = row.querySelector('.comp-launch');
-  var full = data.initialPrice || (data.currentPrice && !(data.discountPercent > 0) ? data.currentPrice : null);
-  var appIdForRow = extractAppId((row.querySelector('.comp-appid') || {}).value || '');
-  var lpNote = row.querySelector('.launch-prefill-note');
-  if (lpIn && !String(lpIn.value).trim() && full) {
-    lpIn.value = full;
-    lpIn.setAttribute('data-prefilled', 'true');
-    if (!lpNote) { lpNote = document.createElement('div'); lpNote.className = 'launch-prefill-note'; lpIn.closest('.comp-card-manual').insertAdjacentElement('afterend', lpNote); }
-    lpNote.innerHTML = 'Launch price pre-filled with today\u2019s full price ($' + full + '). If it changed since launch, check the price history on ' +
-      (appIdForRow ? '<a href="https://steamdb.info/app/' + encodeURIComponent(appIdForRow) + '/" target="_blank" rel="noopener">SteamDB</a>' : 'SteamDB') + ' and correct it.';
-  }
+  // Launch price is never filled from Steam: Steam only knows today's price.
+  setLaunchNote(row, data.nonUsd
+    ? 'Steam returned this game\u2019s price in ' + escapeHtml(data.currency || 'another currency') + ', not US dollars, so no price is shown. Enter the US launch price yourself.'
+    : (data.currentPrice ? 'Steam\u2019s current US price is $' + data.currentPrice + (data.discountPercent > 0 && data.initialPrice ? ' (on sale; full price $' + data.initialPrice + ')' : '') + '. That is today\u2019s price, not the launch price. Enter the US launch price yourself.' : 'Enter the US launch price yourself.'));
   row.querySelector('.steam-badge').style.display = 'inline-block';
   row.dataset.fetched = 'true';
 }
 
+// Help line under a comp's manual fields, with a pointer to SteamDB's price history.
+function setLaunchNote(row, lead) {
+  var manual = row.querySelector('.comp-card-manual');
+  if (!manual) return;
+  var note = row.querySelector('.launch-prefill-note');
+  if (!note) { note = document.createElement('div'); note.className = 'launch-prefill-note'; manual.insertAdjacentElement('afterend', note); }
+  var appId = extractAppId((row.querySelector('.comp-appid') || {}).value || '');
+  note.innerHTML = lead + ' Find it in the price history on ' +
+    (appId ? '<a href="https://steamdb.info/app/' + encodeURIComponent(appId) + '/" target="_blank" rel="noopener">SteamDB</a>' : 'SteamDB (steamdb.info)') + '.';
+}
 function fetchErrorReason(err) {
   if (!err) return 'unknown error';
   if (err.message === 'Aborted') return 'cancelled';
@@ -2474,14 +2490,14 @@ function addCompRow(title, launch, current, quality, reception, hours) {
       '</div>' +
     '</div>' +
     '<div class="comp-card-fetched">' +
-      '<span class="comp-fact"><span class="comp-fact-label">Current</span><span class="comp-current" data-value="' + current + '">' + currentDisplay + '</span><span class="sale-badge" style="display:none">SALE</span></span>' +
-      '<span class="comp-fact"><span class="comp-fact-label">Full</span><span class="comp-full" data-value=""></span></span>' +
+      '<span class="comp-fact"><span class="comp-fact-label">Current US price</span><span class="comp-current" data-value="' + current + '">' + currentDisplay + '</span><span class="sale-badge" style="display:none">SALE</span></span>' +
+      '<span class="comp-fact"><span class="comp-fact-label">Full US price today</span><span class="comp-full" data-value=""></span></span>' +
       '<span class="comp-fact"><span class="comp-fact-label">Released</span><span class="comp-release-date" data-value=""></span></span>' +
     '</div>' +
     '<div class="comp-card-genres genres-tags"></div>' +
     '<div class="comp-card-review reception-auto-note"></div>' +
     '<div class="comp-card-manual">' +
-      '<label class="comp-field"><span class="comp-field-label">Launch Price <span class="tooltip-icon" title="Steam doesn\u2019t publish launch prices. Fetch pre-fills today\u2019s full price; check the price history on SteamDB (steamdb.info/app/ID) if it has changed.">?</span></span>' +
+      '<label class="comp-field"><span class="comp-field-label">Launch Price (USD) <span class="tooltip-icon" title="The US price on launch day. Steam doesn\u2019t publish it, so Fetch can\u2019t fill it in: look it up in the price history on SteamDB (steamdb.info/app/ID) and type it here.">?</span></span>' +
         '<input type="text" inputmode="decimal" data-num="dec" autocomplete="off" value="' + launch + '" step="0.01" min="0" placeholder="0.00" class="comp-launch" aria-label="Launch price (USD)" oninput="this.removeAttribute(\'data-fetched\'); updateCompStats()"></label>' +
       '<label class="comp-field"><span class="comp-field-label">Quality</span>' +
         '<select class="comp-quality" aria-label="Quality vs. mine"><option' + (quality==='Better'?' selected':'') + '>Better</option><option' + (quality==='Equal'?' selected':'') + '>Equal</option><option' + (quality==='Worse'?' selected':'') + '>Worse</option></select></label>' +
@@ -2883,8 +2899,14 @@ function getBreakEven() {
   var lp = getValidatedLaunchPrice();
   var target = parseFloat(document.getElementById('target-sale-price').value) || 0;
   var devShare = getDevShare();
-  var fullShare = parseFloat(document.getElementById('be-full-share').value);
-  return PricingModel.breakEven(devCost, lp, target, devShare, fullShare);
+  var be = PricingModel.breakEven(devCost, lp, target, devShare, 100);
+  // Break-even uses Net per Copy, All-In. That figure already includes the
+  // average discount, so there is no separate full-price / sale-price blend.
+  var allIn = getNetPerCopy(lp);
+  be.allInNet = allIn ? allIn.net : 0;
+  be.steamOnlyUnits = be.fullPriceUnits;
+  be.blendedUnits = (devCost > 0 && be.allInNet > 0) ? devCost / be.allInNet : 0;
+  return be;
 }
 
 function renderBreakEven() {
@@ -2910,14 +2932,12 @@ function renderBreakEven() {
       '<div class="output-row"><span class="output-label">Break-Even vs Projected First-Week Units</span><span class="output-value">' + Math.ceil(be.blendedUnits).toLocaleString() + ' vs ' + fwUnits.toLocaleString() + ' <span class="output-note">(' + mult.toFixed(1) + 'x)</span></span></div>' +
       '<p class="muted" style="margin-top:6px">Break-even needs ' + mult.toFixed(1) + 'x your projected first-week units. First-week units are typically a fraction of lifetime units, so a multiple above 1 is normal \u2014 the number to watch is how large it is.</p>';
   }
+  if (!(be.allInNet > 0)) { el.innerHTML = '<p class="muted pricing-invalid">Enter a share between 1% and 100% for refunds, discounts and tax/VAT to see break-even units.</p>'; return; }
   el.innerHTML =
-    '<div class="output-row"><span class="output-label">Net Revenue per Unit (Full Price) <span class="output-note">' + steamOnlyNote() + '</span></span><span class="output-value">' + fmtMoney(be.netFull) + '</span></div>' +
-    '<div class="output-row"><span class="output-label">Net Revenue per Unit (Sale Price) <span class="output-note">' + steamOnlyNote() + '</span></span><span class="output-value">' + fmtMoney(be.netSale) + '</span></div>' +
-    '<div class="output-row"><span class="output-label">Units to Break Even (Full Price)</span><span class="output-value">' + Math.ceil(be.fullPriceUnits).toLocaleString() + '</span></div>' +
-    '<div class="output-row"><span class="output-label">Units to Break Even (Sale Price)</span><span class="output-value">' + Math.ceil(be.salePriceUnits).toLocaleString() + '</span></div>' +
-    '<div class="output-row"><span class="output-label">Units to Break Even (Blended)</span><span class="output-value">' + Math.ceil(be.blendedUnits).toLocaleString() + '</span></div>' +
+    '<div class="output-row"><span class="output-label">Net per Copy, All-In <span class="output-note">After Steam\u2019s cut, refunds, discounts and tax</span></span><span class="output-value">' + fmtMoney(be.allInNet) + '</span></div>' +
+    '<div class="output-row net-all-in"><span class="output-label">Units to Break Even <span class="output-note">Development cost \u00F7 Net per Copy, All-In</span></span><span class="output-value">' + Math.ceil(be.blendedUnits).toLocaleString() + '</span></div>' +
     (!isManual('dev-cost') ? '<p class="assumption-line">Using an assumed development cost of ' + fmtMoney(be.devCost) + ' from your budget band. Replace it with your real figure above.</p>' : '') +
-    '<div class="output-row"><span class="output-label">Blended Split Assumption</span><span class="output-value">' + be.fullShare.toFixed(0) + '% full / ' + (100 - be.fullShare).toFixed(0) + '% discounted</span></div>' +
+    '<div class="output-row"><span class="output-label">For comparison: units to break even <span class="output-note">' + steamOnlyNote() + ' (' + fmtMoney(be.netFull) + ' per copy). Too optimistic: ignores refunds, discounts and tax</span></span><span class="output-value">' + Math.ceil(be.steamOnlyUnits).toLocaleString() + '</span></div>' +
     multipleHtml;
 }
 
@@ -2989,7 +3009,10 @@ function updateWishlist() {
   var lp = getValidatedLaunchPrice();
   var devShare = getDevShare();
   if (count <= 0 || lp <= 0) {
-    document.getElementById('wishlist-outputs').innerHTML = '<p class="muted">Enter your projected wishlist count and set your Step 4 (Price &amp; Discount) inputs.</p>';
+    document.getElementById('wishlist-outputs').innerHTML = count <= 0
+      ? '<p class="muted"><strong>Enter your wishlist count</strong> to see first-week units and revenue. Nothing is estimated for you.</p>'
+      : '<p class="muted">Set your Step 4 (Price &amp; Discount) inputs to see first-week units and revenue.</p>';
+    renderBreakEven();
     return;
   }
   var s = computeWishlistScenarios(count, lp, devShare);
@@ -3023,9 +3046,9 @@ function updateWishlist() {
       '<div><span class="band-k">First-week units</span><span class="band-v">' + cons.units.toLocaleString() + '</span></div>' +
       '<div class="band-central"><span class="band-k">First-week units</span><span class="band-v">' + cent.units.toLocaleString() + '</span></div>' +
       '<div><span class="band-k">First-week units</span><span class="band-v">' + opt.units.toLocaleString() + '</span></div>' +
-      '<div><span class="band-k">Net revenue</span><span class="band-v">' + fmtMoney(cons.revenue) + '</span></div>' +
-      '<div class="band-central"><span class="band-k">Net revenue</span><span class="band-v">' + fmtMoney(cent.revenue) + '</span></div>' +
-      '<div><span class="band-k">Net revenue</span><span class="band-v">' + fmtMoney(opt.revenue) + '</span></div>' +
+      '<div><span class="band-k">Net revenue, all-in</span><span class="band-v">' + fmtMoney(cons.revenue) + '</span></div>' +
+      '<div class="band-central"><span class="band-k">Net revenue, all-in</span><span class="band-v">' + fmtMoney(cent.revenue) + '</span></div>' +
+      '<div><span class="band-k">Net revenue, all-in</span><span class="band-v">' + fmtMoney(opt.revenue) + '</span></div>' +
     '</div>';
 
   var chainHtml =
@@ -3039,6 +3062,7 @@ function updateWishlist() {
     chainHtml +
     '<p class="muted" style="margin-top:10px">A range, not a forecast. Aggregate conversion benchmarks carry wide variance and wishlist count alone is a weak predictor below 10,000.</p>' +
     band +
+    '<p class="muted" style="margin-top:6px">Net revenue = first-week units \u00D7 Net per Copy, All-In (' + fmtMoney(s.netPerCopy) + '), the same figure as Step 4. After Steam\u2019s ' + Math.round((1 - devShare) * 100) + '% only, the central figure would be ' + fmtMoney(cent.revenueSteamOnly) + ', which overstates what you keep.</p>' +
     capNote +
     comRow +
     demoRow +
@@ -3068,7 +3092,14 @@ function computeWishlistScenarios(count, lp, devShare) {
   var demo = getDemoHealthScore();
   var demoFactor = hasDemoData ? 1.0 : demo.multiplier;
   var band = PricingModel.computeScenarioBand(count, lp, devShare, baseRate, pricePenalty, community.multiplier, demoFactor);
+  // Revenue uses Net per Copy, All-In (the headline figure), not the after-Steam figure.
+  var allIn = getNetPerCopy(lp);
+  ['conservative', 'central', 'optimistic'].forEach(function (k) {
+    band[k].revenueSteamOnly = band[k].revenue;
+    band[k].revenue = allIn ? band[k].units * allIn.net : 0;
+  });
   return {
+    netPerCopy: allIn ? allIn.net : 0,
     baseRate: baseRate,
     hasDemoData: hasDemoData,
     demoConvRate: demoConvRate,
@@ -3108,7 +3139,7 @@ function updateEaCalc() {
   var ratio = eaNet > 0 ? Math.round(fullNet / eaNet * 100) / 100 : 0;
   document.getElementById('ea-calc-outputs').innerHTML = lp > 0 ?
     '<div class="output-row"><span class="output-label">Recommended EA Launch Price</span><span class="output-value">' + fmtSnappedPrice(eaPrice) + '</span></div>' +
-    '<div class="output-row"><span class="output-label">Net Revenue per EA Unit <span class="output-note">After Steam cut (' + (devShare*100).toFixed(0) + '% to dev)</span></span><span class="output-value">$' + eaNet.toFixed(2) + '</span></div>' +
+    '<div class="output-row"><span class="output-label">Net Revenue per EA Unit <span class="output-note">' + steamOnlyNote() + '</span></span><span class="output-value">$' + eaNet.toFixed(2) + '</span></div>' +
     '<div class="output-row"><span class="output-label">EA Units Needed per 1.0 Unit Revenue</span><span class="output-value">' + ratio.toFixed(2) + 'x</span></div>'
     : '<p class="muted">Set your Step 4 (Price &amp; Discount) inputs first to see Early Access prices.</p>';
 }
@@ -3348,7 +3379,7 @@ function computeReconciliation() {
     lp: lp, tier: tier, devCost: devCost, be: be,
     fwUnits: fwUnits, optUnits: optUnits, compCount: compCount,
     hrs: hrs, band: band, wl: wl, signalsFilled: signalsFilled,
-    roundWishlist: isRoundWishlist(wl),
+    roundWishlist: false, // the count is always the founder's own number now, so it is never flagged as an unverified estimate
     demoExists: demoExists, demoComplete: demoComplete, demoConv: demoConv
   });
 }
@@ -3449,15 +3480,10 @@ function deriveWishlistEstimate() {
 function updateWishlistEstimateLabel() {
   var note = document.getElementById('wishlist-estimate-note');
   if (!note) return;
-  if (isManual('wishlist-count')) { note.style.display = 'none'; note.innerHTML = ''; return; }
-  var avgReviews = getAvgCompReviews();
-  var bm = budgetMultiplier();
-  var tm = teamMultiplier();
-  var avgTxt = avgReviews > 0 ? Math.round(avgReviews).toLocaleString() : 'n/a (no Steam review data \u2192 fallback 1,200)';
-  note.className = 'estimate-note heuristic';
+  note.className = 'estimate-note';
   note.style.display = 'block';
-  note.innerHTML = '<span style="font-weight:600">Heuristic starting point \u2014 not a published benchmark.</span> Starting estimate based on your comp set. Replace with your actual tracked wishlist count.' +
-    '<details><summary>How is this estimated?</summary><span>average comp review total (' + avgTxt + ') \u00D7 budget factor (' + bm.toFixed(1) + ') \u00D7 team factor (' + tm.toFixed(1) + ')</span></details>';
+  note.innerHTML = 'Use your own number: the wishlists on your Steamworks dashboard today, plus what you realistically expect to add before launch.' +
+    '<details><summary>How can I estimate it?</summary><span>Take your current wishlist count and your average weekly additions, and multiply the weekly figure by the weeks left until launch. Add expected bumps from a demo, a festival such as Next Fest, or press, only if they are confirmed. If you have no Steam page yet, leave this empty.</span></details>';
 }
 
 function deriveFollowerEstimate() {
@@ -3611,12 +3637,14 @@ function refreshAssumptionTags() {
     ch.className = 'estimate-tag ' + (playtime > 0 ? 'benchmark' : 'heuristic');
   }
   var wl = document.getElementById('wishlist-count-tag');
-  if (wl) wl.style.display = isManual('wishlist-count') ? 'none' : 'inline';
+  if (wl) wl.style.display = 'none';
 }
 function refreshDerivedDefaults() {
   refreshAssumptionTags();
+  // The wishlist count is never pre-filled: an estimate from comp review counts
+  // was far too high for a small studio. Clear any old auto-filled value.
   if (!isManual('wishlist-count')) {
-    document.getElementById('wishlist-count').value = deriveWishlistEstimate();
+    document.getElementById('wishlist-count').value = '';
   }
   updateWishlistEstimateLabel();
   refreshCommunityDefaults();
@@ -4039,8 +4067,8 @@ function renderScenarioComparison() {
     { key: 'firstWeekUnitsCons', label: 'First-Week Units (Conservative)', dir: 'higher' },
     { key: 'firstWeekUnitsCentral', label: 'First-Week Units (Central)', dir: 'higher' },
     { key: 'firstWeekUnitsOpt', label: 'First-Week Units (Optimistic)', dir: 'higher' },
-    { key: 'netFirstWeekRevenue', label: 'Net First-Week Revenue', dir: 'higher' },
-    { key: 'breakEvenUnits', label: 'Break-Even Units', dir: 'lower' },
+    { key: 'netFirstWeekRevenue', label: 'Net First-Week Revenue (All-In)', dir: 'higher' },
+    { key: 'breakEvenUnits', label: 'Break-Even Units (All-In)', dir: 'lower' },
     { key: 'blockingCount', label: 'Blocking Issues', dir: 'lower', allowZero: true },
     { key: 'warningCount', label: 'Warning Issues', dir: 'lower', allowZero: true }
   ];
@@ -4200,16 +4228,16 @@ function buildSummary() {
     '<div class="output-row"><span class="output-label">Net Revenue per Unit (Full) <span class="output-note">' + steamOnlyNote() + '</span></span><span class="output-value">' + (lp > 0 ? '$' + netFull.toFixed(2) : '—') + '</span></div>' +
     '<div class="output-row"><span class="output-label">Steam Share Tier</span><span class="output-value">' + (devShare*100).toFixed(0) + '% to dev</span></div>' +
     '<div class="output-row"><span class="output-label">Price Floor</span><span class="output-value">' + floorPct + '% off max</span></div>' +
-    (be.devCost > 0 ? '<div class="output-row"><span class="output-label">Break-Even Units <span class="output-note">Blended ' + be.fullShare.toFixed(0) + '%/' + (100 - be.fullShare).toFixed(0) + '% split</span></span><span class="output-value">' + Math.ceil(be.blendedUnits).toLocaleString() + '</span></div>' : '') +
+    (be.devCost > 0 ? '<div class="output-row"><span class="output-label">Break-Even Units <span class="output-note">At ' + fmtMoney(be.allInNet) + ' Net per Copy, All-In</span></span><span class="output-value">' + Math.ceil(be.blendedUnits).toLocaleString() + '</span></div>' : '') +
     '</div>' +
     '<div class="card"><h3>Comps & Wishlist ' + srcLine('gdc-wishlist', '2025-06-01') + '</h3>' +
     '<div class="output-row"><span class="output-label">Comp Games Analyzed</span><span class="output-value">' + compCount + '</span></div>' +
     '<div class="output-row"><span class="output-label">Projected Wishlist Count</span><span class="output-value">' + (wishlistCount > 0 ? wishlistCount.toLocaleString() : '—') + '</span></div>' +
     (wlScenarios ? (
       '<div class="output-row"><span class="output-label">First-Week Units <span class="output-note">Conservative\u2013Optimistic</span></span><span class="output-value">' + wlScenarios.conservative.units.toLocaleString() + '\u2013' + wlScenarios.optimistic.units.toLocaleString() + '</span></div>' +
-      '<div class="output-row"><span class="output-label">First-Week Net Revenue <span class="output-note">After Steam cut</span></span><span class="output-value">' + fmtMoney(wlScenarios.conservative.revenue) + '\u2013' + fmtMoney(wlScenarios.optimistic.revenue) + '</span></div>' +
+      '<div class="output-row"><span class="output-label">First-Week Net Revenue <span class="output-note">Units \u00D7 Net per Copy, All-In</span></span><span class="output-value">' + fmtMoney(wlScenarios.conservative.revenue) + '\u2013' + fmtMoney(wlScenarios.optimistic.revenue) + '</span></div>' +
       (wlScenarios.centralCapped ? '<p class="muted" style="color:var(--coral);margin-top:8px">\u26A0 Central estimate was capped \u2014 stacked multipliers pushed it outside the 5\u201335% benchmark envelope.</p>' : '')
-    ) : '<div class="output-row"><span class="output-label">First-Week Estimate</span><span class="output-value">—</span></div>') +
+    ) : '<div class="output-row"><span class="output-label">First-Week Estimate</span><span class="output-value">Enter your wishlist count in Step 5</span></div>') +
     '</div>' +
     '<div class="card"><h3>Content-Depth Cross-Check ' + srcLine('zukowski', '2025-06-01') + '</h3>' +
     '<div class="output-row"><span class="output-label">Expected Content Hours</span><span class="output-value">' + (contentHrs > 0 ? contentHrs + ' hrs' : '—') + '</span></div>' +
@@ -4406,7 +4434,8 @@ function serialiseState() {
       hours: (tr.querySelector('.comp-hours') || {}).value || '',
       totalReviews: tr.getAttribute('data-total-reviews') || '',
       genres: (tr.querySelector('.genres-tags') || {}).textContent || '',
-      fetched: tr.getAttribute('data-fetched') === 'true'
+      fetched: tr.getAttribute('data-fetched') === 'true',
+      usd: tr.getAttribute('data-usd') === 'true'
     });
   });
 
@@ -4446,6 +4475,14 @@ function restoreState(state, restoredFrom) {
       var full = sanitiseFetchedPrice(r.full);
       var launch = r.launch || '';
       var launchFetched = false;
+      // Fetched before the US-dollar check: the stored prices may be in another
+      // currency (and the launch price may be an old auto-fill of them), so drop them.
+      var unverified = !!r.fetched && !r.usd;
+      if (unverified) {
+        var same = function (a, b) { return a !== '' && b !== '' && Math.abs(parseFloat(a) - parseFloat(b)) < 0.005; };
+        if (same(launch, r.current || '') || same(launch, r.full || '')) launch = '';
+        current = ''; full = '';
+      }
       if (r.launchFetched) {
         var sl = sanitiseFetchedPrice(r.launch);
         if (sl) { launch = sl; launchFetched = true; }
@@ -4467,6 +4504,13 @@ function restoreState(state, restoredFrom) {
         if (sb) { sb.textContent = 'Sale \u2212' + (r.discountPercent || '') + '%'; sb.style.display = 'inline-block'; }
       }
       if (r.totalReviews) tr.setAttribute('data-total-reviews', r.totalReviews);
+      if (r.usd) tr.setAttribute('data-usd', 'true');
+      if (unverified) {
+        var cpu = tr.querySelector('.comp-current'); if (cpu) cpu.textContent = 'Fetch again';
+        setLaunchNote(tr, 'This game\u2019s prices were fetched before we made sure they are in US dollars, so they were cleared. Press Fetch again, then enter the US launch price yourself.');
+      } else if (r.fetched) {
+        setLaunchNote(tr, 'Enter the US launch price yourself.');
+      }
       if (r.fetched) {
         tr.setAttribute('data-fetched', 'true');
         var badge = tr.querySelector('.steam-badge'); if (badge) badge.style.display = 'inline-block';
@@ -4624,58 +4668,196 @@ function showRestoreBanner(savedAt, lead) {
   else document.body.appendChild(banner);
 }
 
-// ---- PDF: a real file download that includes the staircase and regional table ----
-function buildPrintAppendix() {
+// ---- PDF: a real text PDF (selectable, searchable) with every Summary section and table ----
+function pdfAppendixSections() {
   try { updatePricing(); } catch (e) {}
   try { updateRegionalTable(); } catch (e) {}
+  try { updateDlcTable(); } catch (e) {}
+  var tableOf = function (bodyId) { var b = document.getElementById(bodyId); return (b && b.children.length) ? b.closest('table') : null; };
+  var mena = (document.getElementById('mena-price') || {}).textContent || '';
+  var list = [
+    { title: 'Discount Staircase', table: tableOf('staircase-body') },
+    { title: 'Regional Prices', table: tableOf('regional-body') },
+    { title: 'Middle East and North Africa (USD_MENA)', text: mena && mena.trim() !== '—' ? 'Estimated USD_MENA price (one US-dollar price for 14 countries): ' + mena.trim() : '' },
+    { title: 'Gulf States (Local Currency)', table: tableOf('gulf-body'), text: 'SAR and AED prices use the fixed dollar pegs (1 USD = 3.75 SAR = 3.6725 AED), rounded up to end in .99. Check Steam’s Pricing Explorer before you set them.' },
+    { title: 'DLC Pricing', table: tableOf('dlc-body') }
+  ];
+  return list.filter(function (x) { return x.table || x.text; });
+}
+function buildPrintAppendix() {
   var ap = document.getElementById('print-appendix');
   if (!ap) return null;
-  var stair = document.getElementById('staircase-body'), reg = document.getElementById('regional-body');
-  var html = '';
-  if (stair && stair.children.length) html += '<div class="card"><h3>Discount Staircase</h3>' + stair.closest('table').outerHTML.replace(' id="staircase-body"', '') + '</div>';
-  if (reg && reg.children.length) html += '<div class="card"><h3>Regional Prices</h3>' + reg.closest('table').outerHTML.replace(' id="regional-body"', '') + '</div>';
-  ap.innerHTML = html;
+  ap.innerHTML = pdfAppendixSections().map(function (sec) {
+    return '<div class="card"><h3>' + escapeHtml(sec.title) + '</h3>' +
+      (sec.table ? sec.table.outerHTML.replace(/ id="[a-z-]+-body"/, '') : '') +
+      (sec.text ? '<p class="muted">' + escapeHtml(sec.text) + '</p>' : '') + '</div>';
+  }).join('');
   return ap;
 }
-var html2pdfLoading = null;
-function loadHtml2Pdf() {
-  if (window.html2pdf) return Promise.resolve(window.html2pdf);
-  if (html2pdfLoading) return html2pdfLoading;
-  html2pdfLoading = new Promise(function (resolve, reject) {
-    var sc = document.createElement('script');
-    sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-    sc.onload = function () { window.html2pdf ? resolve(window.html2pdf) : reject(new Error('PDF library missing')); };
-    sc.onerror = function () { html2pdfLoading = null; reject(new Error('PDF library failed to load')); };
-    document.head.appendChild(sc);
+// Standard PDF fonts cover Latin text only: swap or drop anything else.
+function pdfText(v) {
+  return String(v == null ? '' : v)
+    .replace(/[\u{1F1E6}-\u{1F1FF}]/gu, '')
+    .replace(/→/g, '->').replace(/≥/g, '>=').replace(/≤/g, '<=').replace(/›/g, '>')
+    .replace(/[–—−]/g, '-').replace(/[‘’]/g, "'").replace(/[“”]/g, '"')
+    .replace(/•/g, '-').replace(/…/g, '...').replace(/ /g, ' ')
+    .replace(/[^\x09\x0A\x20-\x7E¡-ÿ]/g, '')
+    .replace(/[ \t]+/g, ' ').replace(/ ?\n ?/g, '\n').trim();
+}
+function pdfNodeText(el) {
+  var c = el.cloneNode(true);
+  c.querySelectorAll('.tooltip-icon, button, input, select, textarea, script, style, .ack-control, .scenario-actions').forEach(function (n) { n.remove(); });
+  var w = document.createTreeWalker(c, NodeFilter.SHOW_TEXT, null), parts = [];
+  while (w.nextNode()) parts.push(w.currentNode.nodeValue);
+  return pdfText(parts.join(' ').replace(/\s+/g, ' '));
+}
+// Turn a DOM subtree into simple blocks: headings, label/value rows, tables, paragraphs.
+function pdfBlocks(root) {
+  var out = [], rows = null;
+  var flush = function () { if (rows && rows.length) out.push({ t: 'rows', rows: rows }); rows = null; };
+  var SKIP = /^(BUTTON|INPUT|SELECT|TEXTAREA|SCRIPT|STYLE)$/;
+  (function walk(el) {
+    if (el.nodeType !== 1 || SKIP.test(el.tagName)) return;
+    if (el.classList.contains('ack-control') || el.classList.contains('scenario-actions') || el.classList.contains('tooltip-icon')) return;
+    if (/^H[1-6]$/.test(el.tagName)) {
+      flush();
+      // A source line inside a heading ("... verified 2026-03-15") goes on its own small line.
+      var hc = el.cloneNode(true), src = Array.prototype.map.call(hc.querySelectorAll('.output-note'), function (n) { return pdfNodeText(n); }).join(' ');
+      hc.querySelectorAll('.output-note, .badge').forEach(function (n) { n.remove(); });
+      out.push({ t: 'h', level: +el.tagName.charAt(1), text: pdfNodeText(hc) });
+      if (src) out.push({ t: 'p', text: 'Source: ' + src, small: true });
+      return;
+    }
+    // A list of "label  value" lines (such as the net-per-copy steps) stays together as rows.
+    if ((el.tagName === 'OL' || el.tagName === 'UL') && el.children.length && Array.prototype.every.call(el.children, function (li) { return li.children.length === 2; })) {
+      flush();
+      out.push({ t: 'rows', keep: true, rows: Array.prototype.map.call(el.children, function (li) { return ['   ' + pdfNodeText(li.children[0]), pdfNodeText(li.children[1])]; }) });
+      return;
+    }
+    if (el.classList.contains('output-row')) {
+      var lab = el.querySelector('.output-label'), val = el.querySelector('.output-value'), note = '';
+      var labText = '';
+      if (lab) {
+        var lc = lab.cloneNode(true);
+        note = Array.prototype.map.call(lc.querySelectorAll('.output-note'), function (n) { return pdfNodeText(n); }).join(' ');
+        lc.querySelectorAll('.output-note').forEach(function (n) { n.remove(); });
+        labText = pdfNodeText(lc);
+      }
+      (rows = rows || []).push([labText + (note ? '\n' + note : ''), val ? pdfNodeText(val) : '']);
+      return;
+    }
+    if (el.tagName === 'TABLE') {
+      flush();
+      var head = Array.prototype.map.call(el.querySelectorAll('thead th'), function (th) { return pdfNodeText(th); });
+      var body = Array.prototype.map.call(el.querySelectorAll('tbody tr'), function (tr) {
+        return Array.prototype.map.call(tr.children, function (td) { return pdfNodeText(td); });
+      }).filter(function (r) { return r.length; });
+      if (body.length) out.push({ t: 'table', head: head, body: body });
+      return;
+    }
+    if (!el.querySelector('div, p, table, ul, ol, h1, h2, h3, h4, h5, li, details, section')) {
+      var tx = pdfNodeText(el);
+      if (tx) { flush(); out.push({ t: 'p', text: (el.tagName === 'LI' ? '- ' : '') + tx }); }
+      return;
+    }
+    Array.prototype.forEach.call(el.childNodes, function (n) {
+      if (n.nodeType === 3) { var t = pdfText(n.nodeValue); if (t) { flush(); out.push({ t: 'p', text: t }); } }
+      else walk(n);
+    });
+  })(root);
+  flush();
+  return out;
+}
+var pdfLibsLoading = null;
+function loadPdfLibs() {
+  if (window.jspdf && window.jspdf.jsPDF && window.jspdf.jsPDF.API.autoTable) return Promise.resolve();
+  if (pdfLibsLoading) return pdfLibsLoading;
+  var load = function (src) {
+    return new Promise(function (resolve, reject) {
+      var sc = document.createElement('script'); sc.src = src;
+      sc.onload = resolve; sc.onerror = function () { reject(new Error('PDF library failed to load')); };
+      document.head.appendChild(sc);
+    });
+  };
+  pdfLibsLoading = load('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js')
+    .then(function () { return load('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js'); })
+    .then(function () { if (!(window.jspdf && window.jspdf.jsPDF && window.jspdf.jsPDF.API.autoTable)) throw new Error('PDF library missing'); })
+    .catch(function (e) { pdfLibsLoading = null; throw e; });
+  return pdfLibsLoading;
+}
+// Builds the document. Returns the jsPDF object (also used by the self-checks).
+function buildPdfDoc() {
+  try { buildSummary(); } catch (e) {}
+  var doc = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4', compress: false });
+  var M = 14, W = 210 - 2 * M, BOTTOM = 297 - 16, y = 18;
+  var ensure = function (h) { if (y + h > BOTTOM) { doc.addPage(); y = 18; } };
+  var para = function (text, size, style, color) {
+    doc.setFont('helvetica', style || 'normal'); doc.setFontSize(size); doc.setTextColor.apply(doc, color || [40, 36, 28]);
+    var lh = size * 0.42;
+    doc.splitTextToSize(text, W).forEach(function (line) { ensure(lh); doc.text(line, M, y); y += lh; });
+    y += 1.2;
+  };
+  var draw = function (blocks) {
+    blocks.forEach(function (b) {
+      if (b.t === 'h') { if (!b.text) return; ensure(24); y += 2; para(b.text, b.level <= 2 ? 15 : (b.level === 3 ? 12 : 10.5), 'bold', [120, 52, 24]); }
+      else if (b.t === 'p') para(b.text, b.small ? 8 : 9.5, 'normal', b.small ? [120, 112, 96] : null);
+      else if (b.t === 'rows') {
+        doc.autoTable({ startY: y, body: b.rows, theme: 'plain', margin: { left: M, right: M, top: 18, bottom: 16 }, rowPageBreak: 'avoid', pageBreak: b.keep ? 'avoid' : 'auto',
+          styles: { font: 'helvetica', fontSize: 9, cellPadding: { top: 1.1, bottom: 1.1, left: 0, right: 0 }, overflow: 'linebreak', textColor: [40, 36, 28], lineColor: [215, 205, 185], lineWidth: { bottom: 0.1 } },
+          columnStyles: { 0: { cellWidth: W * 0.62 }, 1: { cellWidth: W * 0.38, halign: 'right', fontStyle: 'bold' } } });
+        y = doc.lastAutoTable.finalY + 3;
+      } else if (b.t === 'table') {
+        // Keep a table whole when it fits on one page; never split a row.
+        doc.autoTable({ startY: y, head: b.head.length ? [b.head] : undefined, body: b.body, theme: 'grid', margin: { left: M, right: M, top: 18, bottom: 16 },
+          pageBreak: 'avoid', rowPageBreak: 'avoid',
+          styles: { font: 'helvetica', fontSize: 8, cellPadding: 1.4, overflow: 'linebreak', textColor: [40, 36, 28], lineColor: [200, 190, 170], lineWidth: 0.1 },
+          headStyles: { fillColor: [48, 77, 79], textColor: [251, 241, 220], fontStyle: 'bold' } });
+        y = doc.lastAutoTable.finalY + 4;
+      }
+    });
+  };
+  var name = (AppState.gameProfile && AppState.gameProfile.name) || '';
+  para('Pricing Summary' + (name ? ': ' + pdfText(name) : ''), 18, 'bold', [120, 52, 24]);
+  y += 2;
+  // One section per Summary card, then the tables that live on other steps.
+  var sections = Array.prototype.slice.call(document.getElementById('summary-content').children);
+  var names = [];
+  sections.forEach(function (sec) {
+    var blocks = pdfBlocks(sec);
+    if (!blocks.length) return;
+    ensure(30); y += 2;
+    var h = blocks.filter(function (b) { return b.t === 'h'; })[0]; if (h) names.push(h.text);
+    draw(blocks);
   });
-  return html2pdfLoading;
+  pdfAppendixSections().forEach(function (sec) {
+    var blocks = [{ t: 'h', level: 3, text: pdfText(sec.title) }];
+    if (sec.table) blocks = blocks.concat(pdfBlocks(sec.table));
+    if (sec.text) blocks.push({ t: 'p', text: pdfText(sec.text) });
+    ensure(40); y += 2;
+    names.push(pdfText(sec.title));
+    draw(blocks);
+  });
+  var pages = doc.getNumberOfPages();
+  for (var i = 1; i <= pages; i++) {
+    doc.setPage(i); doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(120, 112, 96);
+    doc.text('Game OS Pricing Calculator' + (name ? ' - ' + pdfText(name) : ''), M, 297 - 8);
+    doc.text('Page ' + i + ' of ' + pages, 210 - M, 297 - 8, { align: 'right' });
+  }
+  doc.__sections = names;
+  return doc;
 }
 function downloadPdf() {
   var btn = document.getElementById('pdf-btn');
-  try { buildSummary(); } catch (e) {}
-  buildPrintAppendix();
   var d = new Date();
   var filename = 'pricing-' + gameSlug() + '-' + d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) + '.pdf';
-  var wrap = document.createElement('div');
-  wrap.className = 'pdf-export';
-  wrap.innerHTML = '<h2 style="margin:0 0 12px">Pricing Summary' + (AppState.gameProfile && AppState.gameProfile.name ? ': ' + escapeHtml(AppState.gameProfile.name) : '') + '</h2>' +
-    document.getElementById('summary-content').innerHTML +
-    document.getElementById('print-appendix').innerHTML;
-  wrap.querySelectorAll('button, .ack-control, .scenario-actions, input[type=file]').forEach(function (n) { n.remove(); });
-  if (btn) { btn.disabled = true; btn.textContent = 'Making PDF\u2026'; }
+  if (btn) { btn.disabled = true; btn.textContent = 'Making PDF…'; }
   var done = function () { if (btn) { btn.disabled = false; btn.textContent = 'Download PDF'; } };
-  loadHtml2Pdf().then(function (h2p) {
-    return h2p().set({
-      margin: [10, 10, 12, 10],
-      filename: filename,
-      image: { type: 'jpeg', quality: 0.95 },
-      html2canvas: { scale: 2, backgroundColor: '#ffffff', useCORS: true },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-      pagebreak: { mode: ['css', 'legacy'], avoid: ['.card', 'tr', '.output-row'] }
-    }).from(wrap).save();
-  }).then(done, function () {
+  return loadPdfLibs().then(function () { buildPdfDoc().save(filename); }).then(done, function () {
     done();
-    // Library couldn't load (offline or blocked): fall back to the print dialog.
+    // Library couldn't load (offline or blocked): fall back to the print dialog,
+    // which also includes every table through the print appendix.
+    try { buildSummary(); } catch (e) {}
+    buildPrintAppendix();
     setTimeout(function () { window.print(); }, 100);
   });
 }
@@ -4970,7 +5152,7 @@ function loadDemoData() {
   updatePricing();
 
   // Wishlist + community
-  var wl = document.getElementById('wishlist-count'); if (wl) wl.value = '18240';
+  var wl = document.getElementById('wishlist-count'); if (wl) { wl.value = '18240'; markManual('wishlist-count'); }
   var followers = document.getElementById('follower-count'); if (followers) followers.value = '1500';
   var discord = document.getElementById('discord-activity'); if (discord) discord.value = 'high';
   var source = document.getElementById('wishlist-source'); if (source) source.value = 'organic';
@@ -5009,6 +5191,11 @@ function runSelfTest() {
   t('getTier(2.0) -> idx 0', PricingModel.getTier(2.0).idx === 0);
   t('getTier(1.99) -> idx 0', PricingModel.getTier(1.99).idx === 0);
   t('getTier(2.01) -> idx 1', PricingModel.getTier(2.01).idx === 1);
+  var cad = PricingModel.normaliseSteamPrice({ currency: 'CAD', initial: 3199, final: 3199, discount_percent: 0 });
+  t('CAD price is rejected, never shown as dollars', cad.nonUsd === true && cad.currentPrice === null && cad.initialPrice === null);
+  var usdp = PricingModel.normaliseSteamPrice({ currency: 'USD', initial: 2499, final: 2499, discount_percent: 0 });
+  t('USD price is accepted', usdp.nonUsd === false && usdp.currentPrice === 24.99);
+  t('missing currency is rejected', PricingModel.normaliseSteamPrice({ initial: 999, final: 999 }).nonUsd === true);
   t('getTier(3.0) -> idx 1', PricingModel.getTier(3.0).idx === 1);
   t('getTier(3.01) -> idx 2', PricingModel.getTier(3.01).idx === 2);
   t('getTier(3.75) -> idx 2', PricingModel.getTier(3.75).idx === 2);
@@ -5117,12 +5304,12 @@ function runSelfTest() {
   t('every grid entry snaps to itself in both directions', selfSnap);
 
   // Steam price normalisation: cents -> dollars, discount untouched
-  var steamNorm = PricingModel.normaliseSteamPrice({ final: 559, initial: 1999, discount_percent: 72 });
+  var steamNorm = PricingModel.normaliseSteamPrice({ currency: 'USD', final: 559, initial: 1999, discount_percent: 72 });
   t('steam price final 559 -> 5.59', Math.abs(steamNorm.currentPrice - 5.59) < 1e-9);
   t('steam price initial 1999 -> 19.99', Math.abs(steamNorm.initialPrice - 19.99) < 1e-9);
   t('steam price discount_percent 72 -> 72 (not divided)', steamNorm.discountPercent === 72);
   // Plausibility guard: absurd price rejected, field left manual
-  var steamBad = PricingModel.normaliseSteamPrice({ final: 55900, initial: 1999, discount_percent: 72 });
+  var steamBad = PricingModel.normaliseSteamPrice({ currency: 'USD', final: 55900, initial: 1999, discount_percent: 72 });
   t('steam price guard rejects >$200', steamBad.priceRejected === true && steamBad.currentPrice === null);
   t('steam price guard keeps valid initial when final absurd', steamBad.initialPrice === 19.99);
 
@@ -5284,7 +5471,7 @@ if (location.search && location.search.indexOf('selftest=1') !== -1) { runSelfTe
       ];
       if (m.firstWeekUnitsCentral > 0) list.push({ key: 'week1_units', label: 'Week 1 units (central)', value: m.firstWeekUnitsCentral, unit: 'units',
         meta: { conservative: m.firstWeekUnitsCons, optimistic: m.firstWeekUnitsOpt } });
-      if (m.netFirstWeekRevenue > 0) list.push({ key: 'week1_net_revenue', label: 'Week 1 net revenue', value: m.netFirstWeekRevenue, unit: 'usd' });
+      if (m.netFirstWeekRevenue > 0) list.push({ key: 'week1_net_revenue', label: 'Week 1 net revenue (all-in)', value: m.netFirstWeekRevenue, unit: 'usd' });
       if (m.breakEvenUnits > 0) list.push({ key: 'break_even_units', label: 'Break-even units', value: m.breakEvenUnits, unit: 'units' });
 
       var btn = document.getElementById('send-thesis-btn');

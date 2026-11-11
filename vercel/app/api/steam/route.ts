@@ -34,7 +34,9 @@ export async function GET(request: NextRequest) {
   const steamUrl =
     type === "reviews"
       ? `https://store.steampowered.com/appreviews/${encodeURIComponent(appid)}?json=1`
-      : `https://store.steampowered.com/api/appdetails?appids=${encodeURIComponent(appid)}`;
+      : // Always ask for the US store in US dollars. Without cc, Steam prices by
+        // the server's location, which returned CAD for some games.
+        `https://store.steampowered.com/api/appdetails?appids=${encodeURIComponent(appid)}&cc=us&l=english`;
 
   // Steam's review endpoint often redirects automated requests to its home
   // page. Reviews are optional for callers, so answer that case with a clear
