@@ -251,6 +251,17 @@ async function main() {
       ('seismic', 'Seismic', '/seismic', 'public', '1', 4, 'cxo'),
       ('steam-page-audit', 'Steam Page Audit', '/game-os/steam-page-audit', 'public', '1', 10, 'tools')
     ON CONFLICT (id) DO NOTHING`,
+    // Mobile Calculator: its own tool, beside the Steam pricing calculator.
+    `INSERT INTO "app" (id, name, path, access, version, "sortOrder", "group") VALUES
+      ('mobile-calc', 'Mobile Calculator', '/game-os/mobile-calc', 'authenticated', '1', 5, 'cxo')
+    ON CONFLICT (id) DO NOTHING`,
+    `UPDATE "app" SET
+       "toolName"='Mobile Calculator', "cxoQuestion"='Does an install pay for itself?',
+       "description"='Unit economics and funding runway for a mobile game: lifetime value per install, the cost per install you can afford, payback, and how long the round lasts in a stress, base and upside case.',
+       "status"='nodata', "statusLabel"='No data',
+       "metrics"='[{"label":"LTV per install","value":"—"},{"label":"Max CPI at target","value":"—"},{"label":"Runway","value":"—"}]',
+       "spark"='{"type":"line","values":[0.10,0.30,0.41,0.49,0.55,0.61,0.66,0.70]}'
+     WHERE id='mobile-calc'`,
     // Seismic's tools + shared objects, surfaced as Game OS widgets.
     `INSERT INTO "app" (id, name, path, access, version, "sortOrder", "group", "anchor", "stage") VALUES
       ('market-scope',        'Market Scope',        '/seismic', 'public', '1', 11, 'tools', '?tool=market-scope',     'Concept'),

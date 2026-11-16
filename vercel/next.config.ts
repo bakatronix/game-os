@@ -38,6 +38,8 @@ const nextConfig: NextConfig = {
       { source: "/game-os/", destination: "/game-os/index.html" },
       { source: "/game-os/price-calc", destination: "/game-os/price-calc/index.html" },
       { source: "/game-os/price-calc/", destination: "/game-os/price-calc/index.html" },
+      { source: "/game-os/mobile-calc", destination: "/game-os/mobile-calc/index.html" },
+      { source: "/game-os/mobile-calc/", destination: "/game-os/mobile-calc/index.html" },
       { source: "/game-os/chicken-brulee", destination: "/game-os/chicken-brulee/index.html" },
       { source: "/game-os/chicken-brulee/", destination: "/game-os/chicken-brulee/index.html" },
       { source: "/game-os/PMF", destination: "/game-os/PMF/index.html" },
