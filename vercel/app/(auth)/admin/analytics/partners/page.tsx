@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { getDb } from "@/db";
 import { sql } from "drizzle-orm";
 import GosShell from "@/components/GosShell";
+import { assertPlatformAdmin, requirePlatformAdmin } from "@/lib/admin";
 import {
   getPartners,
   createPartner,
@@ -20,8 +21,7 @@ type PartnerRow = Awaited<ReturnType<typeof getPartners>>[number] & {
 };
 
 export default async function PartnersPage() {
-  const session = await auth();
-  if (!session?.user) redirect("/login?callbackUrl=/admin/analytics/partners");
+  const session = await requirePlatformAdmin("/admin/analytics/partners");
 
   const partners = await getPartners();
   const db = getDb();
@@ -51,7 +51,7 @@ export default async function PartnersPage() {
   const dormantCount = rows.filter((r) => r.dormant).length;
 
   return (
-    <GosShell title="Analytics" active="admin" subnav="partners">
+    <GosShell title="Analytics" active="analytics" subnav="partners">
       <div className="gos-card">
         <h2>Partner board</h2>
         <p className="gos-muted" style={{ marginTop: -4 }}>
@@ -83,6 +83,7 @@ export default async function PartnersPage() {
                 <form
                   action={async (fd: FormData) => {
                     "use server";
+            await assertPlatformAdmin();
                     await updatePartner(String(fd.get("id")), {
                       status: String(fd.get("status")),
                       quotePermission: String(fd.get("quote")),
@@ -106,6 +107,7 @@ export default async function PartnersPage() {
                 <form
                   action={async (fd: FormData) => {
                     "use server";
+            await assertPlatformAdmin();
                     await deletePartner(String(fd.get("id")));
                     revalidatePath("/admin/analytics/partners");
                   }}
@@ -124,6 +126,7 @@ export default async function PartnersPage() {
         <form
           action={async (fd: FormData) => {
             "use server";
+            await assertPlatformAdmin();
             const studioName = String(fd.get("studioName") || "").trim();
             if (studioName) {
               await createPartner({
