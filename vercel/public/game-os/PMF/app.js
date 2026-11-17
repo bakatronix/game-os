@@ -225,7 +225,8 @@
         ". " + (r.peerPct >= 99.5 ? "No peer has as many reviews" : "This game has more reviews than " + Math.round(r.peerPct) + "% of them") + " (peer median: " + num(r.peerMedian) + ")." +
         (P.truncated ? " Steam listed more peers than we read, so the oldest are missing." : "") + "</p><div id=\"ch-peers\"></div>" +
         '<div class="legend"><span><i style="background:var(--slate);opacity:.4;border-radius:50%"></i>Peer game</span><span><i style="background:var(--orange);border-radius:50%"></i>' + esc(D.name) + "</span></div>";
-    } else if (peersState === "ok") h += '<p class="note">Too few peers (' + ((P && P.rows.length) || 0) + ") to compare, so Reach uses a fixed scale.</p>";
+    } else if (peersState === "ok" && P && P.truncated) h += '<p class="note">Steam lists too many newer games tagged ' + esc(tagNames) + " to reach back to this game&rsquo;s release, so Reach uses a fixed scale instead.</p>";
+    else if (peersState === "ok") h += '<p class="note">Too few peers (' + ((P && P.rows.length) || 0) + ") to compare, so Reach uses a fixed scale.</p>";
     return '<section class="card">' + h + "</section>";
   }
 
