@@ -23,7 +23,7 @@ connection to the spine.
 
 | Stage | Tool | Folder (`vercel/public/game-os/…`) | Status |
 |---|---|---|---|
-| Validate | Market Scope | `market-scope/` | **Being rebuilt right now on live Steam data. Don't start on it without checking in.** |
+| Validate | Market Scope | `market-scope/` | **Done and live.** Real Steam data, saves work, sends comps to the thesis and figures to the game. Use it as the pattern for the others. |
 | | Audience Map | `audience-map/` | Demo shell |
 | Store page | Page Engine | `page-engine/` | Demo shell |
 | | Test Loop | `test-loop/` | Demo shell |
