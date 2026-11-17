@@ -591,6 +591,42 @@
         label: o ? 'Live' : 'No data yet'
       };
     },
+    'market-scope': function (G) {
+      var m = sig('market_median_revenue');
+      var h = sig('market_hit_rate');
+      var r = sig('market_releases_last_year');
+      function short(v) {
+        if (v == null) return '\u2014';
+        return v >= 1e6 ? '$' + (v / 1e6).toFixed(1).replace(/\.0$/, '') + 'M' : v >= 1e3 ? '$' + Math.round(v / 1e3) + 'K' : '$' + Math.round(v);
+      }
+      return {
+        metrics: [
+          { label: 'Median revenue', value: m ? short(m.value) : '\u2014' },
+          { label: 'Over $100K', value: h && h.value != null ? (Math.round(h.value * 10) / 10) + '%' : '\u2014' },
+          { label: 'Releases a year', value: r && r.value != null ? Math.round(r.value).toLocaleString() : '\u2014' }
+        ],
+        spark: sigSpark('market_median_revenue'),
+        kind: m ? 'healthy' : 'demo',
+        label: m ? 'Live' : 'No data yet'
+      };
+    },
+    'mobile-calc': function (G) {
+      var l = sig('mobile_ltv_per_install');
+      var c = sig('mobile_max_cpi_target');
+      var rw = sig('mobile_runway_months');
+      var ratio = sig('mobile_ltv_cpi_ratio');
+      var target = ratio && ratio.meta && ratio.meta.target;
+      return {
+        metrics: [
+          { label: 'LTV per install', value: l ? sigVal('mobile_ltv_per_install') : '\u2014' },
+          { label: 'Max CPI at target', value: c ? sigVal('mobile_max_cpi_target') : '\u2014' },
+          { label: 'Runway', value: rw && rw.value != null ? Math.round(rw.value) + ' months' : '\u2014' }
+        ],
+        spark: sigSpark('mobile_ltv_per_install'),
+        kind: !l ? 'demo' : ratio && target && ratio.value < target ? 'watch' : 'healthy',
+        label: l ? 'Live' : 'No data yet'
+      };
+    },
     'thesis-builder': thesisTile,
     'thesis-view': thesisTile,
     'ledger-view': function (G) {
@@ -633,7 +669,7 @@
      out and marked "Under construction", but still open for a preview.
      Remove an id once that tool reads and writes the game spine. */
   var UNDER_CONSTRUCTION = {
-    'seismic': 1, 'market-scope': 1, 'audience-map': 1, 'page-engine': 1,
+    'seismic': 1, 'audience-map': 1, 'page-engine': 1,
     'community-scaffold': 1, 'test-loop': 1, 'festival-radar': 1,
     'playtest-pipeline': 1, 'creator-match': 1, 'sentiment-radar': 1,
     'demo-command': 1, 'window-planner': 1, 'launch-runbook': 1,

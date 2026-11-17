@@ -377,7 +377,9 @@ async function main() {
     // Market Scope is now a standalone Game OS widget (not a Seismic deep-link).
     `UPDATE "app" SET path='/game-os/market-scope', anchor=NULL WHERE id='market-scope'`,
     // Market Scope now reads live Steam releases; drop the demo tile numbers.
+    // It is a working tool, so it sits in the top row with the other real tools.
     `UPDATE "app" SET
+       "group"='cxo', "sortOrder"=6, "stage"=NULL, "toolName"='Market Scope',
        "description"='Size a Steam market from real releases: what games under your tags earn, whether the space is getting crowded, which added tag is an opening, and which games to use as comps.',
        "status"='nodata', "statusLabel"='No data',
        "metrics"='[{"label":"Median revenue","value":"—"},{"label":"Over $100K","value":"—"},{"label":"Releases a year","value":"—"}]'
