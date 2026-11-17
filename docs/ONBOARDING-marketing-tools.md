@@ -49,18 +49,42 @@ connection to the spine.
 
 ---
 
-## 2. Getting access (the owner does this)
+## 2. Getting access: logins and passwords
 
-1. **GitHub:** add the person as a collaborator on `bakatronix/game-os` with
-   Write access.
-2. **Vercel:** invite them to the team that owns the `game-os` project, so
-   that `npx vercel` and `vercel env pull` work for them.
-3. **Sign-in:** they sign in once at `llamagriffin.com/game-os` with Google
-   or Discord so they have an account. Admin pages (`/admin`) need an admin
-   role on top of that.
+**Nobody sends anyone a password.** Each person uses their own accounts, and
+the owner grants access to them.
 
-Never send keys by chat or email. Everything they need comes through
-`vercel env pull` (see below).
+| What | Who provides it | Needed for |
+|---|---|---|
+| GitHub account | The collaborator's own | Reading the code, branches, pull requests |
+| Collaborator access to `bakatronix/game-os` (Write) | The owner invites their GitHub username | Pushing branches and opening PRs |
+| Google or Discord account | The collaborator's own | Signing in at `llamagriffin.com/game-os` to try the live tools |
+| Vercel team membership | The owner invites them (may add a paid seat) | Only for running the full app locally and deploying (level 2 below) |
+
+There are two levels of access. **Start at level 1.**
+
+**Level 1: code only (recommended to start).** GitHub Write access, plus
+their own Game OS sign-in. They build tool pages and API routes that need no
+keys (Steam's store search needs none), run the static pages locally, and
+open pull requests into `game-spine`. The owner reviews, merges and deploys.
+They never hold a production secret.
+
+**Level 2: full app and deploys.** Add them to the Vercel team. Then
+`vercel env pull` gives them, in `.env.local`:
+
+- the **production database** username and password (Neon), so they can read
+  and change every user's data;
+- `AUTH_SECRET`, which can create a valid sign-in for **any** user, the owner
+  included;
+- the Google and Discord sign-in secrets.
+
+Vercel members can also deploy to production and change environment
+variables. Give level 2 only to someone you would trust with the whole
+production system. Cloudflare, Namecheap and DNS keys are not on Vercel, so
+level 2 does not include them.
+
+Whatever the level: never send keys by chat or email, and never paste them
+into a file in the repo.
 
 ---
 
@@ -145,8 +169,12 @@ you change a file, or users keep the old one.
 5. Add the game bar, saved state, and a "Send to game" action that calls
    `recordSignals` and/or `saveThesis`.
 6. Check it at phone width (375px) and desktop width.
-7. If the dashboard tile text should change, update it in `scripts/migrate.ts`
-   (see below).
+7. Put the tile on the dashboard properly: take the tool's id out of
+   `UNDER_CONSTRUCTION` in `public/game-os/assets/app.js` (otherwise the tile
+   stays greyed out), add a `LIVE_TILES` entry there that reads your signals,
+   and bump `assets/app.js?v=` in `public/game-os/index.html`. In
+   `scripts/migrate.ts`, update the tile text and move it to the top row
+   (`"group"='cxo'`). Market Scope's entries show all of this.
 
 ### Adding a brand-new tool (three places)
 
@@ -165,6 +193,7 @@ tool list in `app/(auth)/admin/analytics/people/page.tsx`.
 ```bash
 cd vercel
 npm install
+# Level 2 only (needs Vercel team access):
 npx vercel link            # pick the existing game-os project
 npx vercel env pull .env.local
 npm run dev                # http://localhost:3000/game-os
@@ -177,12 +206,19 @@ so treat it like a password.
   `python3 -m http.server 8731 --directory vercel/public`, then open
   `http://localhost:8731/game-os/<tool>/`. Sign-in, the spine and `/api/*`
   won't work that way.
-- **Signing in locally:** Google and Discord sign-in only work on the real
-  domain. For local runs, set `ENABLE_TEST_AUTH=true` and
+- **Signing in locally (level 2 only):** Google and Discord sign-in only work
+  on the real domain. For local runs, set `ENABLE_TEST_AUTH=true` and
   `AUTH_URL=http://localhost:3000` in `.env.local`. That turns on a test
-  sign-in provider (`/api/test-idp`) that points at your machine. Never set
-  `ENABLE_TEST_AUTH` in production. If local sign-in still fails, ask the
-  owner before changing any auth settings.
+  sign-in provider (`/api/test-idp`) that points at your machine. Because
+  `.env.local` points at the production database, a test sign-in creates a
+  real user there. Never set `ENABLE_TEST_AUTH` in production. If local
+  sign-in still fails, ask the owner before changing any auth settings.
+- **Level 1 (no `.env.local`):** serve the static pages as above. To test a
+  keyless API route, `npm run dev` and open the route directly, e.g.
+  `http://localhost:3000/api/market-scope?list=tags`. Pages under `/game-os`
+  will send you to a sign-in that can't work locally; that's expected. If the
+  dev server won't start without `.env.local`, ask the owner rather than
+  borrowing their file.
 - **Tests:** `npm test`, and `npm run test:browser` (Playwright).
 
 ---
