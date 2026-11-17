@@ -377,6 +377,12 @@ async function main() {
     // Market Scope is now a standalone Game OS widget (not a Seismic deep-link).
     `UPDATE "app" SET path='/game-os/market-scope', anchor=NULL WHERE id='market-scope'`,
     // Market Scope now reads live Steam releases; drop the demo tile numbers.
+    // PMF Analyzer rebuilt as a Game OS tool on Steam's working endpoints.
+    `UPDATE "app" SET
+       "toolName"='PMF Analyzer',
+       "description"='Is a Steam game finding its market? Satisfaction, engagement and reach scored against similar games, with its trailer, screenshots, review history and what to do next.',
+       "metrics"='[{"label":"Satisfaction","value":"—"},{"label":"Engagement","value":"—"},{"label":"Reach","value":"—"}]'
+     WHERE id='pmf'`,
     // It is a working tool, so it sits in the top row with the other real tools.
     `UPDATE "app" SET
        "group"='cxo', "sortOrder"=6, "stage"=NULL, "toolName"='Market Scope',

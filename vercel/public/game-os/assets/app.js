@@ -591,6 +591,22 @@
         label: o ? 'Live' : 'No data yet'
       };
     },
+    'pmf': function (G) {
+      var sat = sig('pmf_satisfaction'), eng = sig('pmf_engagement'), rea = sig('pmf_reach');
+      function sc(s) { return s && s.value != null ? Math.round(s.value) + '/100' : '\u2014'; }
+      var low = [sat, eng, rea].filter(function (s) { return s && s.value != null; }).map(function (s) { return s.value; });
+      var min = low.length ? Math.min.apply(null, low) : null;
+      return {
+        metrics: [
+          { label: 'Satisfaction', value: sc(sat) },
+          { label: 'Engagement', value: sc(eng) },
+          { label: 'Reach', value: sc(rea) }
+        ],
+        spark: sigSpark('pmf_satisfaction'),
+        kind: min == null ? 'demo' : min >= 60 ? 'healthy' : min >= 40 ? 'watch' : 'concern',
+        label: min == null ? 'No data yet' : 'Live'
+      };
+    },
     'market-scope': function (G) {
       var m = sig('market_median_revenue');
       var h = sig('market_hit_rate');
