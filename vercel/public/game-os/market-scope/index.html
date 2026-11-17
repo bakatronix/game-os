@@ -1,28 +1,85 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Market Scope — Game OS</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Source+Sans+3:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/game-os/toolkit/tokens.css">
-  <link rel="stylesheet" href="/game-os/toolkit/components.css">
-  <link rel="stylesheet" href="/game-os/market-scope/market-scope.css">
-  <script src="/track.js" data-tool="market-scope" data-version="2"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Market Scope — Game OS</title>
+<meta name="description" content="Size a Steam market from real releases: what games under your tags earn, whether the space is getting crowded, which added tag is an opening, and which games to use as comps.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/game-os/toolkit/tokens.css">
+<link rel="stylesheet" href="/game-os/market-scope/styles.css?v=3">
+<script src="/track.js" data-tool="market-scope" data-version="3"></script>
+<script src="/game-os/toolkit/spine.js?v=2"></script>
 </head>
 <body>
-  <div class="ms-app">
-    <header class="ms-header">
-      <a class="ms-brand" href="/game-os">Game OS</a>
-      <span class="ss-badge demo">Demo data</span>
-    </header>
 
-    <main class="ms-main" id="widget-root"></main>
+<header class="top">
+  <div class="container">
+    <div class="gos-topbar">
+      <a class="gos-brand" href="/game-os" aria-label="Game OS home"><img src="/game-os/assets/logo.svg?v=6" alt="Game OS"></a>
+      <a class="gos-back" href="/game-os">&larr; Back to dashboard</a>
+    </div>
+    <div class="title-row">
+      <h1><span class="kicker">Stage 1 &middot; Concept</span>Market Scope</h1>
+      <div class="toolbar">
+        <button class="btn-small" id="btn-print" type="button">Print / PDF</button>
+        <button class="btn-small" id="btn-clear" type="button">Clear</button>
+      </div>
+    </div>
+    <p class="lead">Does an audience exist for your game, and does it pay? Pick the Steam tags that describe your game and this sizes the space from every game released under them in the last three years.</p>
   </div>
-  <script src="/game-os/toolkit/data.js"></script>
-  <script src="/game-os/market-scope/render.js"></script>
-  <script>window.msRender();</script>
+</header>
+
+<main>
+  <div class="container">
+    <div id="gameBar"></div>
+
+    <section class="card accent" id="picker">
+      <h3>Your space</h3>
+      <p class="note">Two or three tags work best: your genre plus what makes it different. Steam counts a game only if it has <b>all</b> the tags you pick.</p>
+      <div class="chips" id="chips"></div>
+      <div class="tag-search">
+        <div class="inwrap"><input id="tag-q" type="text" autocomplete="off" placeholder="Search Steam tags, e.g. roguelike" aria-label="Search Steam tags" aria-controls="tag-list" aria-expanded="false" role="combobox"></div>
+        <ul class="tag-list" id="tag-list" role="listbox" hidden></ul>
+      </div>
+      <div class="picker-foot">
+        <button class="btn" id="btn-run" type="button">Size this market</button>
+        <span class="feedback" id="run-msg" role="status"></span>
+      </div>
+      <details class="more">
+        <summary>Estimate assumptions</summary>
+        <div class="assume">
+          <label class="field-inline"><span class="name">Copies sold per review</span>
+            <span class="inwrap"><input id="a-mult" type="number" min="5" max="100" step="1"><span class="affix">&times;</span></span>
+            <span class="help">Steam doesn&rsquo;t publish sales. A common rule of thumb is 20&ndash;60 copies per review; 30 is a middle value for recent indie games.</span></label>
+          <label class="field-inline"><span class="name">Average price paid</span>
+            <span class="inwrap"><input id="a-share" type="number" min="10" max="100" step="1"><span class="affix">% of list</span></span>
+            <span class="help">Most copies sell in discounts and regional pricing. 65% of the US list price is a typical blend.</span></label>
+        </div>
+      </details>
+    </section>
+
+    <div id="out"></div>
+
+    <section class="card" id="about">
+      <h3>How the numbers are made</h3>
+      <ul class="plain">
+        <li><b>Source:</b> Steam&rsquo;s store search, newest releases first, US store. Only full games (no DLC, soundtracks or bundles).</li>
+        <li><b>Revenue estimate:</b> reviews &times; copies per review &times; US list price &times; average price paid. It is <b>gross</b>: before Steam&rsquo;s cut (30%, falling to 25% and 20% above US$10M and US$50M), refunds, VAT and any publisher share.</li>
+        <li>Games with fewer than 10 reviews show no review count on Steam; they are counted as 5 reviews. Free-to-play games are counted as releases but have no revenue estimate.</li>
+        <li><b>Revenue spread</b> uses paid games released 6 to 36 months ago, so new releases that haven&rsquo;t had time to sell don&rsquo;t drag it down.</li>
+        <li><b>Crowding</b> counts every release. The last two quarters are still maturing: their revenue will grow.</li>
+        <li><b>Tag-pair gaps</b> use the top tags Steam shows for each game in your results (about seven per game), so smaller tags are undercounted. Groups of fewer than five games are left out; treat small groups as leads to check, not proof.</li>
+        <li>Reviews per copy differ by genre, price and audience. Use these figures to compare spaces with each other, not as a forecast for your game.</li>
+      </ul>
+    </section>
+  </div>
+</main>
+
+<div class="chart-tip" id="chart-tip" role="tooltip"></div>
+
+<script src="/game-os/market-scope/model.js?v=3"></script>
+<script src="/game-os/market-scope/app.js?v=3"></script>
 </body>
 </html>

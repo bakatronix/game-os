@@ -376,6 +376,12 @@ async function main() {
     `UPDATE "app" SET "cxoQuestion"='One system, eight stages.', "metrics"='[{"label":"Tools","value":"15"},{"label":"Stages","value":"8"},{"label":"Momentum","value":"84"}]', "spark"='{"type":"line","values":[58,64,70,78,84]}' WHERE id='seismic'`,
     // Market Scope is now a standalone Game OS widget (not a Seismic deep-link).
     `UPDATE "app" SET path='/game-os/market-scope', anchor=NULL WHERE id='market-scope'`,
+    // Market Scope now reads live Steam releases; drop the demo tile numbers.
+    `UPDATE "app" SET
+       "description"='Size a Steam market from real releases: what games under your tags earn, whether the space is getting crowded, which added tag is an opening, and which games to use as comps.',
+       "status"='nodata', "statusLabel"='No data',
+       "metrics"='[{"label":"Median revenue","value":"—"},{"label":"Over $100K","value":"—"},{"label":"Releases a year","value":"—"}]'
+     WHERE id='market-scope'`,
     // The remaining Seismic tools are extracted as standalone widgets too.
     `UPDATE "app" SET path='/game-os/'||id, anchor=NULL WHERE id IN
       ('thesis-builder','audience-map','page-engine','community-scaffold',
