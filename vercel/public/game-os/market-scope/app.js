@@ -350,11 +350,11 @@
         { key: "market_median_revenue", label: "Median gross revenue, " + tagList(DATA.tags), value: sp.median, unit: "usd", meta: meta },
         { key: "market_p75_revenue", label: "Top-quarter gross revenue", value: sp.p75, unit: "usd" },
         { key: "market_p90_revenue", label: "Top-tenth gross revenue", value: sp.p90, unit: "usd" },
-        { key: "market_hit_rate", label: "Share of games over $100K", value: sp.overHit == null ? null : sp.overHit * 100, unit: "%" },
-        { key: "market_share_under_10k", label: "Share of games under $10K", value: sp.underSmall == null ? null : sp.underSmall * 100, unit: "%" },
-        { key: "market_releases_last_year", label: "Releases in the last 12 months", value: cr.lastYear, unit: "games" },
+        { key: "market_hit_rate", label: "Share of games over $100K", value: sp.overHit == null ? null : sp.overHit * 100, unit: "pct" },
+        { key: "market_share_under_10k", label: "Share of games under $10K", value: sp.underSmall == null ? null : sp.underSmall * 100, unit: "pct" },
+        { key: "market_releases_last_year", label: "Releases in the last 12 months", value: cr.lastYear, unit: "units" },
       ];
-      if (cr.change != null) list.push({ key: "market_release_change", label: "Change in releases vs the year before", value: cr.change * 100, unit: "%" });
+      if (cr.change != null) list.push({ key: "market_release_change", label: "Change in releases vs the year before", value: cr.change * 100, unit: "pct" });
       list = list.filter(function (s) { return s.value != null && isFinite(s.value); });
       sendMsg("Sending to " + GOS.game.title + "…");
       GOS.recordSignals(TOOL_ID, list)
