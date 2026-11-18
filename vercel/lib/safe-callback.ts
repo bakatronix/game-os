@@ -11,7 +11,7 @@ export function safeCallback(raw: string | undefined | null): string {
 const TOOL_NAMES: [string, string][] = [
   ["/game-os/price-calc", "the Pricing Calculator"],
   ["/game-os/mobile-calc", "the Mobile Calculator"],
-  ["/game-os/feedback", "the Price Calculator feedback form"],
+  ["/game-os/pci/feedback", "the Price Calculator feedback form"],
   ["/game-os/chicken-brulee", "Chicken Brûlée, the Discord playtest scanner"],
   ["/game-os/PMF", "the PMF Analyzer"],
   ["/game-os/steam-page-audit", "Steam Page Audit"],

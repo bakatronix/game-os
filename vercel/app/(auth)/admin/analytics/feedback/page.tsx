@@ -19,7 +19,7 @@ export default async function FeedbackPage() {
       <div className="gos-card">
         <h2>Price Calculator feedback</h2>
         <p className="gos-muted">
-          From the form at /game-os/feedback. One answer per person; sending again replaces it.{" "}
+          From the form at /game-os/pci/feedback. One answer per person; sending again replaces it.{" "}
           <a href="/admin/analytics/feedback/csv">Download CSV</a>
         </p>
         <div className="ppl-tiles">
