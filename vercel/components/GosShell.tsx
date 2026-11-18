@@ -8,6 +8,7 @@ const ANALYTICS_TABS: { key: string; href: string; label: string }[] = [
   { key: "partners", href: "/admin/analytics/partners", label: "Partners" },
   { key: "engagement", href: "/admin/analytics/engagement", label: "Engagement" },
   { key: "attribution", href: "/admin/analytics/attribution", label: "Attribution" },
+  { key: "feedback", href: "/admin/analytics/feedback", label: "Feedback" },
 ];
 
 export default async function GosShell({
@@ -18,7 +19,7 @@ export default async function GosShell({
 }: {
   title: string;
   active: "account" | "admin" | "dashboard" | "analytics";
-  subnav?: "people" | "funnel" | "partners" | "engagement" | "attribution";
+  subnav?: "people" | "funnel" | "partners" | "engagement" | "attribution" | "feedback";
   children: React.ReactNode;
 }) {
   // Analytics is for platform admins only; studio owners still see Admin.
