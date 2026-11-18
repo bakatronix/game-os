@@ -68,6 +68,35 @@ export async function getFeedbackRows(): Promise<FeedbackRow[]> {
   });
 }
 
+export type NotAnsweredRow = {
+  userId: string;
+  name: string | null;
+  email: string | null;
+  studios: string | null;
+  lastUsed: string;
+  sessions: number;
+  visits: number;
+};
+
+/** People who have used the Price Calculator while signed in but haven't sent the feedback form. */
+export async function getNotAnswered(): Promise<NotAnsweredRow[]> {
+  const res = (await getDb().execute(sql`
+    SELECT u.id AS "userId", u.name, u.email,
+           (SELECT string_agg(DISTINCT s.name, ', ') FROM membership m JOIN studio s ON s.id = m."studioId" WHERE m."userId" = u.id) AS studios,
+           MAX(e."timestamp") AS "lastUsed",
+           COUNT(DISTINCT e."sessionId")::int AS sessions,
+           COUNT(*)::int AS visits
+    FROM event e JOIN "user" u ON u.id = e."userId"
+    WHERE e."toolId" = 'price-calc'
+      AND NOT EXISTS (
+        SELECT 1 FROM tool_state t WHERE t."userId" = u.id AND t."toolId" = ${FEEDBACK_TOOL_ID}
+      )
+    GROUP BY u.id, u.name, u.email
+    ORDER BY MAX(e."timestamp") DESC
+  `)) as unknown as { rows: (Omit<NotAnsweredRow, "lastUsed"> & { lastUsed: string })[] };
+  return res.rows.map((r) => ({ ...r, lastUsed: new Date(r.lastUsed).toISOString() }));
+}
+
 /** Headline numbers for the deck: share who changed price, average change, average help score. */
 export function summarise(rows: FeedbackRow[]) {
   const withBoth = rows.filter((r) => r.priceChange !== null);

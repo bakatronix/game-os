@@ -1,7 +1,8 @@
 import GosShell from "@/components/GosShell";
 import LocalTime from "@/components/LocalTime";
 import { requirePlatformAdmin } from "@/lib/admin";
-import { getFeedbackRows, summarise } from "@/lib/feedback";
+import CopyEmails from "@/components/CopyEmails";
+import { getFeedbackRows, getNotAnswered, summarise } from "@/lib/feedback";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +12,7 @@ const pct = (n: number | null) => (n === null ? "—" : `${Math.round(n * 100)}%
 
 export default async function FeedbackPage() {
   await requirePlatformAdmin("/admin/analytics/feedback");
-  const rows = await getFeedbackRows();
+  const [rows, waiting] = await Promise.all([getFeedbackRows(), getNotAnswered()]);
   const s = summarise(rows);
 
   return (
@@ -24,6 +25,7 @@ export default async function FeedbackPage() {
         </p>
         <div className="ppl-tiles">
           <div><b>{s.responses}</b><span>founders answered</span></div>
+          <div><b>{waiting.length}</b><span>used the calculator but haven&rsquo;t answered</span></div>
           <div><b>{pct(s.changedShare)}</b><span>changed their launch price ({s.changed} of {s.comparable} who gave both prices)</span></div>
           <div><b>{signed(s.avgChange)}</b><span>average change among those who changed (average size {money(s.avgAbsChange)})</span></div>
           <div><b>{s.avgHelp === null ? "—" : s.avgHelp.toFixed(1)}</b><span>average help score, 1 to 5</span></div>
@@ -35,6 +37,36 @@ export default async function FeedbackPage() {
           <p className="gos-muted">
             Steps that gave people trouble: {s.trouble.map(([k, n]) => `${k} (${n})`).join(", ")}
           </p>
+        )}
+      </div>
+
+      <div className="gos-card">
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
+          <h2>Not answered yet</h2>
+          <CopyEmails emails={waiting.map((w) => w.email).filter((e): e is string => !!e)} />
+        </div>
+        <p className="gos-muted">
+          Everyone who has opened the Price Calculator while signed in and hasn&rsquo;t sent the form, most recent first.
+          People who used it without signing in can&rsquo;t be listed.
+        </p>
+        {waiting.length === 0 ? (
+          <p className="gos-muted">Everyone who has used the calculator has answered.</p>
+        ) : (
+          <table className="ppl-table">
+            <thead>
+              <tr><th>Name</th><th>Studio</th><th>Last used</th><th>Sessions</th></tr>
+            </thead>
+            <tbody>
+              {waiting.map((w) => (
+                <tr key={w.userId}>
+                  <td>{w.name || "—"}<br /><span className="gos-muted">{w.email}</span></td>
+                  <td>{w.studios || "—"}</td>
+                  <td><LocalTime iso={w.lastUsed} /></td>
+                  <td className="num">{w.sessions}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </div>
 
