@@ -17,31 +17,18 @@
   function show(id, on) { document.getElementById(id).classList.toggle("on", !!on); }
   function track(name, props) { try { if (window.gosTrack) window.gosTrack(name, props || {}); } catch (e) {} }
 
-  // "None" clears the other step boxes; any other box clears "None".
-  f.querySelectorAll('input[name="steps_trouble"]').forEach(function (b) {
-    b.addEventListener("change", function () {
-      var boxes = Array.prototype.slice.call(f.querySelectorAll('input[name="steps_trouble"]'));
-      var none = boxes.filter(function (x) { return x.value === "None"; })[0];
-      if (b === none && b.checked) boxes.forEach(function (x) { if (x !== none) x.checked = false; });
-      else if (b !== none && b.checked) none.checked = false;
-    });
-  });
   noBefore.addEventListener("change", function () {
     priceBefore.disabled = noBefore.checked;
     if (noBefore.checked) priceBefore.value = "";
   });
 
   function fill(s) {
-    ["price_before", "price_after", "why_changed", "use_again_why", "trouble_detail", "testimonial", "name", "studio", "email"].forEach(function (k) {
+    ["price_before", "price_after", "why_changed", "use_again_why", "testimonial", "name", "studio", "email"].forEach(function (k) {
       if (s[k] != null && el(k)) el(k).value = s[k];
     });
     noBefore.checked = !!s.no_price_before;
     priceBefore.disabled = noBefore.checked;
     ["helped_score", "net_per_copy_used", "time_vs_without", "use_again"].forEach(function (k) { if (s[k]) setRadio(k, s[k]); });
-    (s.steps_trouble || []).forEach(function (v) {
-      var c = f.querySelector('input[name="steps_trouble"][value="' + CSS.escape(v) + '"]');
-      if (c) c.checked = true;
-    });
   }
 
   // Prefill: earlier answers if there are any, otherwise name and email from the account.
@@ -95,8 +82,6 @@
       net_per_copy_used: radio("net_per_copy_used"),
       time_vs_without: radio("time_vs_without"),
       use_again: radio("use_again"), use_again_why: val("use_again_why"),
-      steps_trouble: Array.prototype.map.call(f.querySelectorAll('input[name="steps_trouble"]:checked'), function (x) { return x.value; }),
-      trouble_detail: val("trouble_detail"),
       testimonial: val("testimonial")
     };
 
