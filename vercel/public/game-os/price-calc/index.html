@@ -1370,6 +1370,7 @@
       <button class="btn-ghost wb-btn" id="pin-scenario-btn" onclick="pinScenario()">Pin this scenario</button>
       <input type="file" id="import-file-input" accept=".json,application/json" style="display:none" onchange="importWorkbook(event)">
     </div>
+    <p class="feedback-ask" style="margin:0 0 16px;padding:10px 14px;border:1px solid var(--orange, #e3683f);border-radius:8px">Finished your price? <a href="/game-os/feedback" style="font-weight:700;color:var(--orange-deep, #b84c27)">Tell us how the calculator worked for you</a>. It takes three minutes.</p>
     <div class="import-error" id="import-error"></div>
     <div class="share-feedback" id="share-feedback"></div>
     <div class="share-feedback" id="send-thesis-feedback" role="status" aria-live="polite"></div>
@@ -5606,7 +5607,7 @@ if (location.search && location.search.indexOf('selftest=1') !== -1) { runSelfTe
   .account-save-status { position: fixed; left: 12px; bottom: 12px; z-index: 50; max-width: 360px; font-size: 12px; padding: 6px 10px; border-radius: 6px; background: #fbf1dc; border: 1px solid #e6d6b7; color: #655e4b; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
   .account-save-status.ok::before { content: "\2713  "; color: #3b8d83; font-weight: 700; }
   .account-save-status.error, .account-save-status.warn { border-color: #c0502b; color: #8a3a1f; }
-  @media print { .account-save-status { display: none !important; } }
+  @media print { .account-save-status, .feedback-ask { display: none !important; } }
   .pdf-export { background: #fff; color: #111; width: 690px; padding: 4px; font-size: 12px; box-sizing: border-box; }
   .pdf-export * { box-sizing: border-box; max-width: 100%; }
   .pdf-export .card { border: 1px solid #bbb; box-shadow: none; background: #fff; margin-bottom: 10px; }
