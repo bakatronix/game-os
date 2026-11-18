@@ -6,7 +6,9 @@
   "use strict";
 
   var STOP = ("a an and are as at be but by can do does for from get got has have how i i'm im if in into is it it's its just me my no not of on or out so than that the their them then there these they this to too up was we what when where which who why will with you your yours any all some more most very much can't cant don't dont didn't didnt doesn't doesnt won't wont isn't isnt " +
-    "game games play playing played player players steam anyone someone something thing things way still also even ever really like one would could should help please thanks question new got make made want need know think am been being after before again only other same here over about after way time getting first every best add keep beat complete since there their would issue issues problem problems 1 2 3 4 5 6 7 8 9 10 vs").split(" ");
+    "game games play playing played player players steam anyone someone something thing things way still also even ever really like one would could should help please thanks question new got make made want need know think am been being after before again only other same here over about after way time getting first every best add keep beat complete since there their would issue issues problem problems 1 2 3 4 5 6 7 8 9 10 vs " +
+    // Conversational filler that shows up in forum titles but says nothing about the game.
+    "looking look looks started start starting now kinda kind sort entire gone happened happen happens happening going go goes went come comes back around anything everything nothing anybody everyone guys guy hey hello pls plz idea ideas thoughts opinion opinions worth good bad great better worse lot lots bit little big actually literally just ok okay yes yeah wait try trying tried find found fix fixed work works working use using used see seen say said tell told take took give gave put let lets let's day days today week weeks hour hours year years now right left yet already able unable possible wrong sure must might may every possible").split(" ");
   var STOPSET = {}; STOP.forEach(function (w) { STOPSET[w] = 1; });
 
   function words(s) {
@@ -67,11 +69,16 @@
   function phrases(comps, limit) {
     var nameWords = {};
     comps.forEach(function (c) { words(c.name).forEach(function (w) { nameWords[w] = 1; }); });
+    // Fold plurals into one entry ("mod" and "mods" count together) when both forms appear.
+    var vocab = {}, canon = {};
+    comps.forEach(function (c) { (c.discussions || []).forEach(function (d) { words(d.title).forEach(function (w) { vocab[w] = 1; }); }); });
+    Object.keys(vocab).forEach(function (w) { if (w.length > 3 && /s$/.test(w) && !/ss$/.test(w) && vocab[w.slice(0, -1)]) canon[w.slice(0, -1)] = w; });
     var by = {};
     comps.forEach(function (c) {
       (c.discussions || []).forEach(function (d) {
         var w = words(d.title), seen = {};
         function add(p) {
+          p = canon[p] || p;
           if (seen[p]) return; seen[p] = 1;
           var v = by[p] || (by[p] = { phrase: p, threads: 0, comps: [], examples: [] });
           v.threads++; if (v.comps.indexOf(c.name) < 0) v.comps.push(c.name);
@@ -84,11 +91,14 @@
         }
       });
     });
-    var list = Object.keys(by).map(function (k) { return by[k]; }).filter(function (v) { return v.threads >= 2; });
+    var list = Object.keys(by).map(function (k) { return by[k]; }).filter(function (v) {
+      // A word raised across comps is an audience signal; one raised in a single game's forum must recur to count.
+      return v.comps.length >= 2 ? v.threads >= 2 : v.threads >= 3;
+    });
     // Prefer phrases over single words when a phrase is nearly as common as its words.
     list.sort(function (a, b) {
-      var sa = a.threads * (a.phrase.indexOf(" ") > 0 ? 1.6 : 1) * (1 + 0.3 * (a.comps.length - 1));
-      var sb = b.threads * (b.phrase.indexOf(" ") > 0 ? 1.6 : 1) * (1 + 0.3 * (b.comps.length - 1));
+      var sa = a.threads * (a.phrase.indexOf(" ") > 0 ? 1.6 : 1) * (1 + 0.6 * (a.comps.length - 1));
+      var sb = b.threads * (b.phrase.indexOf(" ") > 0 ? 1.6 : 1) * (1 + 0.6 * (b.comps.length - 1));
       return sb - sa;
     });
     return list.slice(0, limit || 30);
