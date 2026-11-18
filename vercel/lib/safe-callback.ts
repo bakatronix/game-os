@@ -16,6 +16,7 @@ const TOOL_NAMES: [string, string][] = [
   ["/game-os/PMF", "the PMF Analyzer"],
   ["/game-os/steam-page-audit", "Steam Page Audit"],
   ["/game-os/thesis-builder", "Thesis Builder"],
+  ["/game-os/ledger-view", "the Signal Ledger"],
   ["/seismic", "Seismic"],
 ];
 /** What the sign-in page should say it opens, from the safe callback path. */

@@ -377,6 +377,13 @@ async function main() {
     // Market Scope is now a standalone Game OS widget (not a Seismic deep-link).
     `UPDATE "app" SET path='/game-os/market-scope', anchor=NULL WHERE id='market-scope'`,
     // Market Scope now reads live Steam releases; drop the demo tile numbers.
+    // Signal Ledger is a real page with the Momentum Score; top row, live tile.
+    `UPDATE "app" SET path='/game-os/ledger-view', anchor=NULL, "group"='cxo', "sortOrder"=0, "stage"=NULL,
+       "toolName"='Signal Ledger', "cxoQuestion"='Is the game gaining momentum?',
+       "description"='Every figure your tools record for a game, scored against benchmarks and rolled into one Momentum Score weighted for your stage, with a daily Steam snapshot.',
+       "status"='nodata', "statusLabel"='No data',
+       "metrics"='[{"label":"Momentum","value":"—"},{"label":"30-day change","value":"—"},{"label":"Coverage","value":"—"}]'
+     WHERE id='ledger-view'`,
     // PMF Analyzer rebuilt as a Game OS tool on Steam's working endpoints.
     `UPDATE "app" SET
        "toolName"='PMF Analyzer',

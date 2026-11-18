@@ -268,6 +268,11 @@
     'price-calc': 'Pricing Calculator',
     'steam-page-audit': 'Steam Page Audit',
     'thesis-builder': 'Thesis Builder',
+    'market-scope': 'Market Scope',
+    'mobile-calc': 'Mobile Calculator',
+    'pmf': 'PMF Analyzer',
+    'chicken-brulee': 'Chicken Br\u00fbl\u00e9e',
+    'steam': 'Daily Steam snapshot',
   };
 
   function fmtSignal(s) {
@@ -327,6 +332,7 @@
           '<div class="module-head"><div><h3>Signal Ledger</h3><div class="module-q">What have we measured?</div></div>' +
           '<span class="ss-badge healthy">Live</span></div>' +
           ledgerHtml +
+          '<div class="card-actions"><a class="ss-btn" href="/game-os/ledger-view">Open ledger and Momentum \u2192</a></div>' +
         '</div>' +
       '</div>';
   }
@@ -647,18 +653,30 @@
     'thesis-view': thesisTile,
     'ledger-view': function (G) {
       var l = G.ledger || [];
-      var tools = {};
-      l.forEach(function (s) { tools[s.toolId] = true; });
-      var last = l.reduce(function (m, s) { return !m || new Date(s.observedAt) > new Date(m) ? s.observedAt : m; }, null);
+      var MO = window.Momentum;
+      if (!MO) return null;
+      // Rebuild readings from each key's short history, so the 30-day change works too.
+      var rows = [];
+      l.forEach(function (s) {
+        (s.history && s.history.length ? s.history : [{ value: s.value, observedAt: s.observedAt }]).forEach(function (h) {
+          rows.push({ key: s.key, toolId: s.toolId, meta: s.meta, value: h.value, observedAt: h.observedAt });
+        });
+      });
+      var stage = (G.game && G.game.stage) || 1;
+      var m = MO.compute(MO.latest(rows), stage);
+      var ago = MO.scoreAt(rows, stage, 30 * 86400000);
+      var hist = MO.history(rows, stage).map(function (p) { return Math.round(p.score); });
+      var d = m.score != null && ago != null ? Math.round(m.score - ago) : null;
+      var b = MO.band(m.score);
       return {
         metrics: [
-          { label: 'Signals', value: l.length ? String(l.length) : '\u2014' },
-          { label: 'From tools', value: l.length ? String(Object.keys(tools).length) : '\u2014' },
-          { label: 'Last update', value: last ? fmtDate(last) : '\u2014' }
+          { label: 'Momentum', value: m.score == null ? '\u2014' : Math.round(m.score) + '/100' },
+          { label: '30-day change', value: d == null ? '\u2014' : (d > 0 ? '+' : d < 0 ? '\u2212' : '') + Math.abs(d) },
+          { label: 'Coverage', value: m.score == null ? '\u2014' : Math.round(m.coverage * 100) + '%' }
         ],
-        spark: null,
-        kind: l.length ? 'healthy' : 'demo',
-        label: l.length ? 'Live' : 'No data yet'
+        spark: hist.length >= 2 ? { type: 'line', values: hist.slice(-12) } : null,
+        kind: m.score == null ? 'demo' : b.key === 'strong' || b.key === 'building' ? 'healthy' : b.key === 'watch' ? 'watch' : 'concern',
+        label: m.score == null ? 'No data yet' : b.label
       };
     }
   };

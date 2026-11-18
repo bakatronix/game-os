@@ -1,19 +1,25 @@
 import { NextResponse } from "next/server";
 import { apiError, noStore, readJson, requireUser } from "@/lib/api";
-import { getLedger, recordSignals, requireGameRole } from "@/lib/spine";
+import { getLedger, getSignalRows, recordSignals, requireGameRole } from "@/lib/spine";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-/** GET /api/games/:id/signals — latest value per key with short history. */
-export async function GET(_req: Request, { params }: Ctx) {
+/** GET /api/games/:id/signals — latest value per key with short history.
+ *  ?all=1[&days=365] — every signal row in that window, oldest first (for the Signal Ledger page). */
+export async function GET(req: Request, { params }: Ctx) {
   const r = await requireUser();
   if ("error" in r) return r.error;
   const { id } = await params;
   try {
     await requireGameRole(r.user.id, id, "viewer");
+    const q = new URL(req.url).searchParams;
+    if (q.get("all") === "1") {
+      const days = Math.min(730, Math.max(7, Number(q.get("days")) || 365));
+      return NextResponse.json({ rows: await getSignalRows(id, days) }, noStore);
+    }
     return NextResponse.json({ ledger: await getLedger(id) }, noStore);
   } catch (err) {
     return apiError(err);

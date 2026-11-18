@@ -48,6 +48,8 @@ const nextConfig: NextConfig = {
       { source: "/game-os/PMF/", destination: "/game-os/PMF/index.html" },
       { source: "/game-os/steam-page-audit", destination: "/game-os/steam-page-audit/index.html" },
       { source: "/game-os/steam-page-audit/", destination: "/game-os/steam-page-audit/index.html" },
+      { source: "/game-os/ledger-view", destination: "/game-os/ledger-view/index.html" },
+      { source: "/game-os/ledger-view/", destination: "/game-os/ledger-view/index.html" },
       { source: "/game-os/market-scope", destination: "/game-os/market-scope/index.html" },
       { source: "/game-os/market-scope/", destination: "/game-os/market-scope/index.html" },
       { source: "/game-os/thesis-builder", destination: "/game-os/thesis-builder/index.html" },

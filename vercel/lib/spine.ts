@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, gte } from "drizzle-orm";
 import { getDb } from "@/db";
 import { games, memberships, signals, studios, thesisVersions } from "@/db/schema";
 
@@ -204,7 +204,7 @@ export type SignalInput = {
   meta?: unknown;
 };
 
-export async function recordSignals(userId: string, gameId: string, toolId: string, list: SignalInput[]) {
+export async function recordSignals(userId: string | null, gameId: string, toolId: string, list: SignalInput[]) {
   const rows = list
     .filter((s) => s && typeof s.key === "string" && /^[a-z0-9_.-]{1,64}$/i.test(s.key))
     .slice(0, 50)
@@ -247,6 +247,22 @@ export async function getLedger(gameId: string, perKey = 12) {
     meta: parseJSON(list[0].meta),
     observedAt: list[0].observedAt,
     history: list.map((r) => ({ value: r.value, observedAt: r.observedAt })).reverse(),
+  }));
+}
+
+/** Every signal for a game in the last `days` days, oldest first (for momentum history). */
+export async function getSignalRows(gameId: string, days = 365) {
+  const db = getDb();
+  const since = new Date(Date.now() - days * 86400000);
+  const rows = await db
+    .select()
+    .from(signals)
+    .where(and(eq(signals.gameId, gameId), gte(signals.observedAt, since)))
+    .orderBy(asc(signals.observedAt))
+    .limit(5000);
+  return rows.map((r) => ({
+    key: r.key, toolId: r.toolId, label: r.label, unit: r.unit, value: r.value,
+    meta: parseJSON(r.meta), observedAt: r.observedAt,
   }));
 }
 
