@@ -37,7 +37,7 @@
     });
     noBefore.checked = !!s.no_price_before;
     priceBefore.disabled = noBefore.checked;
-    ["helped_score", "net_per_copy_used", "time_vs_without", "use_again", "quote_consent"].forEach(function (k) { if (s[k]) setRadio(k, s[k]); });
+    ["helped_score", "net_per_copy_used", "time_vs_without", "use_again"].forEach(function (k) { if (s[k]) setRadio(k, s[k]); });
     (s.steps_trouble || []).forEach(function (v) {
       var c = f.querySelector('input[name="steps_trouble"][value="' + CSS.escape(v) + '"]');
       if (c) c.checked = true;
@@ -74,8 +74,7 @@
       e_help: radio("helped_score") === "",
       e_name: val("name") === "",
       e_studio: val("studio") === "",
-      e_email: !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val("email")),
-      e_quote: radio("quote_consent") === ""
+      e_email: !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val("email"))
     };
     Object.keys(errs).forEach(function (id) { show(id, errs[id]); });
     var first = Object.keys(errs).filter(function (k) { return errs[k]; })[0];
@@ -98,8 +97,7 @@
       use_again: radio("use_again"), use_again_why: val("use_again_why"),
       steps_trouble: Array.prototype.map.call(f.querySelectorAll('input[name="steps_trouble"]:checked'), function (x) { return x.value; }),
       trouble_detail: val("trouble_detail"),
-      testimonial: val("testimonial"),
-      quote_consent: radio("quote_consent")
+      testimonial: val("testimonial")
     };
 
     send.disabled = true;

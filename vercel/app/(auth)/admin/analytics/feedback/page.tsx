@@ -29,8 +29,7 @@ export default async function FeedbackPage() {
           <div><b>{s.avgHelp === null ? "—" : s.avgHelp.toFixed(1)}</b><span>average help score, 1 to 5</span></div>
         </div>
         <p className="gos-muted" style={{ marginTop: 12 }}>
-          {s.noPriceBefore} had no price in mind before · {s.usedNet} used Net per Copy in their model · {s.useAgainYes} would use it again ·{" "}
-          {s.quotableByName} agreed to their comments being used with their name
+          {s.noPriceBefore} had no price in mind before · {s.usedNet} used Net per Copy in their model · {s.useAgainYes} would use it again
         </p>
         {s.trouble.length > 0 && (
           <p className="gos-muted">
@@ -46,7 +45,7 @@ export default async function FeedbackPage() {
         ) : (
           <table className="ppl-table">
             <thead>
-              <tr><th>Sent</th><th>Name</th><th>Studio or game</th><th>Before</th><th>After</th><th>Help</th><th>Can use comments</th><th>Comment</th></tr>
+              <tr><th>Sent</th><th>Name</th><th>Studio or game</th><th>Before</th><th>After</th><th>Help</th><th>Comment</th></tr>
             </thead>
             <tbody>
               {rows.map((r) => (
@@ -57,7 +56,6 @@ export default async function FeedbackPage() {
                   <td className="num">{r.noPriceBefore ? "None" : money(r.priceBefore)}</td>
                   <td className="num">{money(r.priceAfter)}</td>
                   <td className="num">{r.helpedScore ?? "—"}</td>
-                  <td>{r.quoteConsent || "—"}</td>
                   <td style={{ maxWidth: 360 }}>{r.testimonial}{r.troubleDetail ? <><br /><span className="gos-muted">Trouble: {r.troubleDetail}</span></> : null}</td>
                 </tr>
               ))}

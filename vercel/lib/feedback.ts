@@ -25,7 +25,6 @@ export type FeedbackRow = {
   stepsTrouble: string[];
   troubleDetail: string;
   testimonial: string;
-  quoteConsent: string;
 };
 
 const str = (v: unknown) => (typeof v === "string" ? v : "");
@@ -65,7 +64,6 @@ export async function getFeedbackRows(): Promise<FeedbackRow[]> {
       stepsTrouble: Array.isArray(s.steps_trouble) ? (s.steps_trouble as unknown[]).map(str).filter(Boolean) : [],
       troubleDetail: str(s.trouble_detail),
       testimonial: str(s.testimonial),
-      quoteConsent: str(s.quote_consent),
     };
   });
 }
@@ -89,7 +87,6 @@ export function summarise(rows: FeedbackRow[]) {
     avgHelp: avg(scores),
     usedNet: rows.filter((r) => r.netPerCopyUsed === "Yes").length,
     useAgainYes: rows.filter((r) => r.useAgain === "Yes").length,
-    quotableByName: rows.filter((r) => r.quoteConsent === "Yes, with my name and studio").length,
     trouble: [...trouble.entries()].sort((a, b) => b[1] - a[1]),
   };
 }
@@ -113,7 +110,6 @@ const CSV_COLUMNS: [string, (r: FeedbackRow) => unknown][] = [
   ["steps_trouble", (r) => r.stepsTrouble.join("; ")],
   ["trouble_detail", (r) => r.troubleDetail],
   ["comment", (r) => r.testimonial],
-  ["can_use_comments", (r) => r.quoteConsent],
 ];
 
 /** CSV safe for Excel and Sheets: quoted cells, formula characters neutralised. */
