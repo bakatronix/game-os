@@ -273,6 +273,7 @@
     'pmf': 'PMF Analyzer',
     'chicken-brulee': 'Chicken Br\u00fbl\u00e9e',
     'steam': 'Daily Steam snapshot',
+    'audience-map': 'Audience Map',
   };
 
   function fmtSignal(s) {
@@ -613,6 +614,20 @@
         label: min == null ? 'No data yet' : 'Live'
       };
     },
+    'audience-map': function (G) {
+      var m = sig('audience_discord_members'), o = sig('audience_discord_online'), c = sig('audience_comps_mapped');
+      function k(s) { return s && s.value != null ? (s.value >= 1000 ? Math.round(s.value / 1000) + 'K' : String(Math.round(s.value))) : '\u2014'; }
+      return {
+        metrics: [
+          { label: 'Comp Discord members', value: k(m) },
+          { label: 'Online now', value: k(o) },
+          { label: 'Comps mapped', value: c ? String(Math.round(c.value)) : '\u2014' }
+        ],
+        spark: null,
+        kind: m ? 'healthy' : 'demo',
+        label: m ? 'Live' : 'No data yet'
+      };
+    },
     'market-scope': function (G) {
       var m = sig('market_median_revenue');
       var h = sig('market_hit_rate');
@@ -703,7 +718,7 @@
      out and marked "Under construction", but still open for a preview.
      Remove an id once that tool reads and writes the game spine. */
   var UNDER_CONSTRUCTION = {
-    'seismic': 1, 'audience-map': 1, 'page-engine': 1,
+    'seismic': 1, 'page-engine': 1,
     'community-scaffold': 1, 'test-loop': 1, 'festival-radar': 1,
     'playtest-pipeline': 1, 'creator-match': 1, 'sentiment-radar': 1,
     'demo-command': 1, 'window-planner': 1, 'launch-runbook': 1,

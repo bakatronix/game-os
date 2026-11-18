@@ -384,6 +384,13 @@ async function main() {
        "status"='nodata', "statusLabel"='No data',
        "metrics"='[{"label":"Momentum","value":"—"},{"label":"30-day change","value":"—"},{"label":"Coverage","value":"—"}]'
      WHERE id='ledger-view'`,
+    // Audience Map is a working tool: top row, live tile.
+    `UPDATE "app" SET "group"='cxo', "sortOrder"=7, "stage"=NULL, "toolName"='Audience Map',
+       "cxoQuestion"='Where do your players gather?',
+       "description"='Start from games like yours: their Discord communities with live member counts, the games Steam recommends alongside them, the words players use, and whether your name is free.',
+       "status"='nodata', "statusLabel"='No data',
+       "metrics"='[{"label":"Comp Discord members","value":"—"},{"label":"Online now","value":"—"},{"label":"Comps mapped","value":"—"}]'
+     WHERE id='audience-map'`,
     // PMF Analyzer rebuilt as a Game OS tool on Steam's working endpoints.
     `UPDATE "app" SET
        "toolName"='PMF Analyzer',

@@ -13,6 +13,7 @@
     "chicken-brulee": { name: "Chicken Brûlée", path: "/game-os/chicken-brulee" },
     "thesis-builder": { name: "Thesis Builder", path: "/game-os/thesis-builder" },
     "steam": { name: "Daily Steam snapshot", path: null },
+    "audience-map": { name: "Audience Map", path: "/game-os/audience-map" },
   };
   var out = document.getElementById("out");
   var ROWS = [], LAST_GAME = null, filter = "all", loadId = 0;
