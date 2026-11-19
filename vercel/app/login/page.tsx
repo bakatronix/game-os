@@ -110,16 +110,16 @@ export default async function LoginPage({
             Continue with Google
           </button>
         </form>
-        <form
-          action={async () => {
-            "use server";
-            await signIn("discord", { redirectTo });
-          }}
+        {/* Discord sign-in is paused until its OAuth setup is fixed; the provider stays configured. */}
+        <button
+          type="button"
+          disabled
+          aria-disabled="true"
+          title="Discord sign-in is under construction. Use Google for now."
+          style={{ ...buttonStyle(TEAL, CREAM), opacity: 0.45, cursor: "not-allowed" }}
         >
-          <button type="submit" style={buttonStyle(TEAL, CREAM)}>
-            Continue with Discord
-          </button>
-        </form>
+          Continue with Discord &middot; under construction
+        </button>
       </div>
 
       <p style={{ fontSize: 12, color: INK_MUTED, maxWidth: 360, textAlign: "center" }}>
