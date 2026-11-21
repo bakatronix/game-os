@@ -23,6 +23,8 @@ export const users = pgTable("user", {
   emailVerified: timestamp("emailVerified", { mode: "date" }),
   image: text("image"),
   createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
+  // Platform role for people who run Game OS itself: "admin" or null (a normal user).
+  platformRole: text("platformRole"),
 });
 
 export const accounts = pgTable(

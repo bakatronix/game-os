@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 /** GET /admin/analytics/feedback/csv — every Price Calculator feedback answer, platform admins only. */
 export async function GET() {
   const session = await auth();
-  if (!isPlatformAdmin(session?.user?.id)) return new NextResponse("Not found", { status: 404 });
+  if (!(await isPlatformAdmin(session?.user?.id))) return new NextResponse("Not found", { status: 404 });
   const csv = toCsv(await getFeedbackRows());
   const day = new Date().toISOString().slice(0, 10);
   return new NextResponse(csv, {

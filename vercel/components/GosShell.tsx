@@ -18,18 +18,23 @@ export default async function GosShell({
   children,
 }: {
   title: string;
-  active: "account" | "admin" | "dashboard" | "analytics";
+  active: "account" | "admin" | "dashboard" | "analytics" | "users";
   subnav?: "people" | "funnel" | "partners" | "engagement" | "attribution" | "feedback";
   children: React.ReactNode;
 }) {
   // Analytics is for platform admins only; studio owners still see Admin.
   const session = await auth();
-  const admin = isPlatformAdmin(session?.user?.id);
+  const admin = await isPlatformAdmin(session?.user?.id);
   const tabs: { key: string; href: string; label: string }[] = [
     { key: "dashboard", href: "/game-os", label: "Dashboard" },
     { key: "account", href: "/account", label: "Account" },
     { key: "admin", href: "/admin", label: "Admin" },
-    ...(admin ? [{ key: "analytics", href: "/admin/analytics/people", label: "Analytics" }] : []),
+    ...(admin
+      ? [
+          { key: "analytics", href: "/admin/analytics/people", label: "Analytics" },
+          { key: "users", href: "/admin/users", label: "Users" },
+        ]
+      : []),
   ];
   return (
     <div className="gos-shell">

@@ -184,6 +184,7 @@ async function main() {
     `ALTER TABLE "app" ADD COLUMN IF NOT EXISTS "cxoQuestion" TEXT`,
     `ALTER TABLE "app" ADD COLUMN IF NOT EXISTS "description" TEXT`,
     `ALTER TABLE "app" ADD COLUMN IF NOT EXISTS "status" TEXT`,
+    `ALTER TABLE "user" ADD COLUMN IF NOT EXISTS "platformRole" TEXT`,
     `ALTER TABLE "app" ADD COLUMN IF NOT EXISTS "statusLabel" TEXT`,
     `ALTER TABLE "app" ADD COLUMN IF NOT EXISTS "metrics" TEXT`,
     `ALTER TABLE "app" ADD COLUMN IF NOT EXISTS "spark" TEXT`,
