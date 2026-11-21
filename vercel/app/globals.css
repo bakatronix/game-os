@@ -158,3 +158,21 @@ a:hover { color: var(--orange-deep); }
   .ppl-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ppl-table { font-size: 13px; display: block; overflow-x: auto; }
 }
+
+/* Price Calculator feedback: per-question counts and full answers */
+.fb-breakdowns { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px 28px; margin-top: 8px; }
+.fb-q { font-size: 14px; margin: 0 0 6px; }
+.fb-bar { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) 28px; gap: 8px; align-items: center; font-size: 13px; padding: 2px 0; }
+.fb-bar .ppl-meter { margin-top: 0; }
+.fb-bar b { text-align: right; font-variant-numeric: tabular-nums; }
+.fb-answer { border-top: 1px solid var(--sand-deep); padding: 14px 0; }
+.fb-answer:first-of-type { border-top: 0; padding-top: 4px; }
+.fb-who { margin-bottom: 8px; }
+.fb-list { display: grid; grid-template-columns: minmax(180px, 280px) 1fr; gap: 4px 16px; margin: 0; font-size: 14px; }
+.fb-list > div { display: contents; }
+.fb-list dt { color: var(--ink-muted); }
+.fb-list dd { margin: 0; white-space: pre-wrap; }
+@media (max-width: 700px) {
+  .fb-list { grid-template-columns: 1fr; gap: 0; }
+  .fb-list dd { margin-bottom: 8px; }
+}
