@@ -19,6 +19,7 @@ const TOOL_NAMES: [string, string][] = [
   ["/game-os/ledger-view", "the Signal Ledger"],
   ["/game-os/audience-map", "the Audience Map"],
   ["/game-os/market-scope", "Market Scope"],
+  ["/game-os/window-planner", "the Window Planner"],
   ["/seismic", "Seismic"],
 ];
 /** What the sign-in page should say it opens, from the safe callback path. */

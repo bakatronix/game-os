@@ -398,6 +398,13 @@ async function main() {
        "description"='Is a Steam game finding its market? Satisfaction, engagement and reach scored against similar games, with its trailer, screenshots, review history and what to do next.',
        "metrics"='[{"label":"Satisfaction","value":"—"},{"label":"Engagement","value":"—"},{"label":"Reach","value":"—"}]'
      WHERE id='pmf'`,
+    // Window Planner reads Steam's upcoming releases and event calendar: top row, live tile.
+    `UPDATE "app" SET "group"='cxo', "sortOrder"=8, "stage"=NULL, "toolName"='Window Planner',
+       "cxoQuestion"='When should you launch?',
+       "description"='Pick a Steam launch week: how many games under your tags are coming out each week, how crowded that week usually is, and which Steam sales and Next Fest dates to avoid or aim for.',
+       "status"='nodata', "statusLabel"='No data',
+       "metrics"='[{"label":"Launch week","value":"—"},{"label":"Week score","value":"—"},{"label":"Same-tag releases","value":"—"}]'
+     WHERE id='window-planner'`,
     // It is a working tool, so it sits in the top row with the other real tools.
     `UPDATE "app" SET
        "group"='cxo', "sortOrder"=6, "stage"=NULL, "toolName"='Market Scope',

@@ -140,3 +140,110 @@ export function parseRows(html: string): Row[] {
   return out;
 }
 
+
+/* ---------------- Upcoming (coming soon) ---------------- */
+
+/** Upcoming row: [appid, name, "YYYY-MM-DD" | "", "YYYY-MM" | "", tagids[]].
+ *  Exact-date games fill [2]; games Steam lists only by month ("March 2027") fill [3]. */
+export type UpcomingRow = [number, string, string, string, number[]];
+
+export type UpcomingResult = {
+  total: number; rows: UpcomingRow[]; undated: number; pages: number; truncated: boolean; reached: string | null;
+};
+
+const MONTH_NAMES: Record<string, string> = {
+  January: "01", February: "02", March: "03", April: "04", May: "05", June: "06",
+  July: "07", August: "08", September: "09", October: "10", November: "11", December: "12",
+};
+
+/** "March 2027" → "2027-03"; anything else → "". */
+function parseMonth(s: string): string {
+  const m = s.replace(/\s+/g, " ").trim().match(/^([A-Z][a-z]+) (\d{4})$/);
+  return m && MONTH_NAMES[m[1]] ? `${m[2]}-${MONTH_NAMES[m[1]]}` : "";
+}
+
+function parseUpcoming(html: string): { rows: UpcomingRow[]; undated: number } {
+  const rows: UpcomingRow[] = [];
+  let undated = 0;
+  for (const chunk of html.split("<a href").slice(1)) {
+    if (/data-ds-bundleid=|data-ds-packageid=/.test(chunk)) continue;
+    const appid = Number((chunk.match(/data-ds-appid="(\d+)"/) || [])[1]);
+    if (!appid) continue;
+    const name = decode((chunk.match(/<span class="title">([^<]*)<\/span>/) || [])[1] || "");
+    const text = (chunk.match(/search_released[^>]*>([^<]*)</) || [])[1] || "";
+    const date = parseDate(text);
+    const month = date ? "" : parseMonth(text);
+    if (!date && !month) { undated++; continue; } // "Coming soon", "Q2 2027", "2027", "To be announced"
+    let tagids: number[] = [];
+    try { tagids = JSON.parse((chunk.match(/data-ds-tagids="(\[[^\]]*\])"/) || [])[1] || "[]"); } catch { tagids = []; }
+    rows.push([appid, name.slice(0, 120), date, month, tagids.slice(0, 20)]);
+  }
+  return { rows, undated };
+}
+
+async function fetchUpcomingPage(tags: number[], start: number) {
+  const url =
+    "https://store.steampowered.com/search/results/?query&start=" + start +
+    "&count=" + PAGE + "&tags=" + tags.join(",") +
+    "&category1=998&json=1&infinite=1&cc=us&l=english&filter=comingsoon";
+  let lastErr = "";
+  for (let attempt = 0; attempt < 4; attempt++) {
+    try {
+      const r = await fetch(url, { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(15000) });
+      if (r.ok) {
+        const d = await r.json();
+        return { total: Number(d.total_count) || 0, ...parseUpcoming(String(d.results_html || "")) };
+      }
+      lastErr = `Steam search returned ${r.status}`;
+    } catch (e) {
+      lastErr = e instanceof Error ? e.message : "Steam search failed";
+    }
+    const wait = lastErr.includes("429") ? 2000 * (attempt + 1) : 600 * (attempt + 1);
+    await new Promise((res) => setTimeout(res, wait));
+  }
+  throw new Error(lastErr);
+}
+
+/**
+ * Unreleased games under ALL `tags` with a release date (or month) up to `to`
+ * (YYYY-MM-DD). Steam lists coming-soon games soonest first, so we stop once a
+ * page goes past `to`. Capped at maxPages; `truncated` says the cap was hit.
+ */
+export async function crawlUpcoming(tags: number[], to: string, maxPages = 30, batch = 4): Promise<UpcomingResult> {
+  const toMonth = to.slice(0, 7);
+  const past = (r: UpcomingRow) => (r[2] ? r[2] > to : r[3] > toMonth);
+  const first = await fetchUpcomingPage(tags, 0);
+  const total = first.total;
+  const rows: UpcomingRow[] = [];
+  let undated = first.undated;
+  const take = (list: UpcomingRow[]) => {
+    let beyond = false;
+    for (const r of list) { if (past(r)) beyond = true; else rows.push(r); }
+    return beyond;
+  };
+  let done = take(first.rows);
+  let pages = 1;
+  const lastPage = Math.ceil(total / PAGE);
+  const cap = Math.min(lastPage, maxPages);
+  while (!done && pages < cap) {
+    const ids: number[] = [];
+    for (let i = 0; i < batch && pages + i < cap; i++) ids.push(pages + i);
+    const results = await Promise.allSettled(ids.map((p) => fetchUpcomingPage(tags, p * PAGE)));
+    let failed = false;
+    for (const r of results) {
+      if (r.status === "rejected") { failed = true; break; }
+      pages++;
+      undated += r.value.undated;
+      if (take(r.value.rows)) { done = true; break; }
+    }
+    if (failed && !done) break;
+  }
+  const seen = new Set<number>();
+  const unique = rows.filter((r) => (seen.has(r[0]) ? false : (seen.add(r[0]), true)));
+  const last = unique[unique.length - 1];
+  return {
+    total, rows: unique, undated, pages,
+    truncated: !done && pages < lastPage,
+    reached: last ? last[2] || last[3] : null,
+  };
+}

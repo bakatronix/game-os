@@ -664,6 +664,23 @@
         label: l ? 'Live' : 'No data yet'
       };
     },
+    'window-planner': function (G) {
+      var w = sig('window_launch_score');
+      var c = sig('window_competing_releases');
+      var wk = w && w.meta && w.meta.week;
+      var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      var label = wk ? MON[+wk.slice(5, 7) - 1] + ' ' + (+wk.slice(8, 10)) + ', ' + wk.slice(0, 4) : '\u2014';
+      return {
+        metrics: [
+          { label: 'Launch week', value: label },
+          { label: 'Week score', value: w && w.value != null ? Math.round(w.value) + '/100' : '\u2014' },
+          { label: 'Same-tag releases', value: c && c.value != null ? String(c.value) : '\u2014' }
+        ],
+        spark: sigSpark('window_launch_score'),
+        kind: !w ? 'demo' : w.value >= 55 ? 'healthy' : 'watch',
+        label: w ? 'Live' : 'No data yet'
+      };
+    },
     'thesis-builder': thesisTile,
     'thesis-view': thesisTile,
     'ledger-view': function (G) {
@@ -721,7 +738,7 @@
     'seismic': 1, 'page-engine': 1,
     'community-scaffold': 1, 'test-loop': 1, 'festival-radar': 1,
     'playtest-pipeline': 1, 'creator-match': 1, 'sentiment-radar': 1,
-    'demo-command': 1, 'window-planner': 1, 'launch-runbook': 1,
+    'demo-command': 1, 'launch-runbook': 1,
     'long-tail-engine': 1, 'sequel-signal': 1, 'gate-log': 1
   };
 
