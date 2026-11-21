@@ -681,6 +681,21 @@
         label: w ? 'Live' : 'No data yet'
       };
     },
+    'launch-runbook': function (G) {
+      var d = sig('runbook_days_to_launch');
+      var p = sig('runbook_done_pct');
+      var o = sig('runbook_overdue');
+      return {
+        metrics: [
+          { label: 'Days to launch', value: d && d.value != null ? (d.value >= 0 ? String(Math.round(d.value)) : 'Launched') : '\u2014' },
+          { label: 'Steps done', value: p && p.value != null ? Math.round(p.value) + '%' : '\u2014' },
+          { label: 'Past their date', value: o && o.value != null ? String(Math.round(o.value)) : '\u2014' }
+        ],
+        spark: sigSpark('runbook_done_pct'),
+        kind: !p ? 'demo' : o && o.value > 0 ? 'watch' : 'healthy',
+        label: p ? 'Live' : 'No data yet'
+      };
+    },
     'thesis-builder': thesisTile,
     'thesis-view': thesisTile,
     'ledger-view': function (G) {
@@ -738,7 +753,7 @@
     'seismic': 1, 'page-engine': 1,
     'community-scaffold': 1, 'test-loop': 1, 'festival-radar': 1,
     'playtest-pipeline': 1, 'creator-match': 1, 'sentiment-radar': 1,
-    'demo-command': 1, 'launch-runbook': 1,
+    'demo-command': 1,
     'long-tail-engine': 1, 'sequel-signal': 1, 'gate-log': 1
   };
 

@@ -136,7 +136,7 @@ export default async function PeoplePage({
           ))}
           <span className="gos-muted" style={{ marginLeft: 12 }}>Tool</span>
           <Link href={href({ tool: null })} className={`ppl-chip${!tool ? " on" : ""}`}>All tools</Link>
-          {["price-calc", "mobile-calc", "market-scope", "window-planner", "ledger-view", "audience-map", "game-os", "chicken-brulee", "pmf", "steam-page-audit", "seismic"].map((id) => (
+          {["price-calc", "mobile-calc", "market-scope", "window-planner", "launch-runbook", "ledger-view", "audience-map", "game-os", "chicken-brulee", "pmf", "steam-page-audit", "seismic"].map((id) => (
             <Link key={id} href={href({ tool: id })} className={`ppl-chip${tool === id ? " on" : ""}`}>{nameOf(id)}</Link>
           ))}
         </div>

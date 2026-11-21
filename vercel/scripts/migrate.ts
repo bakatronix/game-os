@@ -398,6 +398,13 @@ async function main() {
        "description"='Is a Steam game finding its market? Satisfaction, engagement and reach scored against similar games, with its trailer, screenshots, review history and what to do next.',
        "metrics"='[{"label":"Satisfaction","value":"—"},{"label":"Engagement","value":"—"},{"label":"Reach","value":"—"}]'
      WHERE id='pmf'`,
+    // Launch Runbook is a dated Steam launch checklist: top row, live tile.
+    `UPDATE "app" SET "group"='cxo', "sortOrder"=9, "stage"=NULL, "toolName"='Launch Runbook',
+       "cxoQuestion"='Are you ready to launch?',
+       "description"='A dated Steam launch checklist worked back from your launch day: Steam review and Coming Soon deadlines, price and launch discount, press keys, launch day and the first 30 days.',
+       "status"='nodata', "statusLabel"='No data',
+       "metrics"='[{"label":"Days to launch","value":"—"},{"label":"Steps done","value":"—"},{"label":"Past their date","value":"—"}]'
+     WHERE id='launch-runbook'`,
     // Window Planner reads Steam's upcoming releases and event calendar: top row, live tile.
     `UPDATE "app" SET "group"='cxo', "sortOrder"=8, "stage"=NULL, "toolName"='Window Planner',
        "cxoQuestion"='When should you launch?',
