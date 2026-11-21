@@ -14,6 +14,23 @@ const nextConfig: NextConfig = {
       ],
     },
   },
+  // Baseline security headers on every response. A full script CSP is left
+  // out on purpose: the static tools use inline scripts and several CDNs.
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "Content-Security-Policy", value: "frame-ancestors 'self'; base-uri 'self'; object-src 'none'" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=()" },
+        ],
+      },
+    ];
+  },
   async rewrites() {
     return [
       // ---- Static tools (served from /public) ----
@@ -21,12 +38,18 @@ const nextConfig: NextConfig = {
       { source: "/game-os/", destination: "/game-os/index.html" },
       { source: "/game-os/price-calc", destination: "/game-os/price-calc/index.html" },
       { source: "/game-os/price-calc/", destination: "/game-os/price-calc/index.html" },
+      { source: "/game-os/mobile-calc", destination: "/game-os/mobile-calc/index.html" },
+      { source: "/game-os/mobile-calc/", destination: "/game-os/mobile-calc/index.html" },
+      { source: "/game-os/pci/feedback", destination: "/game-os/pci/feedback/index.html" },
+      { source: "/game-os/pci/feedback/", destination: "/game-os/pci/feedback/index.html" },
       { source: "/game-os/chicken-brulee", destination: "/game-os/chicken-brulee/index.html" },
       { source: "/game-os/chicken-brulee/", destination: "/game-os/chicken-brulee/index.html" },
       { source: "/game-os/PMF", destination: "/game-os/PMF/index.html" },
       { source: "/game-os/PMF/", destination: "/game-os/PMF/index.html" },
       { source: "/game-os/steam-page-audit", destination: "/game-os/steam-page-audit/index.html" },
       { source: "/game-os/steam-page-audit/", destination: "/game-os/steam-page-audit/index.html" },
+      { source: "/game-os/ledger-view", destination: "/game-os/ledger-view/index.html" },
+      { source: "/game-os/ledger-view/", destination: "/game-os/ledger-view/index.html" },
       { source: "/game-os/market-scope", destination: "/game-os/market-scope/index.html" },
       { source: "/game-os/market-scope/", destination: "/game-os/market-scope/index.html" },
       { source: "/game-os/thesis-builder", destination: "/game-os/thesis-builder/index.html" },

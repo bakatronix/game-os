@@ -1,24 +1,76 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Audience Map — Game OS</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Source+Sans+3:wght@400;500;700&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/game-os/toolkit/tokens.css">
-  <link rel="stylesheet" href="/game-os/toolkit/sandstone.css">
-  <script src="/track.js" data-tool="audience-map" data-version="1"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audience Map — Game OS</title>
+<meta name="description" content="Where your comps' players gather, which games they also play, the words they use, and whether your game's name is free.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/game-os/toolkit/tokens.css">
+<link rel="stylesheet" href="/game-os/audience-map/styles.css?v=3">
+<script src="/track.js" data-tool="audience-map" data-version="3"></script>
+<script src="/game-os/toolkit/spine.js?v=2"></script>
 </head>
 <body>
-  <div class="widget-shell">
-    <div class="widget-breadcrumb"><a href="/game-os">&larr; Game OS</a> · Seismic</div>
-    <div id="widget-root"></div>
+
+<header class="top">
+  <div class="container">
+    <div class="gos-topbar">
+      <a class="gos-brand" href="/game-os" aria-label="Game OS home"><img src="/game-os/assets/logo.svg?v=6" alt="Game OS"></a>
+      <a class="gos-back" href="/game-os">&larr; Back to dashboard</a>
+    </div>
+    <div class="title-row">
+      <h1><span class="kicker">Stage 2 &middot; Pre-production</span>Audience Map</h1>
+      <div class="toolbar">
+        <button class="btn-small" id="btn-print" type="button">Print / PDF</button>
+      </div>
+    </div>
+    <p class="lead">Where do your players live? Start from games like yours and see where their players gather, which other games they play, the words they use, and whether your game&rsquo;s name is free.</p>
   </div>
-  <script src="/game-os/toolkit/data.js"></script>
-  <script src="/game-os/toolkit/toolkit.js"></script>
-  <script src="/game-os/audience-map/render.js"></script>
-  <script>bootWidget('audience-map');</script>
+</header>
+
+<main>
+  <div class="container">
+    <div id="gameBar"></div>
+
+    <section class="card accent" id="comps-card">
+      <h3>Games like yours</h3>
+      <p class="note">Up to eight comps. They come from your game&rsquo;s thesis when it has a comp set; add or remove any here.</p>
+      <div class="comps-row" id="comps"></div>
+      <form class="search-row" id="add-form" autocomplete="off">
+        <div class="inwrap"><input id="add-q" type="text" placeholder="Add a game: search Steam by name" aria-label="Search Steam for a comp game"></div>
+        <button class="btn-ghost" type="submit">Search</button>
+      </form>
+      <ul class="results" id="results" hidden></ul>
+      <div class="actions"><button class="btn" id="btn-map" type="button">Map the audience</button><span class="feedback" id="msg" role="status"></span></div>
+    </section>
+
+    <div id="out"></div>
+
+    <section class="card" id="name-card">
+      <h3>Name check</h3>
+      <p class="note">Is your game&rsquo;s name free? Checks Steam for games with the same name and whether the .com is registered. Social handles aren&rsquo;t checked: look those up yourself.</p>
+      <form class="search-row" id="name-form" autocomplete="off">
+        <div class="inwrap"><input id="name-q" type="text" placeholder="Your game's name" aria-label="Your game's name"></div>
+        <button class="btn-ghost" type="submit">Check</button>
+      </form>
+      <div class="namebox" id="name-out"></div>
+    </section>
+
+    <section class="card" id="about">
+      <h3>Where the data comes from</h3>
+      <ul class="plain">
+        <li><b>Communities</b>: the links each comp lists on its Steam store page. Discord member and online counts are live from Discord&rsquo;s public invite lookup. Reddit doesn&rsquo;t allow automated reads, so subreddits are linked without member counts.</li>
+        <li><b>Neighbouring games</b>: Steam&rsquo;s &ldquo;more like this&rdquo; list for each comp. A game recommended alongside several of your comps shares their audience.</li>
+        <li><b>Player tags</b>: the tags Steam players voted onto your comps, weighted by votes. Grey tags are generic ones most games carry.</li>
+        <li><b>Discussion topics</b>: words and two-word phrases from the newest threads in each comp&rsquo;s Steam discussion forum, counted once per thread. They show what players raise, not polished marketing copy.</li>
+      </ul>
+    </section>
+  </div>
+</main>
+
+<script src="/game-os/audience-map/model.js?v=4"></script>
+<script src="/game-os/audience-map/app.js?v=3"></script>
 </body>
 </html>

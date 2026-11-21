@@ -1,4 +1,5 @@
 import { signIn } from "@/auth";
+import { safeCallback, toolNameFor } from "@/lib/safe-callback";
 
 const SAND = "#f0e3c3";
 const SAND_DEEP = "#e6d6b7";
@@ -9,11 +10,13 @@ const TEAL = "#3b8d83";
 const ORANGE = "#e3683f";
 const ORANGE_DEEP = "#b84c27";
 
-export default function LoginPage({
+export default async function LoginPage({
   searchParams,
 }: {
   searchParams: Promise<{ callbackUrl?: string }>;
 }) {
+  const redirectTo = safeCallback((await searchParams).callbackUrl);
+  const tool = toolNameFor(redirectTo);
   return (
     <main
       style={{
@@ -73,7 +76,18 @@ export default function LoginPage({
             color: INK_MUTED,
           }}
         >
-          Sign in to open your studio dashboard.
+          {tool ? `Sign in to open ${tool}.` : "Sign in to open your studio dashboard."}
+        </p>
+        <p
+          style={{
+            margin: "6px auto 0",
+            maxWidth: 380,
+            fontSize: 13,
+            color: INK_MUTED,
+          }}
+        >
+          Game OS is a set of tools from Llama &amp; Griffin that helps indie studios price, test and launch
+          their games.
         </p>
       </div>
 
@@ -89,27 +103,31 @@ export default function LoginPage({
         <form
           action={async () => {
             "use server";
-            await signIn("google", { redirectTo: "/game-os" });
+            await signIn("google", { redirectTo });
           }}
         >
           <button type="submit" style={buttonStyle(ORANGE_DEEP, CREAM)}>
             Continue with Google
           </button>
         </form>
-        <form
-          action={async () => {
-            "use server";
-            await signIn("discord", { redirectTo: "/game-os" });
-          }}
+        {/* Discord sign-in is paused until its OAuth setup is fixed; the provider stays configured. */}
+        <button
+          type="button"
+          disabled
+          aria-disabled="true"
+          title="Discord sign-in is under construction. Use Google for now."
+          style={{ ...buttonStyle(TEAL, CREAM), opacity: 0.45, cursor: "not-allowed" }}
         >
-          <button type="submit" style={buttonStyle(TEAL, CREAM)}>
-            Continue with Discord
-          </button>
-        </form>
+          Continue with Discord &middot; under construction
+        </button>
       </div>
 
       <p style={{ fontSize: 12, color: INK_MUTED, maxWidth: 360, textAlign: "center" }}>
-        By signing in you agree to the terms and privacy policy. Demo data only.
+        We only use your Google or Discord name and email to sign you in. Read our{" "}
+        <a href="/login/privacy" style={{ color: ORANGE_DEEP }}>
+          privacy policy
+        </a>
+        .
       </p>
     </main>
   );

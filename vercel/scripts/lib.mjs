@@ -110,3 +110,38 @@ export function hasCommand(name) {
     return false;
   }
 }
+
+/**
+ * The files uploaded as the edge router Worker: the router itself plus the
+ * visiting-card page (namecheap/card/), bundled so the Worker can serve
+ * llamagriffin.com/card directly. Edit the card in namecheap/card/.
+ */
+export function workerModules() {
+  const card = resolve(ROOT, "namecheap", "card");
+  const html = readFileSync(resolve(card, "index.html"), "utf8");
+  const vcf = readFileSync(resolve(card, "abbas-saleem.vcf"), "utf8");
+  return [
+    {
+      name: "router.worker.js",
+      type: "application/javascript+module",
+      body: readFileSync(resolve(VERCEL_DIR, "edge/router.worker.js"), "utf8"),
+    },
+    {
+      name: "card.js",
+      type: "application/javascript+module",
+      body: `export const CARD_HTML = ${JSON.stringify(html)};\nexport const CARD_VCF = ${JSON.stringify(vcf)};\n`,
+    },
+    {
+      name: "abbas.png",
+      type: "application/octet-stream",
+      body: readFileSync(resolve(card, "abbas.png")),
+    },
+  ];
+}
+
+/** Append workerModules() to a FormData for the Workers script upload API. */
+export function appendWorkerModules(form) {
+  for (const m of workerModules()) {
+    form.append(m.name, new Blob([m.body], { type: m.type }), m.name);
+  }
+}

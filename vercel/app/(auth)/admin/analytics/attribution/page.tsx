@@ -3,12 +3,12 @@ import { auth } from "@/auth";
 import { getDb } from "@/db";
 import { sql } from "drizzle-orm";
 import GosShell from "@/components/GosShell";
+import { assertPlatformAdmin, requirePlatformAdmin } from "@/lib/admin";
 
 export const dynamic = "force-dynamic";
 
 export default async function AttributionPage() {
-  const session = await auth();
-  if (!session?.user) redirect("/login?callbackUrl=/admin/analytics/attribution");
+  const session = await requirePlatformAdmin("/admin/analytics/attribution");
 
   const db = getDb();
 
@@ -56,7 +56,7 @@ export default async function AttributionPage() {
   }
 
   return (
-    <GosShell title="Analytics" active="admin" subnav="attribution">
+    <GosShell title="Analytics" active="analytics" subnav="attribution">
       <div className="gos-card">
         <h2>Signups by campaign (UTM)</h2>
         {emptyMsg(byUtm.rows.length, "signups")}

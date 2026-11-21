@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Signal Ledger — Game OS</title>
+<meta name="description" content="Every figure your Game OS tools have recorded for a game, scored against benchmarks and rolled into one Momentum Score.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/game-os/toolkit/tokens.css">
+<link rel="stylesheet" href="/game-os/ledger-view/styles.css?v=1">
+<script src="/track.js" data-tool="ledger-view" data-version="1"></script>
+<script src="/game-os/toolkit/spine.js?v=2"></script>
+</head>
+<body>
+
+<header class="top">
+  <div class="container">
+    <div class="gos-topbar">
+      <a class="gos-brand" href="/game-os" aria-label="Game OS home"><img src="/game-os/assets/logo.svg?v=6" alt="Game OS"></a>
+      <a class="gos-back" href="/game-os">&larr; Back to dashboard</a>
+    </div>
+    <div class="title-row">
+      <h1><span class="kicker">Shared record</span>Signal Ledger &amp; Momentum</h1>
+      <div class="toolbar">
+        <button class="btn-small" id="btn-print" type="button">Print / PDF</button>
+      </div>
+    </div>
+    <p class="lead">Every figure your Game OS tools have recorded for a game, each scored against a stated benchmark, rolled into one Momentum Score that weighs what matters at your stage.</p>
+  </div>
+</header>
+
+<main>
+  <div class="container">
+    <div id="gameBar"></div>
+    <div id="out"><div class="loading">Loading your games&hellip;</div></div>
+
+    <section class="card" id="about">
+      <h3>How the Momentum Score works</h3>
+      <ul class="plain">
+        <li>Each figure a tool sends to your game is scored from 0 to 100 against the benchmark listed next to it. Figures with no benchmark stay in the ledger but don&rsquo;t move the score.</li>
+        <li>Scores roll up into four pillars: <b>Market</b>, <b>Store page</b>, <b>Players</b> and <b>Steam traction</b>. Where two figures measure the same thing (say, positive reviews from the PMF Analyzer and from the daily Steam snapshot), only the newest counts.</li>
+        <li>Pillars are weighted by your game&rsquo;s stage, set in the bar at the top: market evidence counts most at Concept, Steam traction most after launch. Pillars with no data drop out and the others are rescaled; <b>coverage</b> shows how much of the full picture you have.</li>
+        <li>The history line recalculates the score at each point in time from what was known then.</li>
+        <li>For games with a Steam App ID, Game OS records Steam reviews, recent reviews and players every day at 06:00 UTC. Use <b>Record now</b> to take one immediately.</li>
+      </ul>
+      <div id="weights"></div>
+    </section>
+  </div>
+</main>
+
+<div class="chart-tip" id="chart-tip" role="tooltip"></div>
+
+<script src="/game-os/toolkit/momentum.js?v=1"></script>
+<script src="/game-os/ledger-view/app.js?v=1"></script>
+</body>
+</html>

@@ -7,6 +7,9 @@
  *   /game-os/*   -> Vercel   (the Next.js app in ../../vercel)
  *   /game-os     -> Vercel
  *   /api/*       -> Vercel   (same-origin APIs; set ROUTE_API=false to disable)
+ *   /card, /card/* -> served right here (visiting-card page, bundled from
+ *                     namecheap/card/ at deploy time — the printed QR code
+ *                     points at /card, so never remove this)
  *   everything   -> Namecheap origin (68.65.120.165)
  *
  * Config via Worker env vars:
@@ -15,12 +18,18 @@
  *   ROUTE_API        "true" | "false"  (default true)
  */
 
+import { CARD_HTML, CARD_VCF } from "./card.js";
+import CARD_PHOTO from "./abbas.png";
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const path = url.pathname;
 
     const routeApi = (env.ROUTE_API ?? "true") === "true";
+
+    const card = cardResponse(path);
+    if (card) return card;
 
     // App pages + tools served by the Next.js app (not the marketing site).
     const APP_PREFIXES = [
@@ -78,15 +87,53 @@ export default {
     proxied.headers.set("Host", url.host);
     proxied.headers.set("X-Forwarded-Host", url.host);
     proxied.headers.set("X-Forwarded-Proto", "https");
-    return fetch(request.url, {
+    const res = await fetch(request.url, {
       method: request.method,
       headers: proxied.headers,
       body: request.body,
       redirect: "manual",
       cf: { resolveOverride: originIp, cacheEverything: false },
     });
+    return withSecurityHeaders(res);
   },
 };
+
+/* Same baseline headers the Next.js app sets (vercel/next.config.ts), added to
+ * the Namecheap marketing site's responses. Existing headers are kept. */
+const SECURITY_HEADERS = {
+  "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "SAMEORIGIN",
+  "Content-Security-Policy": "frame-ancestors 'self'; base-uri 'self'; object-src 'none'",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=()",
+};
+
+function withSecurityHeaders(res) {
+  const headers = new Headers(res.headers);
+  for (const [k, v] of Object.entries(SECURITY_HEADERS)) {
+    if (!headers.has(k)) headers.set(k, v);
+  }
+  return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
+}
+
+/* Visiting-card page (llamagriffin.com/card). */
+function cardResponse(path) {
+  const files = {
+    "/card": [CARD_HTML, "text/html; charset=utf-8"],
+    "/card/": [CARD_HTML, "text/html; charset=utf-8"],
+    "/card/index.html": [CARD_HTML, "text/html; charset=utf-8"],
+    "/card/abbas.png": [CARD_PHOTO, "image/png"],
+    "/card/abbas-saleem.vcf": [CARD_VCF, "text/vcard; charset=utf-8"],
+  };
+  const hit = files[path];
+  if (!hit) return null;
+  const headers = { "Content-Type": hit[1], "Cache-Control": "public, max-age=300" };
+  if (path.endsWith(".vcf")) {
+    headers["Content-Disposition"] = 'attachment; filename="abbas-saleem.vcf"';
+  }
+  return withSecurityHeaders(new Response(hit[0], { headers }));
+}
 
 function misconfigured() {
   return new Response("Edge router misconfigured (missing origin)", {

@@ -17,7 +17,7 @@ vercel/
   public/                   the static tools, served at their subpaths
     game-os/                dashboard (auth-gated)
     game-os/price-calc/     pricing calculator
-    game-os/chicken-brulee/ Discord playtest dashboard (talks to Supabase)
+    game-os/chicken-brulee/ Discord playtest scanner (Neon via /api/games/:id/playtest)
     game-os/PMF/            PMF Analyzer React build
     seismic/                Seismic mockflow
   auth.ts                   Auth.js config (Google + Discord, Drizzle adapter)
@@ -59,7 +59,7 @@ vercel/
 - OAuth redirect URIs to register:
   - Google: `https://<domain>/api/auth/callback/google`
   - Discord: `https://<domain>/api/auth/callback/discord`
-- `chicken-brulee` talks to Supabase directly from the browser — no change needed.
+- `chicken-brulee` stores its data in Neon through `/api/games/:id/playtest` (moved off Supabase 2026-11-04). AI summaries need `DEEPSEEK_API_KEY` (optional).
 - The `game-os` dashboard module links are root-relative (`/game-os/...`).
 - The PMF build posts to `/game-os/PMF/api/v1/analyze`, rewritten to the ported handler.
 - The price-calc tool posts to `/api/steam`.

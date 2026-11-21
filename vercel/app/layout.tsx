@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Archivo, Source_Sans_3 } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -7,15 +7,20 @@ export const metadata: Metadata = {
   description: "Llama & Griffin operator surface for indie studio executives.",
 };
 
-const archivo = Archivo({
-  subsets: ["latin"],
-  weight: ["700", "800"],
+// Self-hosted (app/fonts, SIL Open Font License) so builds never fetch from
+// Google Fonts: a bad reply from Google used to fail the whole build.
+// Both are variable fonts (latin subset), so one file covers each weight range.
+const archivo = localFont({
+  src: [{ path: "./fonts/archivo-latin.woff2", weight: "700 800", style: "normal" }],
   variable: "--font-display",
+  display: "swap",
+  fallback: ["system-ui", "sans-serif"],
 });
-const sourceSans = Source_Sans_3({
-  subsets: ["latin"],
-  weight: ["400", "500", "700"],
+const sourceSans = localFont({
+  src: [{ path: "./fonts/source-sans-3-latin.woff2", weight: "400 700", style: "normal" }],
   variable: "--font-sans",
+  display: "swap",
+  fallback: ["system-ui", "sans-serif"],
 });
 
 export default function RootLayout({

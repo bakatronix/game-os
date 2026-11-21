@@ -124,7 +124,7 @@ Closed four marketing-review reconciliation gaps:
 - **GitHub:** `github.com/bakatronix/seismic` — holds the mockflow (3 commits).
 
 ### The broader monorepo (on FTP server only)
-The FTP root (`***REMOVED***`) contains a *separate* React/Vite/Express/Tailwind monorepo (`package.json`, `client/`, `server/`, `shared/`) — the Llama & Griffin **marketing website**, not the products. Its stack: **Vite 7 + React 19 + Express 4 + Tailwind 4 + TypeScript + pnpm**, with wouter routing, shadcn/ui (55+ components in `client/src/components/ui/`), recharts, react-hook-form + zod. `server/index.ts` currently only serves static files (no auth/DB). This was being downloaded locally to `/Users/abbas/Projects/llama-griffin/` (partial).
+The FTP root (`(old Namecheap FTP host)`) contains a *separate* React/Vite/Express/Tailwind monorepo (`package.json`, `client/`, `server/`, `shared/`) — the Llama & Griffin **marketing website**, not the products. Its stack: **Vite 7 + React 19 + Express 4 + Tailwind 4 + TypeScript + pnpm**, with wouter routing, shadcn/ui (55+ components in `client/src/components/ui/`), recharts, react-hook-form + zod. `server/index.ts` currently only serves static files (no auth/DB). This was being downloaded locally to `/Users/abbas/Projects/llama-griffin/` (partial).
 
 ---
 
@@ -212,8 +212,8 @@ The FTP root (`***REMOVED***`) contains a *separate* React/Vite/Express/Tailwind
 
 ### 10.2 FTP (Namecheap shared hosting — the live deployment target)
 
-- **Host:** `***REMOVED***` (FTPS, cert mismatch — deploy scripts use `rejectUnauthorized: false`).
-- **User:** `***REMOVED***` (read from `FTP_USER` env).
+- **Host:** `(old Namecheap FTP host)` (FTPS, cert mismatch — deploy scripts use `rejectUnauthorized: false`).
+- **User:** `(stored in a password manager)` (read from `FTP_USER` env).
 - **Password:** `FTP_PASS` env var — never stored in repo or handoff.
 - **Deploy mechanism:** Node `basic-ftp` script — reference implementation at `chicken-brulee/scripts/deploy.js` (also a GitHub Actions workflow in `chicken-brulee/.github/workflows/`). Older deploys used `curl -T` with cache-buster query strings (`?v=6`).
 - **Live paths (LiteSpeed static hosting):**
@@ -251,7 +251,7 @@ git clone https://github.com/bakatronix/chicken-brulee.git GameOS/chicken-brulee
 #    - pangram-bypass/  (copy from old machine or FTP)
 #    - HANDOFF.md        (copy from old machine)
 
-# 3. Pull the FTP-only React monorepo down from ***REMOVED*** root into llama-griffin/ and version it.
+# 3. Pull the FTP-only React monorepo down from (old Namecheap FTP host) root into llama-griffin/ and version it.
 
 # 4. Set env: FTP_USER, FTP_PASS, DATABASE_URL (once DB chosen).
 ```
