@@ -80,6 +80,9 @@ const nextConfig: NextConfig = {
       { source: "/game-os/long-tail-engine/", destination: "/game-os/long-tail-engine/index.html" },
       { source: "/game-os/sequel-signal", destination: "/game-os/sequel-signal/index.html" },
       { source: "/game-os/sequel-signal/", destination: "/game-os/sequel-signal/index.html" },
+      // Unlisted page: not in the app registry, so it does not appear on the dashboard.
+      { source: "/game-os/pitch-lineup", destination: "/game-os/pitch-lineup/index.html" },
+      { source: "/game-os/pitch-lineup/", destination: "/game-os/pitch-lineup/index.html" },
       // PMF web (built with VITE_API_URL=/game-os/PMF/api/v1) posts to
       // /game-os/PMF/api/v1/analyze — send it to the ported route handler.
       {

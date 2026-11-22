@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pitch Lineup — Llama &amp; Griffin</title>
+<meta name="description" content="Order a demo day like a batting lineup: rate each pitch as a single, double, triple or home run and see where runs score and where the room goes quiet.">
+<link rel="icon" href="/favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f7f4ee; --card:#fdfcf9; --line:#eae7e0; --line2:#d2cdc3;
+  --ink:#232323; --muted:#6b6660; --faint:#bab9b4;
+  --gold:#c3a55f; --gold-deep:#a8893a; --teal:#2a8f76; --coral:#b85a3a; --purple:#6b64b3;
+  --serif:"Playfair Display",Georgia,serif; --sans:"DM Sans",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--sans)}
+a{color:var(--teal)}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 20px 60px}
+header{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;border-bottom:1px solid var(--gold);padding-bottom:16px;margin-bottom:22px}
+.eyebrow{font:500 12px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--gold-deep)}
+h1{font:700 34px/1.1 var(--serif);margin:6px 0 6px}
+.lede{color:var(--muted);max-width:640px;margin:0}
+.brand{font:600 14px var(--serif);color:var(--muted);text-decoration:none}
+.grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:22px}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px}
+.card h2{font:700 19px var(--serif);margin:0 0 4px}
+.card .sub{color:var(--muted);font-size:13px;margin:0 0 14px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:22px}
+@media(max-width:700px){.stats{grid-template-columns:repeat(2,1fr)}}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.stat .k{font:500 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.stat .v{font:700 26px/1.2 var(--serif);margin-top:4px}
+.stat .n{font-size:12px;color:var(--muted)}
+table{width:100%;border-collapse:collapse}
+th{font:500 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;padding:6px 6px;border-bottom:1px solid var(--line2)}
+td{padding:5px 4px;border-bottom:1px solid var(--line);vertical-align:middle}
+td.num,th.num{text-align:center;font-family:var(--mono)}
+tr.group-start td{border-top:2px solid var(--line2)}
+tr.dragging{opacity:.4}
+tr.drop-above td{box-shadow:inset 0 2px 0 var(--gold)}
+.handle{cursor:grab;color:var(--faint);user-select:none;font-size:16px;padding:0 2px}
+.slot{font-family:var(--mono);color:var(--muted);width:28px}
+.grp{font:500 11px var(--mono);color:var(--gold-deep)}
+input[type=text]{width:100%;border:1px solid transparent;background:transparent;font:inherit;padding:4px 6px;border-radius:6px;color:var(--ink)}
+input[type=text]:hover{border-color:var(--line)}
+input[type=text]:focus{outline:none;border-color:var(--gold);background:#fff}
+.bases{display:inline-flex;border:1px solid var(--line2);border-radius:7px;overflow:hidden}
+.bases button{border:0;background:transparent;font:500 12px var(--mono);padding:4px 6px;cursor:pointer;color:var(--muted)}
+.bases button+button{border-left:1px solid var(--line2)}
+.bases button.on{color:#fff}
+.bases button.on[data-b="1"]{background:var(--faint);color:var(--ink)}
+.bases button.on[data-b="2"]{background:var(--purple)}
+.bases button.on[data-b="3"]{background:var(--gold-deep)}
+.bases button.on[data-b="4"]{background:var(--teal)}
+.runs{font:700 15px var(--mono)}
+.runs.zero{color:var(--faint);font-weight:400}
+.acts{white-space:nowrap}
+.mini{border:0;background:transparent;cursor:pointer;color:var(--faint);font-size:13px;padding:2px 4px}
+.mini:hover{color:var(--coral)}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.btn{border:1px solid var(--line2);background:var(--card);border-radius:7px;padding:7px 12px;font:500 13px var(--sans);cursor:pointer;color:var(--ink)}
+.btn:hover{border-color:var(--gold)}
+.btn.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.settings{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.settings label{font:500 11px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:4px}
+.settings input[type=range]{width:100%;accent-color:var(--gold-deep)}
+.settings .val{font:500 13px var(--mono)}
+.settings input[type=number]{width:70px;font:500 13px var(--mono);border:1px solid var(--line2);border-radius:6px;padding:3px 6px;background:#fff}
+.chart{width:100%;height:auto;display:block}
+.chart text{font-family:var(--mono);font-size:11px;fill:var(--muted)}
+.chart .title{font:700 14px var(--sans);fill:var(--ink)}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin:6px 0 2px;flex-wrap:wrap}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.charts .card+.card{margin-top:16px}
+.notes{margin:0;padding-left:18px;color:var(--ink)}
+.notes li{margin:4px 0}
+.rules{font-size:13px;color:var(--muted);margin-top:22px}
+.rules b{color:var(--ink)}
+dialog{border:1px solid var(--line2);border-radius:10px;background:var(--card);padding:18px;max-width:560px;width:92vw}
+dialog textarea{width:100%;height:240px;font:13px var(--mono);border:1px solid var(--line2);border-radius:6px;padding:8px}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+.tip{position:fixed;pointer-events:none;background:var(--ink);color:var(--bg);font:12px var(--sans);padding:5px 8px;border-radius:6px;opacity:0;transition:opacity .1s;z-index:5}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow">Demo day tool</div>
+      <h1>Pitch Lineup</h1>
+      <p class="lede">Order a demo day like a batting lineup. Rate each pitch as a single, double, triple or home run. Runners move up with every hit, so you can see which pitches bring the room home and where it goes quiet. Drag to reorder and everything recalculates.</p>
+    </div>
+    <a class="brand" href="/">Llama &amp; Griffin</a>
+  </header>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="grid">
+    <section class="card">
+      <h2>Lineup</h2>
+      <p class="sub">Drag the handle to reorder. Groups are internal labels only — the inning runs straight through.</p>
+      <table>
+        <thead><tr><th></th><th>#</th><th>Pitch</th><th>Hit</th><th class="num">Runs</th><th class="num">Total</th><th></th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <div class="toolbar">
+        <button class="btn" id="add">+ Add pitch</button>
+        <button class="btn" id="paste">Paste a lineup</button>
+        <button class="btn" id="csv">Download CSV</button>
+        <button class="btn primary" id="share">Copy share link</button>
+      </div>
+      <div class="settings">
+        <div><label>Group size</label><input type="number" id="gsize" min="1" max="21"></div>
+        <div><label>Room memory <span class="val" id="memv"></span></label><input type="range" id="mem" min="0" max="0.9" step="0.05"></div>
+        <div><label>Starting mood <span class="val" id="startv"></span></label><input type="range" id="start" min="1" max="4" step="0.5"></div>
+      </div>
+    </section>
+
+    <section class="charts">
+      <div class="card">
+        <h2>Hits and runs by slot</h2>
+        <div class="legend"><span><i style="background:var(--gold)"></i>Bases hit</span><span><i style="background:var(--teal)"></i>Runs driven in</span></div>
+        <svg class="chart" id="c1" viewBox="0 0 600 230"></svg>
+      </div>
+      <div class="card">
+        <h2>Room mood</h2>
+        <div class="legend"><span><i style="background:var(--purple)"></i>From hits</span><span><i style="background:var(--coral)"></i>With runs</span><span><i style="background:var(--teal)"></i>Runs so far (right axis)</span></div>
+        <svg class="chart" id="c2" viewBox="0 0 600 230"></svg>
+      </div>
+      <div class="card">
+        <h2>What the order is doing</h2>
+        <ul class="notes" id="notes"></ul>
+        <table style="margin-top:12px"><thead><tr><th>Group</th><th class="num">Pitches</th><th class="num">Bases</th><th class="num">Runs</th></tr></thead><tbody id="groups"></tbody></table>
+      </div>
+    </section>
+  </div>
+
+  <p class="rules"><b>How runs are counted.</b> One continuous inning, no outs. Each hit moves every runner forward by the same number of bases as the hit (single 1, double 2, triple 3, home run 4); a runner scores on reaching home, and the run is credited to the pitch that brought them in. <b>Room mood</b> is a running average: each pitch moves the room part of the way toward its own impact, and "room memory" sets how much of the previous mood carries over. "With runs" adds the runs a pitch drives in to its hit, capped at 4. Your lineup is saved in this browser; the share link carries it in the URL and is not stored on any server.</p>
+</div>
+
+<dialog id="dlg">
+  <h2 style="font:700 19px var(--serif);margin:0 0 6px">Paste a lineup</h2>
+  <p class="sub" style="color:var(--muted);font-size:13px;margin:0 0 10px">One pitch per line: name, then the hit (1B, 2B, 3B, HR or 1–4), separated by a comma or tab. This replaces the current lineup.</p>
+  <textarea id="pasteText" placeholder="Studio One, 2B&#10;Studio Two, HR"></textarea>
+  <div class="toolbar" style="justify-content:flex-end"><button class="btn" id="cancel">Cancel</button><button class="btn primary" id="apply">Replace lineup</button></div>
+</dialog>
+<div class="toast" id="toast"></div>
+<div class="tip" id="tip"></div>
+
+<script>
+(function(){
+  const KEY = 'lg-pitch-lineup-v1';
+  const LABEL = {1:'1B',2:'2B',3:'3B',4:'HR'};
+  const SAMPLE = [['Pitch 1',2],['Pitch 2',2],['Pitch 3',2],['Pitch 4',1],['Pitch 5',2],['Pitch 6',1],['Pitch 7',3],['Pitch 8',4],['Pitch 9',1],['Pitch 10',1],['Pitch 11',4],['Pitch 12',2]];
+  let state = load();
+
+  function defaults(){ return {items: SAMPLE.map(([name,b])=>({name,b})), gsize:4, mem:0.6, start:2}; }
+  function clean(s){
+    const d = defaults();
+    if(!s || !Array.isArray(s.items)) return d;
+    const items = s.items.filter(x=>x && typeof x.name==='string').map(x=>({name:x.name.slice(0,80), b:[1,2,3,4].includes(+x.b)?+x.b:1}));
+    return {items: items.length?items:d.items, gsize: Math.max(1,Math.min(50,+s.gsize||4)), mem: Math.max(0,Math.min(0.9,isFinite(+s.mem)?+s.mem:0.6)), start: Math.max(1,Math.min(4,+s.start||2))};
+  }
+  function fromHash(){
+    try{
+      const h = location.hash.replace(/^#/,'');
+      if(!h.startsWith('l=')) return null;
+      const json = decodeURIComponent(escape(atob(h.slice(2).replace(/-/g,'+').replace(/_/g,'/'))));
+      const o = JSON.parse(json);
+      return clean({items:(o.n||[]).map((name,i)=>({name, b:(o.b||[])[i]})), gsize:o.g, mem:o.m, start:o.s});
+    }catch(e){ return null; }
+  }
+  function load(){
+    const h = fromHash(); if(h) return h;
+    try{ const s = JSON.parse(localStorage.getItem(KEY)); if(s) return clean(s); }catch(e){}
+    return defaults();
+  }
+  function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
+  function shareUrl(){
+    const o = {n:state.items.map(x=>x.name), b:state.items.map(x=>x.b), g:state.gsize, m:state.mem, s:state.start};
+    const enc = btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+    return location.origin + location.pathname + '#l=' + enc;
+  }
+
+  // ---------- model ----------
+  function compute(){
+    const it = state.items, n = it.length;
+    const before = []; let acc = 0;
+    it.forEach(x=>{ before.push(acc); acc += x.b; });
+    const runs = it.map((x,k)=>{
+      let r = 0;
+      for(let j=0;j<=k;j++){ const after = before[k]+x.b-before[j], prior = before[k]-before[j]; if(after>=4 && prior<4) r++; }
+      return r;
+    });
+    let cum = 0; const sofar = runs.map(r=>cum+=r);
+    const ngroups = Math.max(1, Math.floor(n/state.gsize));
+    const group = it.map((_,i)=>String.fromCharCode(65+Math.min(Math.floor(i/state.gsize), ngroups-1)));
+    const m = state.mem; let a = state.start, b = state.start;
+    const moodHits = [], moodRuns = [];
+    it.forEach((x,i)=>{ a = m*a+(1-m)*x.b; b = m*b+(1-m)*Math.min(4,x.b+runs[i]); moodHits.push(a); moodRuns.push(b); });
+    return {runs, sofar, group, moodHits, moodRuns, bases: acc};
+  }
+
+  // ---------- render ----------
+  const $ = id => document.getElementById(id);
+  function esc(s){ return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  function render(){
+    const c = compute();
+    renderRows(c); renderStats(c); renderCharts(c); renderNotes(c);
+    $('gsize').value = state.gsize; $('mem').value = state.mem; $('memv').textContent = state.mem.toFixed(2);
+    $('start').value = state.start; $('startv').textContent = state.start;
+    save();
+  }
+
+  function renderRows(c){
+    const tb = $('rows');
+    tb.innerHTML = state.items.map((x,i)=>{
+      const gs = i>0 && c.group[i]!==c.group[i-1];
+      return `<tr draggable="true" data-i="${i}" class="${gs?'group-start':''}">
+        <td><span class="handle" title="Drag to reorder">⋮⋮</span></td>
+        <td class="slot">${i+1}<div class="grp">${(i===0||gs)?c.group[i]:''}</div></td>
+        <td><input type="text" value="${esc(x.name)}" data-name="${i}" aria-label="Pitch name"></td>
+        <td style="white-space:nowrap"><span class="bases">${[1,2,3,4].map(b=>`<button data-b="${b}" data-i="${i}" class="${x.b===b?'on':''}" aria-label="${LABEL[b]}">${LABEL[b]}</button>`).join('')}</span></td>
+        <td class="num"><span class="runs ${c.runs[i]?'':'zero'}">${c.runs[i]}</span></td>
+        <td class="num">${c.sofar[i]}</td>
+        <td class="acts"><button class="mini" data-up="${i}" title="Move up">↑</button><button class="mini" data-down="${i}" title="Move down">↓</button><button class="mini" data-del="${i}" title="Remove">✕</button></td>
+      </tr>`;
+    }).join('');
+  }
+
+  function renderStats(c){
+    const n = state.items.length, total = c.sofar[n-1]||0;
+    const maxR = Math.max(0,...c.runs), bigIdx = c.runs.indexOf(maxR);
+    const q = quietStretches(c.runs).sort((a,b)=>(b[1]-b[0])-(a[1]-a[0]))[0];
+    const lowIdx = c.moodRuns.indexOf(Math.min(...c.moodRuns));
+    $('stats').innerHTML = [
+      ['Runs scored', total, `${c.bases} bases across ${n} pitches`],
+      ['Biggest pitch', maxR? `${maxR} run${maxR>1?'s':''}`:'—', maxR? `#${bigIdx+1} ${esc(state.items[bigIdx].name)}`:''],
+      ['Longest quiet stretch', q? `${q[1]-q[0]+1} pitch${q[1]>q[0]?'es':''}`:'None', q? `Slots ${q[0]+1}${q[1]>q[0]?'–'+(q[1]+1):''} drive in no runs`:''],
+      ['Lowest room mood', n? c.moodRuns[lowIdx].toFixed(2):'—', n? `After #${lowIdx+1} ${esc(state.items[lowIdx].name)}`:'']
+    ].map(([k,v,s])=>`<div class="stat"><div class="k">${k}</div><div class="v">${v}</div><div class="n">${s}</div></div>`).join('');
+  }
+
+  function quietStretches(runs){
+    const out = []; let s = -1;
+    runs.forEach((r,i)=>{ if(r===0){ if(s<0) s=i; } else if(s>=0){ out.push([s,i-1]); s=-1; } });
+    if(s>=0) out.push([s,runs.length-1]);
+    return out;
+  }
+
+  function renderNotes(c){
+    const it = state.items, notes = [];
+    const qs = quietStretches(c.runs).filter(([a,b])=>b>a);
+    qs.forEach(([a,b])=>notes.push(`<b>Quiet run, slots ${a+1}–${b+1}</b> (${it.slice(a,b+1).map(x=>esc(x.name)).join(', ')}): no runs score. A double or better in the middle would break it up.`));
+    c.runs.forEach((r,i)=>{ if(r>=3) notes.push(`<b>#${i+1} ${esc(it[i].name)}</b> drives in ${r}. The pitches before it set this up by putting runners on.`); });
+    const lead = c.runs.findIndex(r=>r>0);
+    if(lead>1) notes.push(`<b>Slow start:</b> the first run doesn't come until slot ${lead+1}.`);
+    const n = it.length, lastHR = n && it[n-1].b===4;
+    if(n && !lastHR) notes.push(`<b>The close:</b> the last pitch is a ${LABEL[it[n-1].b]}, so anyone still on base at the end never comes home.`);
+    $('notes').innerHTML = (notes.length?notes:['No dead spots: every stretch keeps runs coming.']).map(x=>`<li>${x}</li>`).join('');
+    const g = {}; it.forEach((x,i)=>{ const k=c.group[i]; g[k]=g[k]||{p:0,b:0,r:0}; g[k].p++; g[k].b+=x.b; g[k].r+=c.runs[i]; });
+    $('groups').innerHTML = Object.keys(g).map(k=>`<tr><td>${k}</td><td class="num">${g[k].p}</td><td class="num">${g[k].b}</td><td class="num">${g[k].r}</td></tr>`).join('');
+  }
+
+  function renderCharts(c){
+    const n = state.items.length, W=600, H=230, L=34, R=40, T=14, B=30, w=W-L-R, h=H-T-B, step=w/Math.max(1,n);
+    const x = i => L + step*(i+.5), y4 = v => T + h - h*v/4;
+    const every = Math.max(1, Math.ceil(18/step));
+    const xlabels = state.items.map((_,i)=> i%every===0 ? `<text x="${x(i)}" y="${H-10}" text-anchor="middle">${i+1}</text>`:'').join('');
+    const grid = [0,1,2,3,4].map(t=>`<line x1="${L}" x2="${W-R}" y1="${y4(t)}" y2="${y4(t)}" stroke="${t?'#eae7e0':'#bab9b4'}"/><text x="${L-8}" y="${y4(t)+4}" text-anchor="end">${t}</text>`).join('');
+    const bw = Math.min(18, step*.36);
+    const bars = state.items.map((it,i)=>{
+      const nm = esc(it.name);
+      const b = `<rect x="${x(i)-bw-1}" y="${y4(it.b)}" width="${bw}" height="${y4(0)-y4(it.b)}" rx="2" fill="#c3a55f" data-tip="#${i+1} ${nm}: ${LABEL[it.b]}"/>`;
+      const r = c.runs[i]? `<rect x="${x(i)+1}" y="${y4(c.runs[i])}" width="${bw}" height="${y4(0)-y4(c.runs[i])}" rx="2" fill="#2a8f76" data-tip="#${i+1} ${nm}: ${c.runs[i]} run${c.runs[i]>1?'s':''}"/>`:'';
+      return b+r;
+    }).join('');
+    $('c1').innerHTML = grid + bars + xlabels;
+
+    const total = Math.max(1, c.sofar[n-1]||0), yr = v => T + h - h*v/total;
+    const line = (arr,f,col) => `<path d="${arr.map((v,i)=>(i?'L':'M')+x(i).toFixed(1)+' '+f(v).toFixed(1)).join(' ')}" fill="none" stroke="${col}" stroke-width="2"/>`;
+    const dots = (arr,f,col,lab) => arr.map((v,i)=>`<circle cx="${x(i)}" cy="${f(v)}" r="3.5" fill="${col}" data-tip="#${i+1} ${esc(state.items[i].name)}: ${lab(v)}"/>`).join('');
+    const ym = v => T + h - h*(Math.min(4,Math.max(1,v))-1)/3;
+    const g2 = [1,2,3,4].map(t=>`<line x1="${L}" x2="${W-R}" y1="${ym(t)}" y2="${ym(t)}" stroke="${t>1?'#eae7e0':'#bab9b4'}"/><text x="${L-8}" y="${ym(t)+4}" text-anchor="end">${t}</text>`).join('');
+    const rt = [0, Math.round(total/2), total].map(t=>`<text x="${W-R+8}" y="${yr(t)+4}" fill="#2a8f76">${t}</text>`).join('');
+    const area = n? `<path d="M${x(0)} ${yr(0)} ${c.sofar.map((v,i)=>'L'+x(i)+' '+yr(v)).join(' ')} L${x(n-1)} ${yr(0)} Z" fill="#2a8f76" opacity=".08"/>`:'';
+    $('c2').innerHTML = g2 + area + rt + line(c.sofar,yr,'#2a8f76').replace('stroke-width="2"','stroke-width="1.5" opacity=".6"')
+      + line(c.moodHits,ym,'#6b64b3') + line(c.moodRuns,ym,'#b85a3a')
+      + dots(c.moodHits,ym,'#6b64b3',v=>'mood from hits '+v.toFixed(2)) + dots(c.moodRuns,ym,'#b85a3a',v=>'mood with runs '+v.toFixed(2)) + xlabels;
+  }
+
+  // ---------- events ----------
+  const rows = $('rows');
+  rows.addEventListener('click', e=>{
+    const t = e.target;
+    if(t.dataset.b){ state.items[+t.dataset.i].b = +t.dataset.b; render(); }
+    else if(t.dataset.up){ move(+t.dataset.up, +t.dataset.up-1); }
+    else if(t.dataset.down){ move(+t.dataset.down, +t.dataset.down+1); }
+    else if(t.dataset.del){ if(state.items.length>1){ state.items.splice(+t.dataset.del,1); render(); } }
+  });
+  rows.addEventListener('change', e=>{ if(e.target.dataset.name){ state.items[+e.target.dataset.name].name = e.target.value.slice(0,80) || 'Untitled'; render(); } });
+  function move(from,to){ if(to<0||to>=state.items.length) return; const [x]=state.items.splice(from,1); state.items.splice(to,0,x); render(); }
+
+  let dragFrom = null;
+  rows.addEventListener('dragstart', e=>{ const tr=e.target.closest('tr'); if(!tr) return; if(document.activeElement && document.activeElement.tagName==='INPUT') { e.preventDefault(); return; } dragFrom=+tr.dataset.i; tr.classList.add('dragging'); e.dataTransfer.effectAllowed='move'; try{e.dataTransfer.setData('text/plain',String(dragFrom));}catch(_){} });
+  rows.addEventListener('dragover', e=>{ const tr=e.target.closest('tr'); if(!tr||dragFrom===null) return; e.preventDefault(); rows.querySelectorAll('.drop-above').forEach(r=>r.classList.remove('drop-above')); tr.classList.add('drop-above'); });
+  rows.addEventListener('drop', e=>{ const tr=e.target.closest('tr'); if(!tr||dragFrom===null) return; e.preventDefault(); let to=+tr.dataset.i; const [x]=state.items.splice(dragFrom,1); if(to>dragFrom) to--; state.items.splice(to,0,x); dragFrom=null; render(); });
+  rows.addEventListener('dragend', ()=>{ dragFrom=null; rows.querySelectorAll('.dragging,.drop-above').forEach(r=>r.classList.remove('dragging','drop-above')); });
+
+  $('add').onclick = ()=>{ state.items.push({name:'Pitch '+(state.items.length+1), b:1}); render(); };
+  $('gsize').onchange = e=>{ state.gsize = Math.max(1,Math.min(50,+e.target.value||4)); render(); };
+  $('mem').oninput = e=>{ state.mem = +e.target.value; render(); };
+  $('start').oninput = e=>{ state.start = +e.target.value; render(); };
+  $('share').onclick = async ()=>{ const u = shareUrl(); try{ await navigator.clipboard.writeText(u); toast('Share link copied'); }catch(_){ prompt('Copy this link:', u); } };
+  $('csv').onclick = ()=>{
+    const c = compute();
+    const lines = [['Slot','Group','Pitch','Hit','Bases','Runs','Runs so far','Mood from hits','Mood with runs']].concat(state.items.map((x,i)=>[i+1,c.group[i],x.name,LABEL[x.b],x.b,c.runs[i],c.sofar[i],c.moodHits[i].toFixed(2),c.moodRuns[i].toFixed(2)]));
+    const csv = lines.map(r=>r.map(v=>{ v=String(v); if(/^[=+\-@]/.test(v)) v="'"+v; return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }).join(',')).join('\n');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download = 'pitch-lineup.csv'; a.click(); URL.revokeObjectURL(a.href);
+  };
+  const dlg = $('dlg');
+  $('paste').onclick = ()=>{ $('pasteText').value = state.items.map(x=>x.name+', '+LABEL[x.b]).join('\n'); dlg.showModal(); };
+  $('cancel').onclick = ()=>dlg.close();
+  $('apply').onclick = ()=>{
+    const map = {'1':1,'1B':1,'2':2,'2B':2,'3':3,'3B':3,'4':4,'HR':4};
+    const items = $('pasteText').value.split(/\r?\n/).map(l=>l.trim()).filter(Boolean).map(l=>{
+      const parts = l.split(/\t|,/).map(s=>s.trim()); const last = (parts.length>1?parts.pop():'1').toUpperCase();
+      return {name: parts.join(', ').slice(0,80) || 'Untitled', b: map[last]||1};
+    });
+    if(items.length){ state.items = items; dlg.close(); render(); toast(items.length+' pitches loaded'); }
+  };
+  function toast(t){ const el=$('toast'); el.textContent=t; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),1800); }
+
+  const tip = $('tip');
+  document.addEventListener('mousemove', e=>{ const t = e.target.closest && e.target.closest('[data-tip]'); if(t){ tip.textContent=t.getAttribute('data-tip'); tip.style.left=(e.clientX+12)+'px'; tip.style.top=(e.clientY+12)+'px'; tip.style.opacity=1; } else tip.style.opacity=0; });
+
+  if(location.hash) history.replaceState(null,'',location.pathname);
+  render();
+})();
+</script>
+</body>
+</html>
