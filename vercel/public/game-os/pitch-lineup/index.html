@@ -104,7 +104,7 @@ dialog textarea{width:100%;height:240px;font:13px var(--mono);border:1px solid v
   <div class="grid">
     <section class="card">
       <h2>Lineup</h2>
-      <p class="sub">Drag the handle to reorder. Groups are internal labels only — the inning runs straight through.</p>
+      <p class="sub">Pitches are listed in demo day running order. Click 1B, 2B, 3B or HR to score each one; drag the handle to reorder. Groups are internal labels only — the inning runs straight through.</p>
       <table>
         <thead><tr><th></th><th>#</th><th>Pitch</th><th>Hit</th><th class="num">Runs</th><th class="num">Total</th><th></th></tr></thead>
         <tbody id="rows"></tbody>
@@ -113,6 +113,7 @@ dialog textarea{width:100%;height:240px;font:13px var(--mono);border:1px solid v
         <button class="btn" id="add">+ Add pitch</button>
         <button class="btn" id="paste">Paste a lineup</button>
         <button class="btn" id="csv">Download CSV</button>
+        <button class="btn" id="reset">Reset</button>
         <button class="btn primary" id="share">Copy share link</button>
       </div>
       <div class="settings">
@@ -146,7 +147,7 @@ dialog textarea{width:100%;height:240px;font:13px var(--mono);border:1px solid v
 
 <dialog id="dlg">
   <h2 style="font:700 19px var(--serif);margin:0 0 6px">Paste a lineup</h2>
-  <p class="sub" style="color:var(--muted);font-size:13px;margin:0 0 10px">One pitch per line: name, then the hit (1B, 2B, 3B, HR or 1–4), separated by a comma or tab. This replaces the current lineup.</p>
+  <p class="sub" style="color:var(--muted);font-size:13px;margin:0 0 10px">One pitch per line: name, then the hit (1B, 2B, 3B, HR or 1–4; leave it off to score later), separated by a comma or tab. This replaces the current lineup.</p>
   <textarea id="pasteText" placeholder="Studio One, 2B&#10;Studio Two, HR"></textarea>
   <div class="toolbar" style="justify-content:flex-end"><button class="btn" id="cancel">Cancel</button><button class="btn primary" id="apply">Replace lineup</button></div>
 </dialog>
@@ -155,16 +156,17 @@ dialog textarea{width:100%;height:240px;font:13px var(--mono);border:1px solid v
 
 <script>
 (function(){
-  const KEY = 'lg-pitch-lineup-v1';
-  const LABEL = {1:'1B',2:'2B',3:'3B',4:'HR'};
-  const SAMPLE = [['Pitch 1',2],['Pitch 2',2],['Pitch 3',2],['Pitch 4',1],['Pitch 5',2],['Pitch 6',1],['Pitch 7',3],['Pitch 8',4],['Pitch 9',1],['Pitch 10',1],['Pitch 11',4],['Pitch 12',2]];
+  const KEY = 'lg-pitch-lineup-v2';
+  const LABEL = {0:'—',1:'1B',2:'2B',3:'3B',4:'HR'};
+  // Demo day running order, one entry per team. Every pitch starts unrated (0) until someone scores it.
+  const SAMPLE = [['Zohal Studio',0],['Folded Reality',0],['Game Hermits',0],['Three Pixels',0],['Struck Knight Games',0],['Henkaa Studio',0],['Neurospike',0],['Hemova',0],['Sparkling Sand Studio',0],['Optimistic Studio',0],['CrownLight Games',0],['Three Coins',0],['Raheebeen',0],['TWW Studios',0],['End Games Studio',0],['Kreationware',0],['Purple Milk',0],['Golden Game Productions',0],['Duwit',0],['Dinomite Studios',0],['MeemWow Games',0]];
   let state = load();
 
   function defaults(){ return {items: SAMPLE.map(([name,b])=>({name,b})), gsize:4, mem:0.6, start:2}; }
   function clean(s){
     const d = defaults();
     if(!s || !Array.isArray(s.items)) return d;
-    const items = s.items.filter(x=>x && typeof x.name==='string').map(x=>({name:x.name.slice(0,80), b:[1,2,3,4].includes(+x.b)?+x.b:1}));
+    const items = s.items.filter(x=>x && typeof x.name==='string').map(x=>({name:x.name.slice(0,80), b:[0,1,2,3,4].includes(+x.b)?+x.b:0}));
     return {items: items.length?items:d.items, gsize: Math.max(1,Math.min(50,+s.gsize||4)), mem: Math.max(0,Math.min(0.9,isFinite(+s.mem)?+s.mem:0.6)), start: Math.max(1,Math.min(4,+s.start||2))};
   }
   function fromHash(){
@@ -203,7 +205,7 @@ dialog textarea{width:100%;height:240px;font:13px var(--mono);border:1px solid v
     const group = it.map((_,i)=>String.fromCharCode(65+Math.min(Math.floor(i/state.gsize), ngroups-1)));
     const m = state.mem; let a = state.start, b = state.start;
     const moodHits = [], moodRuns = [];
-    it.forEach((x,i)=>{ a = m*a+(1-m)*x.b; b = m*b+(1-m)*Math.min(4,x.b+runs[i]); moodHits.push(a); moodRuns.push(b); });
+    it.forEach((x,i)=>{ if(x.b){ a = m*a+(1-m)*x.b; b = m*b+(1-m)*Math.min(4,x.b+runs[i]); } moodHits.push(a); moodRuns.push(b); });
     return {runs, sofar, group, moodHits, moodRuns, bases: acc};
   }
 
@@ -240,6 +242,7 @@ dialog textarea{width:100%;height:240px;font:13px var(--mono);border:1px solid v
     const maxR = Math.max(0,...c.runs), bigIdx = c.runs.indexOf(maxR);
     const q = quietStretches(c.runs).sort((a,b)=>(b[1]-b[0])-(a[1]-a[0]))[0];
     const lowIdx = c.moodRuns.indexOf(Math.min(...c.moodRuns));
+    if(!state.items.some(x=>x.b)){ $('stats').innerHTML = [['Runs scored',0,`${n} pitches, none scored yet`],['Biggest pitch','—',''],['Longest quiet stretch','—',''],['Lowest room mood','—','']].map(([k,v,s])=>`<div class="stat"><div class="k">${k}</div><div class="v">${v}</div><div class="n">${s}</div></div>`).join(''); return; }
     $('stats').innerHTML = [
       ['Runs scored', total, `${c.bases} bases across ${n} pitches`],
       ['Biggest pitch', maxR? `${maxR} run${maxR>1?'s':''}`:'—', maxR? `#${bigIdx+1} ${esc(state.items[bigIdx].name)}`:''],
@@ -257,13 +260,16 @@ dialog textarea{width:100%;height:240px;font:13px var(--mono);border:1px solid v
 
   function renderNotes(c){
     const it = state.items, notes = [];
+    const unrated = it.filter(x=>!x.b).length;
+    if(unrated===it.length) notes.push('<b>Nothing scored yet.</b> Rate each pitch 1B, 2B, 3B or HR in the Hit column and the runs, mood and notes fill in here.');
+    else if(unrated) notes.push(`<b>${unrated} pitch${unrated>1?'es':''} not rated yet.</b> Unrated pitches count as no hit.`);
     const qs = quietStretches(c.runs).filter(([a,b])=>b>a);
-    qs.forEach(([a,b])=>notes.push(`<b>Quiet run, slots ${a+1}–${b+1}</b> (${it.slice(a,b+1).map(x=>esc(x.name)).join(', ')}): no runs score. A double or better in the middle would break it up.`));
+    if(unrated<it.length) qs.forEach(([a,b])=>notes.push(`<b>Quiet run, slots ${a+1}–${b+1}</b> (${it.slice(a,b+1).map(x=>esc(x.name)).join(', ')}): no runs score. A double or better in the middle would break it up.`));
     c.runs.forEach((r,i)=>{ if(r>=3) notes.push(`<b>#${i+1} ${esc(it[i].name)}</b> drives in ${r}. The pitches before it set this up by putting runners on.`); });
     const lead = c.runs.findIndex(r=>r>0);
     if(lead>1) notes.push(`<b>Slow start:</b> the first run doesn't come until slot ${lead+1}.`);
     const n = it.length, lastHR = n && it[n-1].b===4;
-    if(n && !lastHR) notes.push(`<b>The close:</b> the last pitch is a ${LABEL[it[n-1].b]}, so anyone still on base at the end never comes home.`);
+    if(n && it[n-1].b && !lastHR) notes.push(`<b>The close:</b> the last pitch is a ${LABEL[it[n-1].b]}, so anyone still on base at the end never comes home.`);
     $('notes').innerHTML = (notes.length?notes:['No dead spots: every stretch keeps runs coming.']).map(x=>`<li>${x}</li>`).join('');
     const g = {}; it.forEach((x,i)=>{ const k=c.group[i]; g[k]=g[k]||{p:0,b:0,r:0}; g[k].p++; g[k].b+=x.b; g[k].r+=c.runs[i]; });
     $('groups').innerHTML = Object.keys(g).map(k=>`<tr><td>${k}</td><td class="num">${g[k].p}</td><td class="num">${g[k].b}</td><td class="num">${g[k].r}</td></tr>`).join('');
@@ -314,7 +320,8 @@ dialog textarea{width:100%;height:240px;font:13px var(--mono);border:1px solid v
   rows.addEventListener('drop', e=>{ const tr=e.target.closest('tr'); if(!tr||dragFrom===null) return; e.preventDefault(); let to=+tr.dataset.i; const [x]=state.items.splice(dragFrom,1); if(to>dragFrom) to--; state.items.splice(to,0,x); dragFrom=null; render(); });
   rows.addEventListener('dragend', ()=>{ dragFrom=null; rows.querySelectorAll('.dragging,.drop-above').forEach(r=>r.classList.remove('dragging','drop-above')); });
 
-  $('add').onclick = ()=>{ state.items.push({name:'Pitch '+(state.items.length+1), b:1}); render(); };
+  $('reset').onclick = ()=>{ if(confirm('Clear all scores and go back to the demo day running order?')){ state = defaults(); render(); toast('Lineup reset'); } };
+  $('add').onclick = ()=>{ state.items.push({name:'Pitch '+(state.items.length+1), b:0}); render(); };
   $('gsize').onchange = e=>{ state.gsize = Math.max(1,Math.min(50,+e.target.value||4)); render(); };
   $('mem').oninput = e=>{ state.mem = +e.target.value; render(); };
   $('start').oninput = e=>{ state.start = +e.target.value; render(); };
@@ -326,13 +333,13 @@ dialog textarea{width:100%;height:240px;font:13px var(--mono);border:1px solid v
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download = 'pitch-lineup.csv'; a.click(); URL.revokeObjectURL(a.href);
   };
   const dlg = $('dlg');
-  $('paste').onclick = ()=>{ $('pasteText').value = state.items.map(x=>x.name+', '+LABEL[x.b]).join('\n'); dlg.showModal(); };
+  $('paste').onclick = ()=>{ $('pasteText').value = state.items.map(x=>x.b?x.name+', '+LABEL[x.b]:x.name).join('\n'); dlg.showModal(); };
   $('cancel').onclick = ()=>dlg.close();
   $('apply').onclick = ()=>{
     const map = {'1':1,'1B':1,'2':2,'2B':2,'3':3,'3B':3,'4':4,'HR':4};
     const items = $('pasteText').value.split(/\r?\n/).map(l=>l.trim()).filter(Boolean).map(l=>{
-      const parts = l.split(/\t|,/).map(s=>s.trim()); const last = (parts.length>1?parts.pop():'1').toUpperCase();
-      return {name: parts.join(', ').slice(0,80) || 'Untitled', b: map[last]||1};
+      const parts = l.split(/\t|,/).map(s=>s.trim()); const last = (parts.length>1?parts.pop():'').toUpperCase();
+      return {name: parts.join(', ').slice(0,80) || 'Untitled', b: map[last]||0};
     });
     if(items.length){ state.items = items; dlg.close(); render(); toast(items.length+' pitches loaded'); }
   };
