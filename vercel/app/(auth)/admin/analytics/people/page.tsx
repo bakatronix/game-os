@@ -98,7 +98,8 @@ export default async function PeoplePage({
              array_agg(DISTINCT e."eventName") AS evs, MAX(u.name) AS name, MAX(u.email) AS email,
              bool_or(e."userId" IS NULL) AS anon
       FROM event e LEFT JOIN "user" u ON u.id = e."userId"
-      WHERE ${base}
+      WHERE ${base} AND u."platformRole" IS DISTINCT FROM 'admin'
+        AND u.email IS DISTINCT FROM 'test-agent@llamagriffin.com'
       GROUP BY COALESCE(e."sessionId", COALESCE(e."userId", e."anonId") || to_char(date_trunc('hour', e."timestamp"), 'YYYYMMDDHH24')),
                COALESCE(e."userId", e."anonId"), e."toolId"
       ORDER BY MAX(e."timestamp") DESC LIMIT 40
@@ -218,7 +219,7 @@ export default async function PeoplePage({
 
       <div className="gos-card">
         <h2>Recent visits</h2>
-        <p className="gos-muted" style={{ marginTop: -4 }}>One row per visit to a tool, newest first.</p>
+        <p className="gos-muted" style={{ marginTop: -4 }}>One row per visit to a tool, newest first. Admins&rsquo; own visits and the internal test account are left out.</p>
         <table className="ppl-table">
           <thead><tr><th>When</th><th>Who</th><th>Tool</th><th>What they did</th></tr></thead>
           <tbody>
