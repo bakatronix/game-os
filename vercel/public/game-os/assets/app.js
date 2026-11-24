@@ -558,15 +558,19 @@
   var LIVE_TILES = {
     'price-calc': function (G) {
       var lp = sig('launch_price');
+      // Revenue sent before the all-in method counted only Steam's cut: don't show it as current.
+      var rev = sig('week1_net_revenue');
+      var old = !!(rev && rev.outdated);
       return {
         metrics: [
           { label: 'Launch price', value: sigVal('launch_price') },
           { label: 'Week 1 units', value: sigVal('week1_units') },
-          { label: 'Week 1 net revenue', value: sigVal('week1_net_revenue') }
+          { label: old ? 'Week 1 net revenue (re-send)' : 'Week 1 net revenue, all-in', value: old ? '\u2014' : sigVal('week1_net_revenue') }
         ],
         spark: sigSpark('launch_price'),
-        kind: lp ? 'healthy' : 'demo',
-        label: lp ? 'Live' : 'No data yet'
+        kind: !lp ? 'demo' : old ? 'watch' : 'healthy',
+        label: !lp ? 'No data yet' : old ? 'Needs refresh' : 'Live',
+        note: old ? 'Revenue was worked out the old way (after Steam\u2019s cut only). Open the calculator and press Send to thesis to update it.' : ''
       };
     },
     'steam-page-audit': function (G) {
@@ -805,6 +809,7 @@
       (a.description ? '<p class="module-desc">' + escapeHtml(a.description) + '</p>' : '') +
       metricsHtml +
       sparkHtml +
+      (live && live.note ? '<p class="tile-note">' + escapeHtml(live.note) + '</p>' : '') +
       '<div class="card-actions">' +
       (building
         ? '<a class="ss-btn ghost" href="' + escapeHtml(href) + '" aria-label="Preview ' + escapeHtml(name) + ' (under construction)">Preview \u2192</a>'

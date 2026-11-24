@@ -224,6 +224,18 @@ export async function recordSignals(userId: string | null, gameId: string, toolI
 }
 
 /** Latest value per signal key, plus a short history per key for sparklines. */
+/* Pricing Calculator figures sent before Nov 2026 used only Steam's 30% cut.
+ * Newer sends say "all-in" in their label. Older ones are flagged so screens
+ * show them as out of date instead of as current numbers. */
+const PRICE_ALL_IN_KEYS = new Set(["week1_net_revenue", "net_revenue_per_unit"]);
+export function isOutdatedSignal(s: { toolId: string | null; key: string; label: string | null }) {
+  return s.toolId === "price-calc" && PRICE_ALL_IN_KEYS.has(s.key) && !/all-in/i.test(s.label || "");
+}
+function markOutdated<T extends { toolId: string | null; key: string; label: string | null }>(s: T) {
+  if (!isOutdatedSignal(s)) return { ...s, outdated: false };
+  return { ...s, outdated: true, label: (s.label || s.key) + " (old method: after Steam's cut only; re-send from the Pricing Calculator)" };
+}
+
 export async function getLedger(gameId: string, perKey = 12) {
   const db = getDb();
   const rows = await db
@@ -238,7 +250,7 @@ export async function getLedger(gameId: string, perKey = 12) {
     if (list.length < perKey) list.push(r);
     byKey.set(r.key, list);
   }
-  return [...byKey.entries()].map(([key, list]) => ({
+  return [...byKey.entries()].map(([key, list]) => markOutdated({
     key,
     toolId: list[0].toolId,
     label: list[0].label,
@@ -260,7 +272,7 @@ export async function getSignalRows(gameId: string, days = 365) {
     .where(and(eq(signals.gameId, gameId), gte(signals.observedAt, since)))
     .orderBy(asc(signals.observedAt))
     .limit(5000);
-  return rows.map((r) => ({
+  return rows.map((r) => markOutdated({
     key: r.key, toolId: r.toolId, label: r.label, unit: r.unit, value: r.value,
     meta: parseJSON(r.meta), observedAt: r.observedAt,
   }));
