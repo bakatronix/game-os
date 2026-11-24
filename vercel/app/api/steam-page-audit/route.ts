@@ -39,11 +39,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ detail: "Invalid app_id" }, { status: 400 });
   }
 
-  const [detailsRaw, reviewsRaw] = await Promise.all([
-    jfetch(`https://store.steampowered.com/api/appdetails?appids=${appId}&l=english`),
+  const [detailsRaw, reviewsRaw, spyRaw] = await Promise.all([
+    jfetch(`https://store.steampowered.com/api/appdetails?appids=${appId}&l=english&cc=us`),
     jfetch(
       `https://store.steampowered.com/appreviews/${appId}?json=1&language=all&purchase_type=all&num_per_page=0`,
     ),
+    // Backup for the positive share: Steam often blocks the review endpoint for
+    // server requests. SteamSpy publishes positive/negative counts (refreshed daily).
+    jfetch(`https://steamspy.com/api.php?request=appdetails&appid=${appId}`),
   ]);
 
   const app = detailsRaw?.[String(appId)];
@@ -74,14 +77,23 @@ export async function POST(req: NextRequest) {
   const recTotal: number | null =
     typeof d.recommendations?.total === "number" ? d.recommendations.total : null;
 
-  // reviewsSource: "reviews" = full summary; "recommendations" = count only; null = unknown.
-  let reviewsSource: "reviews" | "recommendations" | null = null;
+  const spyPos = typeof spyRaw?.positive === "number" ? spyRaw.positive : 0;
+  const spyNeg = typeof spyRaw?.negative === "number" ? spyRaw.negative : 0;
+  const spyOk = Number(spyRaw?.appid) === appId && spyPos + spyNeg > 0;
+
+  // reviewsSource: "reviews" = Steam's summary; "steamspy" = Steam's count with
+  // SteamSpy's positive share; "recommendations" = count only; null = unknown.
+  let reviewsSource: "reviews" | "steamspy" | "recommendations" | null = null;
   let total: number | null = null;
   let posPct: number | null = null;
   if (summary && (summary.total_reviews > 0 || !recTotal)) {
     reviewsSource = "reviews";
     total = summary.total_reviews;
     posPct = total! > 0 ? ((summary.total_positive ?? 0) / total!) * 100 : null;
+  } else if (spyOk) {
+    reviewsSource = "steamspy";
+    total = recTotal ?? spyPos + spyNeg;
+    posPct = (spyPos / (spyPos + spyNeg)) * 100;
   } else if (recTotal !== null) {
     reviewsSource = "recommendations";
     total = recTotal;
@@ -147,7 +159,9 @@ export async function POST(req: NextRequest) {
           ? "No reviews yet — page is still building social proof."
           : posPct === null
             ? `About ${total.toLocaleString()} reviews on Steam. Couldn't load the positive share, so this isn't counted in the score.`
-            : `${total.toLocaleString()} reviews, ${posPct.toFixed(1)}% positive.`,
+            : reviewsSource === "steamspy"
+              ? `About ${total.toLocaleString()} reviews on Steam, ${posPct.toFixed(1)}% positive (positive share from SteamSpy, updated daily).`
+              : `${total.toLocaleString()} reviews, ${posPct.toFixed(1)}% positive.`,
   });
 
   // Genres / tags clarity
