@@ -77,8 +77,11 @@
         return (
           '<div class="criterion">' +
           '<span class="lbl">' + esc(c.label) + "</span>" +
-          '<div class="bar ' + barClass(c.score) + '"><span style="width:' + Math.round(c.score) + '%"></span></div>' +
-          '<span class="val">' + Math.round(c.score) + "</span>" +
+          (typeof c.score === "number"
+            ? '<div class="bar ' + barClass(c.score) + '"><span style="width:' + Math.round(c.score) + '%"></span></div>' +
+              '<span class="val">' + Math.round(c.score) + "</span>"
+            : '<div class="bar"><span style="width:0%"></span></div>' +
+              '<span class="val">—</span>') +
           '<span class="detail">' + esc(c.detail) + "</span>" +
           "</div>"
         );
@@ -108,7 +111,7 @@
     if (copyBtn) {
       copyBtn.addEventListener("click", function () {
         var text = "Steam Page Audit — " + r.game_name + "\nScore: " + r.overall + "/100 (grade " + r.grade + ")\n" +
-          r.criteria.map(function (c) { return "  " + c.label + ": " + Math.round(c.score) + " — " + c.detail; }).join("\n");
+          r.criteria.map(function (c) { return "  " + c.label + ": " + (typeof c.score === "number" ? Math.round(c.score) : "not scored") + " — " + c.detail; }).join("\n");
         if (navigator.clipboard) navigator.clipboard.writeText(text);
         once("actioned", function () { track("output_action", { action: "copy" }); });
         copyBtn.textContent = "Copied";
