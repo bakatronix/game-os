@@ -1004,10 +1004,10 @@
       </div>
       <div class="floor-warning" id="floor-warning" style="display:none"></div>
       <table class="stackable">
-        <thead><tr><th>Stage</th><th>When</th><th>Discount</th><th>Price</th><th>Revenue per Day <span class="tooltip-icon" title="Estimated revenue per day during a two-week sale at this depth, against the same days at full price. From 602 Steam games with 1,000+ reviews, 2017 to 2025. Sales have weakened since 2020, so treat it as a best case.">?</span></th><th>Purpose</th></tr></thead>
+        <thead><tr><th>Stage</th><th>When</th><th>Discount</th><th>Price</th><th>Revenue per Day <span class="tooltip-icon" title="Estimated revenue per day during a two-week sale at this depth, against the same days at full price. From 602 Steam games with 1,000+ reviews, 2017 to 2025. Sales have weakened since 2020, so treat it as a best case. It averages all launch sizes; after a small launch, sales in the first months showed no measurable lift.">?</span></th><th>Purpose</th></tr></thead>
         <tbody id="staircase-body"></tbody>
       </table>
-      <p class="muted" style="margin-top:10px">Built from sales data on 602 Steam games with 1,000+ reviews, released 2017 to 2025. Since 2021 a sale lifts players about a third as much as it did in 2019, so treat these estimates as a best case. Smaller games aren’t in the data. <span id="sale-plan-src"></span></p>
+      <p class="muted" style="margin-top:10px">Built from sales data on 602 Steam games with 1,000+ reviews, released 2017 to 2025, so a small launch here is small among fairly successful games. Since 2021 a sale lifts players about a third as much as it did in 2019, so treat these estimates as a best case. Launch size changes the timing. After a big or mid-sized launch, a sale lifted players about 60% in the first months and only 5–9% after four years. After a small launch it was the reverse: nothing measurable in the first months, about 29% from six months to four years, and 44% after four years. <span id="sale-plan-src"></span></p>
     </div>
   </section>
 
@@ -1351,7 +1351,7 @@
       </div>
       <div class="checklist-item">
         <h4>What a Sale Does</h4>
-        <p>During a two-week sale, expect daily sales of about 1.8x normal at 20% off and 2.7x at 84% off. Over the month, a sale now lifts players about 20—30%, and they’re back to normal within two months. A seasonal event adds little by itself: the discount does the work. If a sale underperforms, check that it was a new lowest price before you go deeper. <span id="spike-src"></span></p>
+        <p>During a two-week sale, expect daily sales of about 1.8x normal at 20% off and 2.7x at 84% off. Over the month, a sale now lifts players about 20—30%, and they’re back to normal within two months. A seasonal event adds little by itself: the discount does the work. If a sale underperforms, check that it was a new lowest price before you go deeper. After a small launch, a weak early sale is normal: in the data, sales only started lifting small launches from about six months. <span id="spike-src"></span></p>
       </div>
       <div class="checklist-item">
         <h4>Long-Tail Revenue (Year 2+)</h4>
@@ -1551,7 +1551,7 @@ var BENCHMARK_SOURCES = [
   { id: 'steam-api', name: 'Steam Storefront API', verified: null, url: 'https://wiki.teamfortress.com/wiki/User:RJackson/StorefrontAPI', finding: 'Comp data can be auto-populated via the official Steam Storefront API. Launch price and content-hour figures require manual research (SteamDB, HowLongToBeat). See included steam-proxy.js.' },
   { id: 'gsu', name: 'GameStudioUnlocked', verified: null, url: 'https://gamestudiounlocked.substack.com/', finding: 'Full pricing methodology and context.' },
   { id: 'next-fest', name: 'Steam Next Fest post-mortem research', verified: '2025-06-01', url: 'https://partner.steamgames.com/doc/marketing/nextfest', finding: 'Demo-driven wishlists convert to purchases at 18–25% vs 8–12% for wishlists added without playing a demo.' },
-  { id: 'haro-sales', name: 'Sulka Haro — Steam sales have lost two thirds of their pull since 2020', verified: '2026-11-24', url: 'https://fragwyz.substack.com/p/steam-sales-have-lost-two-thirds', finding: '602 paid Steam games released January 2017 to May 2025, each with 1,000+ reviews (smaller games are not in the sample). A two-week 40%-off sale lifted players 84% in 2018, 95% in 2019 and 74% in 2020, then 20–32% every year from 2021. Per day, a 20% sale earns about 40% more than full price, about 40% off roughly breaks even, and past 50% off a sale earns less. A first sale adds about 28% more reviews than a later one; a new lowest price lifts reviews 63%, a repeat price 34%. The median first sale came 64 days after launch. About 70% of indies launched with a discount in 2024–25 (median 15%).' }
+  { id: 'haro-sales', name: 'Sulka Haro — Steam sales have lost two thirds of their pull since 2020', verified: '2026-11-24', url: 'https://fragwyz.substack.com/p/steam-sales-have-lost-two-thirds', finding: '602 paid Steam games released January 2017 to May 2025, each with 1,000+ reviews (smaller games are not in the sample). A two-week 40%-off sale lifted players 84% in 2018, 95% in 2019 and 74% in 2020, then 20–32% every year from 2021. Per day, a 20% sale earns about 40% more than full price, about 40% off roughly breaks even, and past 50% off a sale earns less. A first sale adds about 28% more reviews than a later one; a new lowest price lifts reviews 63%, a repeat price 34%. The median first sale came 64 days after launch. About 70% of indies launched with a discount in 2024–25 (median 15%). By launch size, a sale lifted big or mid-sized launches about 60% in their first months and 5–9% after four years; small launches showed nothing measurable early, about 29% from six months to four years and 44% after four years.' }
 ];
 
 function getSource(id) {
@@ -2900,7 +2900,7 @@ function updatePricing() {
   // step a new lowest price, regular sales at 50% off or less. Deeper is optional.
   var staircase = [
     { stage: 'Launch Discount', when: 'Optional, launch week', pct: 0.15, launch: true, purpose: 'About 70% of indies now launch with one. Under 20%, so no wishlist email. Clearly helps when leaving Early Access.' },
-    { stage: 'First Sale', when: '2 to 3 months after launch (median: 64 days)', pct: 0.20, purpose: 'Your strongest sale: a first sale adds about 28% more reviews than a later one. 20% off triggers wishlist emails.' },
+    { stage: 'First Sale', when: '2 to 3 months after launch (median: 64 days)', pct: 0.20, purpose: 'On average a first sale adds about 28% more reviews than a later one. After a small launch, though, sales in the first months showed no measurable lift. 20% off triggers wishlist emails.' },
     { stage: 'Second Sale', when: 'About 6 months', pct: 0.30, purpose: 'Make each step a new lowest price. A new low lifts reviews 63%; a repeat price, 34%.' },
     { stage: 'One Year', when: '12 months', pct: 0.40, purpose: 'About break-even per day. Space sales out: each extra sale in a year weakens the next.' },
     { stage: '2+ Years', when: '24 months and later', pct: 0.50, purpose: 'Your deepest regular sale. Deeper than 50% earns less per day than full price.' },
