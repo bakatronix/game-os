@@ -376,6 +376,7 @@
     border-top: 2px solid rgba(255,184,77,0.25);
   }
   .floor-row td { font-weight: 500; color: #ffcf7a; }
+  tr.stage-optional td { color: var(--mid); }
   .floor-warning { font-family: var(--mono); font-size: 10px; color: var(--coral); margin-top: 6px; }
 
   .checklist-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
@@ -923,7 +924,7 @@
   <section class="tab" id="tab-pricing">
     <h2>Price Setting &amp; Discount Buffer</h2>
     <p class="subtitle">
-      Steam's algorithm is built around discounting. A 20%+ discount triggers wishlist notification emails. Build the buffer in from day one.
+      A 20%+ discount triggers Steam’s wishlist emails, so build that room into your launch price from day one. Don’t count on sales to rescue a game, though: since 2021 a sale lifts players about a third as much as it did in 2019. <span id="pricing-sale-src"></span>
     </p>
     <div class="reconcile-banner" id="price-tier-conflict-banner" aria-live="polite" aria-atomic="true"></div>
 
@@ -989,6 +990,7 @@
     <div class="card">
       <h3>Launch Discount Strategy Comparison</h3>
       <div class="grid-2" id="discount-compare"></div>
+      <p style="margin-top:8px"><span id="launch-disc-src"></span></p>
     </div>
 
     <div class="card" style="overflow-x:auto">
@@ -1002,9 +1004,10 @@
       </div>
       <div class="floor-warning" id="floor-warning" style="display:none"></div>
       <table class="stackable">
-        <thead><tr><th>Stage</th><th>When</th><th>Discount</th><th>Price</th><th>Purpose</th></tr></thead>
+        <thead><tr><th>Stage</th><th>When</th><th>Discount</th><th>Price</th><th>Revenue per Day <span class="tooltip-icon" title="Estimated revenue per day during a two-week sale at this depth, against the same days at full price. From 602 Steam games with 1,000+ reviews, 2017 to 2025. Sales have weakened since 2020, so treat it as a best case.">?</span></th><th>Purpose</th></tr></thead>
         <tbody id="staircase-body"></tbody>
       </table>
+      <p class="muted" style="margin-top:10px">Built from sales data on 602 Steam games with 1,000+ reviews, released 2017 to 2025. Since 2021 a sale lifts players about a third as much as it did in 2019, so treat these estimates as a best case. Smaller games aren’t in the data. <span id="sale-plan-src"></span></p>
     </div>
   </section>
 
@@ -1347,8 +1350,8 @@
         <p>For most indies, 50—70% of first-year revenue comes in the first 30 days. A higher proportion means heavy launch-dependency.</p>
       </div>
       <div class="checklist-item">
-        <h4>Discount Spike Patterns</h4>
-        <p>Expect 3—5x revenue spikes during first seasonal sales. If weaker than expected, revisit the discount staircase in Step 4.</p>
+        <h4>What a Sale Does</h4>
+        <p>During a two-week sale, expect daily sales of about 1.8x normal at 20% off and 2.7x at 84% off. Over the month, a sale now lifts players about 20—30%, and they’re back to normal within two months. A seasonal event adds little by itself: the discount does the work. If a sale underperforms, check that it was a new lowest price before you go deeper. <span id="spike-src"></span></p>
       </div>
       <div class="checklist-item">
         <h4>Long-Tail Revenue (Year 2+)</h4>
@@ -1547,7 +1550,8 @@ var BENCHMARK_SOURCES = [
   { id: 'steamdb-matrix', name: 'SteamDB — March 2026 Pricing Matrix Update', verified: '2026-03-15', url: 'https://steamdb.info/blog/valve-price-matrix-2026/', finding: "Valve's March 2026 pricing matrix revision — first update since 2022. Conversion methods: FX, PPP, Multi-variable. MENA-USD at ~47% of US price under multi-variable method at $59.99 tier." },
   { id: 'steam-api', name: 'Steam Storefront API', verified: null, url: 'https://wiki.teamfortress.com/wiki/User:RJackson/StorefrontAPI', finding: 'Comp data can be auto-populated via the official Steam Storefront API. Launch price and content-hour figures require manual research (SteamDB, HowLongToBeat). See included steam-proxy.js.' },
   { id: 'gsu', name: 'GameStudioUnlocked', verified: null, url: 'https://gamestudiounlocked.substack.com/', finding: 'Full pricing methodology and context.' },
-  { id: 'next-fest', name: 'Steam Next Fest post-mortem research', verified: '2025-06-01', url: 'https://partner.steamgames.com/doc/marketing/nextfest', finding: 'Demo-driven wishlists convert to purchases at 18–25% vs 8–12% for wishlists added without playing a demo.' }
+  { id: 'next-fest', name: 'Steam Next Fest post-mortem research', verified: '2025-06-01', url: 'https://partner.steamgames.com/doc/marketing/nextfest', finding: 'Demo-driven wishlists convert to purchases at 18–25% vs 8–12% for wishlists added without playing a demo.' },
+  { id: 'haro-sales', name: 'Sulka Haro — Steam sales have lost two thirds of their pull since 2020', verified: '2026-11-24', url: 'https://fragwyz.substack.com/p/steam-sales-have-lost-two-thirds', finding: '602 paid Steam games released January 2017 to May 2025, each with 1,000+ reviews (smaller games are not in the sample). A two-week 40%-off sale lifted players 84% in 2018, 95% in 2019 and 74% in 2020, then 20–32% every year from 2021. Per day, a 20% sale earns about 40% more than full price, about 40% off roughly breaks even, and past 50% off a sale earns less. A first sale adds about 28% more reviews than a later one; a new lowest price lifts reviews 63%, a repeat price 34%. The median first sale came 64 days after launch. About 70% of indies launched with a discount in 2024–25 (median 15%).' }
 ];
 
 function getSource(id) {
@@ -1818,6 +1822,33 @@ var PricingModel = {
     var netDeepDiscount = deepDiscountPrice * devShare;
     var launchDiscPrice = launchPrice * 0.875;
     return { launchPrice: launchPrice, snappedLaunchUp: snappedLaunchUp, realDiscount: realDiscount, netFull: netFull, netSale: netSale, unitsNeeded: unitsNeeded, deepDiscountPrice: deepDiscountPrice, netDeepDiscount: netDeepDiscount, launchDiscPrice: launchDiscPrice };
+  },
+  // --- Sale response by discount depth ---
+  // Source: Haro (2026), 602 paid Steam games with 1,000+ reviews, 2017–2025.
+  // How much a two-week sale adds to the month's new reviews at each depth.
+  // The article doesn't say whether these average every year. Sales lost about
+  // two thirds of their effect after 2020, so treat the results as a best case.
+  SALE_LIFT_POINTS: [[20, 0.35], [40, 0.40], [70, 0.50], [80, 0.80]],
+  saleMonthLift: function(pct) {
+    var pts = this.SALE_LIFT_POINTS;
+    if (!(pct >= pts[0][0]) || pct >= 100) return null;
+    if (pct >= pts[pts.length - 1][0]) return pts[pts.length - 1][1];
+    for (var i = 1; i < pts.length; i++) {
+      if (pct <= pts[i][0]) {
+        var a = pts[i - 1], b = pts[i];
+        return a[1] + (b[1] - a[1]) * (pct - a[0]) / (b[0] - a[0]);
+      }
+    }
+    return null;
+  },
+  // Revenue per day during a two-week sale, against the same days at full
+  // price. The month's lift lands on the 14 sale days of a 30-day month, which
+  // matches the article: about +40% at 20% off, roughly even at 40%, about a
+  // third less at 68% and more than half less at 84%.
+  saleRevenuePerDay: function(pct) {
+    var lift = this.saleMonthLift(pct);
+    if (lift == null) return null;
+    return (1 + lift * 30 / 14) * (1 - pct / 100) - 1;
   },
   // Real money per copy: list price, then Steam's cut, refunds, discounts and
   // regional pricing, and tax/VAT. Each keep factor is a share from 0 to 1.
@@ -2787,6 +2818,23 @@ function pricingInvalidReason() {
   return '';
 }
 
+// A Steam sale price: a whole-percent discount off the base price, cut to the
+// cent. It is not a base price point, so it isn't snapped to the price grid
+// (Steamworks: discounts are set as percentages; a $14.99 game at 50% off is $7.49).
+function salePrice(launch, pct) {
+  return launch > 0 ? Math.floor(launch * (1 - pct) * 100 + 1e-6) / 100 : 0;
+}
+// Revenue per day of a two-week sale at this depth, against full price, as a badge.
+function saleRevenueHtml(pct) {
+  var r = PricingModel.saleRevenuePerDay(pct);
+  if (r == null) return '<span class="output-note">Under 20% off: outside the data</span>';
+  var five = Math.round(r * 20) * 5;
+  var txt = (five > 0 ? '+' : five < 0 ? '\u2212' : '') + Math.abs(five) + '%';
+  if (r >= 0.15) return '<span class="badge badge-teal">' + txt + ' more</span>';
+  if (r <= -0.15) return '<span class="badge badge-coral">' + txt.replace('\u2212', '') + ' less</span>';
+  return '<span class="badge badge-gold">About even</span>';
+}
+
 // === PRICE & DISCOUNT MODEL ===
 function updatePricing() {
   var target = parseFloat(document.getElementById('target-sale-price').value);
@@ -2812,8 +2860,8 @@ function updatePricing() {
   var netFull = launchPrice * devShare;
   var netSale = dm.netSale;
   var unitsNeeded = netSale > 0 ? Math.round((netFull * 1000) / netSale) : 0;
-  var deepDiscountPrice = launchPrice * 0.5;
-  var netDeepDiscount = shownPrice(deepDiscountPrice) * devShare;
+  var deepDiscountPrice = salePrice(launchPrice, 0.5);
+  var netDeepDiscount = deepDiscountPrice * devShare;
 
   var launchPriceHtml = '$' + launchPrice.toFixed(2);
   var launchNote = Math.round(launchPrice * 100) !== Math.round(rawLaunchPrice * 100)
@@ -2825,39 +2873,48 @@ function updatePricing() {
     instinctCompareHtml(launchPrice) +
     '<div class="output-row"><span class="output-label">Actual Discount at Target Sale <span class="output-note">Should be \u226520% for wishlist emails</span></span><span class="output-value">' + (realDiscount * 100).toFixed(1) + '% ' + (realDiscount >= 0.2 ? '<span class="badge badge-teal">Meets 20%</span>' : '<span class="badge badge-coral">Below 20%</span>') + '</span></div>' +
     (realDiscount < 0.2 ? '<p class="muted" style="color:var(--coral);margin-top:6px">\u26A0 Snapping the launch price pushed the effective discount below the 20% wishlist-email threshold.</p>' : '') +
+    '<div class="output-row"><span class="output-label">Sale Revenue per Day vs Full Price <span class="output-note">Estimate for a two-week sale at ' + Math.round(realDiscount * 100) + '% off</span></span><span class="output-value">' + saleRevenueHtml(realDiscount * 100) + '</span></div>' +
+    (realDiscount > 0.505 ? '<p class="muted" style="color:var(--coral);margin-top:6px">\u26A0 Past 50% off, a sale earns less per day than full price, and the extra players are gone within two months.</p>' : '') +
     netPerCopyHtml(launchPrice) +
     '<div class="output-row"><span class="output-label">Net Revenue per Unit (Full Price) <span class="output-note">' + steamOnlyNote() + '</span></span><span class="output-value">$' + netFull.toFixed(2) + '</span></div>' +
     '<div class="output-row"><span class="output-label">Net Revenue per Unit (Sale Price) <span class="output-note">' + steamOnlyNote() + '</span></span><span class="output-value">$' + netSale.toFixed(2) + '</span></div>' +
     '<div class="output-row"><span class="output-label">Units at Sale Price to Match 1,000 Full-Price Units</span><span class="output-value">' + unitsNeeded.toLocaleString() + '</span></div>' +
-    '<div class="output-row"><span class="output-label">50% Deep-Discount Price <span class="output-note">2nd-year seasonal sale floor</span></span><span class="output-value">' + fmtSnappedPrice(deepDiscountPrice) + '</span></div>' +
+    '<div class="output-row"><span class="output-label">50% Deep-Discount Price <span class="output-note">Deepest regular sale, 2+ years</span></span><span class="output-value">$' + deepDiscountPrice.toFixed(2) + '</span></div>' +
     '<div class="output-row"><span class="output-label">Net Revenue at 50% Discount <span class="output-note">' + steamOnlyNote() + '</span></span><span class="output-value">$' + netDeepDiscount.toFixed(2) + '</span></div>';
 
-  var launchDiscPrice = launchPrice * 0.875;
+  var launchDiscPrice = salePrice(launchPrice, 0.125);
   var fullNetComp = launchPrice * devShare;
-  var discLaunchNet = shownPrice(launchDiscPrice) * devShare;
+  var discLaunchNet = launchDiscPrice * devShare;
   document.getElementById('discount-compare').innerHTML =
     '<div class="compare-card"><h4>(A) Full Price Launch, Discount Later</h4>' +
     '<div class="output-row"><span class="output-label">Launch Price</span><span class="output-value">' + fmtSnappedPrice(launchPrice) + '</span></div>' +
     '<div class="output-row"><span class="output-label">Net Revenue per Unit <span class="output-note">' + steamOnlyNote() + '</span></span><span class="output-value">$' + fullNetComp.toFixed(2) + '</span></div>' +
-    '<div class="tradeoff">Higher per-unit margin. Signals confidence. Less conversion lift from launch discount hype.</div></div>' +
+    '<div class="tradeoff">Higher margin per copy. For a first launch, the data shows no clear long-run difference between full-price and discounted launches.</div></div>' +
     '<div class="compare-card"><h4>(B) Launch With 10\u201415% Discount</h4>' +
-    '<div class="output-row"><span class="output-label">Launch Price</span><span class="output-value">' + fmtSnappedPrice(launchDiscPrice) + '</span></div>' +
+    '<div class="output-row"><span class="output-label">Launch Price</span><span class="output-value">$' + launchDiscPrice.toFixed(2) + ' <span class="output-note">12.5% off</span></span></div>' +
     '<div class="output-row"><span class="output-label">Net Revenue per Unit <span class="output-note">' + steamOnlyNote() + '</span></span><span class="output-value">$' + discLaunchNet.toFixed(2) + '</span></div>' +
-    '<div class="tradeoff">Triggers wishlist notification on day one if ≥20%. Lower margin but can drive higher volume.</div></div>';
+    '<div class="tradeoff">Most indies now do this: about 70% launched with a discount in 2024\u201325, and the median was 15%. Below 20%, so no wishlist email. It clearly helped Early Access games at 1.0.</div></div>';
 
   var floorPct = parseFloat(document.getElementById('price-floor').value) || 50;
+  // Sale plan from Haro (2026): first sale 2 to 3 months after launch, every
+  // step a new lowest price, regular sales at 50% off or less. Deeper is optional.
   var staircase = [
-    { stage: 'Launch Week', when: 'Optional: 10—15%', pct: 0.15, purpose: 'Conversion momentum (below 20% = no wishlist email)' },
-    { stage: 'First Seasonal Sale', when: '60—90 days post-launch', pct: 0.20, purpose: 'First wishlist email trigger' },
-    { stage: 'Second Seasonal Sale', when: '~6 months', pct: 0.30, purpose: 'Deepening reach. Wait for sale segment.' },
-    { stage: 'One Year Post-Launch', when: '12 months', pct: 0.45, purpose: 'Catalog monetization. Standard for mature titles.' },
-    { stage: '2+ Years / Bundles', when: '24+ months', pct: 0.60, purpose: 'Long-tail revenue.' },
+    { stage: 'Launch Discount', when: 'Optional, launch week', pct: 0.15, launch: true, purpose: 'About 70% of indies now launch with one. Under 20%, so no wishlist email. Clearly helps when leaving Early Access.' },
+    { stage: 'First Sale', when: '2 to 3 months after launch (median: 64 days)', pct: 0.20, purpose: 'Your strongest sale: a first sale adds about 28% more reviews than a later one. 20% off triggers wishlist emails.' },
+    { stage: 'Second Sale', when: 'About 6 months', pct: 0.30, purpose: 'Make each step a new lowest price. A new low lifts reviews 63%; a repeat price, 34%.' },
+    { stage: 'One Year', when: '12 months', pct: 0.40, purpose: 'About break-even per day. Space sales out: each extra sale in a year weakens the next.' },
+    { stage: '2+ Years', when: '24 months and later', pct: 0.50, purpose: 'Your deepest regular sale. Deeper than 50% earns less per day than full price.' },
+    { stage: 'Deep Sale', when: 'Optional: 4+ years, or a sequel or DLC launch', pct: 0.70, optional: true, purpose: 'Only if reaching new players matters more than revenue. Players return to normal within two months.' }
   ];
+  var lowest = launchPrice;
   staircase.forEach(function (s) {
-    s.price = shownPrice(launchPrice * (1 - s.pct));
-    s.realPct = launchPrice > 0 ? 1 - s.price / launchPrice : s.pct;
+    s.price = salePrice(launchPrice, s.pct);
+    s.realPct = s.pct;
+    // A repeat of an earlier price lifts sales about half as much as a new low.
+    s.repeat = !s.optional && s.price >= lowest - 0.005;
+    if (!s.optional) lowest = Math.min(lowest, s.price);
   });
-  var violations = staircase.filter(function(s){return (s.realPct * 100) > floorPct + 0.05;});
+  var violations = staircase.filter(function(s){return !s.optional && (s.realPct * 100) > floorPct + 0.05;});
   var floorWarn = document.getElementById('floor-warning');
   if (violations.length > 0) {
     floorWarn.style.display = 'block';
@@ -2867,9 +2924,12 @@ function updatePricing() {
     staircase.map(function(s){
       var real = Math.round(s.realPct * 100), planned = Math.round(s.pct * 100);
       var discCell = real + '%' + (real !== planned ? ' <span class="output-note">(planned ' + planned + '%; rounding to a Steam price changes it)</span>' : '');
-      return '<tr><td data-label="Stage"><strong>' + s.stage + '</strong></td><td data-label="When">' + s.when + '</td><td data-label="Discount">' + discCell + '</td><td data-label="Price" style="color:var(--teal);font-weight:500">$' + s.price.toFixed(2) + '</td><td data-label="Purpose">' + s.purpose + '</td></tr>';
+      if (s.repeat) discCell += ' <span class="output-note" style="color:var(--coral)">Same price as an earlier step. Go a step deeper so it\u2019s a new low.</span>';
+      if (s.optional && (s.realPct * 100) > floorPct + 0.05) discCell += ' <span class="output-note">Past your price floor</span>';
+      var rev = s.launch ? '<span class="output-note">Launch price, not a sale</span>' : saleRevenueHtml(s.realPct * 100);
+      return '<tr' + (s.optional ? ' class="stage-optional"' : '') + '><td data-label="Stage"><strong>' + s.stage + '</strong></td><td data-label="When">' + s.when + '</td><td data-label="Discount">' + discCell + '</td><td data-label="Price" style="color:var(--teal);font-weight:500">$' + s.price.toFixed(2) + '</td><td data-label="Revenue per Day">' + rev + '</td><td data-label="Purpose">' + s.purpose + '</td></tr>';
     }).join('') +
-    '<tr class="floor-row"><td data-label="Stage"><strong>Price Floor</strong></td><td data-label="When">Long-term minimum</td><td data-label="Discount">' + floorPct + '%</td><td data-label="Price">' + fmtSnappedPrice(launchPrice * (1 - floorPct/100)) + '</td><td data-label="Purpose">Permanent price floor threshold</td></tr>';
+    '<tr class="floor-row"><td data-label="Stage"><strong>Price Floor</strong></td><td data-label="When">Long-term minimum</td><td data-label="Discount">' + floorPct + '%</td><td data-label="Price">$' + salePrice(launchPrice, floorPct / 100).toFixed(2) + '</td><td data-label="Revenue per Day">' + saleRevenueHtml(floorPct) + '</td><td data-label="Purpose">Permanent price floor threshold</td></tr>';
   updateRegionalTable();
   renderReconciliation();
   renderBreakEven();
@@ -3124,6 +3184,7 @@ var eaData = [
   { q: 'Is EA your primary community-building and feedback phase?', yes: 'Prioritize access over margin. Lower price = larger tester base.', no: 'Treat EA as early monetization. Price accordingly.' },
   { q: 'Do you plan to raise price at 1.0?', yes: 'Set EA price 15—25% below planned 1.0 price. Communicate on store page.', no: 'Set EA price = 1.0 price. No price change at full release.' },
   { q: 'Do you have a strong wishlist/community pre-EA?', yes: 'More pricing power. Price toward higher end of EA range.', no: 'Prioritize building community. Price accessibly.' },
+  { q: 'Will you launch 1.0 with a discount?', yes: 'Good call. Games that launched 1.0 with a discount reached 5.1x their Early Access player level in the launch month, against 2.8x at full price (Haro 2026). Part of the gap is because they started from smaller Early Access audiences.', no: 'Consider one. Leaving Early Access is the one launch where the data clearly backs a discount. The median launch discount is 15%.' },
 ];
 document.getElementById('ea-framework').innerHTML = eaData.map(function(d){
   return '<div class="framework-card"><h4>' + d.q + '</h4><div class="framework-yes"><strong>Yes →</strong> ' + d.yes + '</div><div class="framework-no"><strong>No →</strong> ' + d.no + '</div></div>';
@@ -3219,7 +3280,11 @@ function updateDlcTable() {
     ['refund-src', 'steamworks', '2026-03-15'],
     ['regional-src', 'steamworks', '2026-03-15'],
     ['mena-src', 'steamdb-matrix', '2026-03-15'],
-    ['gulf-src', 'steamworks-currencies', '2026-03-15']
+    ['gulf-src', 'steamworks-currencies', '2026-03-15'],
+    ['pricing-sale-src', 'haro-sales', '2026-11-24'],
+    ['launch-disc-src', 'haro-sales', '2026-11-24'],
+    ['sale-plan-src', 'haro-sales', '2026-11-24'],
+    ['spike-src', 'haro-sales', '2026-11-24']
   ];
   map.forEach(function(m){
     var el = document.getElementById(m[0]);
