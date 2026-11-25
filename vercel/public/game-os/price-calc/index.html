@@ -1850,6 +1850,12 @@ var PricingModel = {
     if (lift == null) return null;
     return (1 + lift * 30 / 14) * (1 - pct / 100) - 1;
   },
+  // A Steam sale price: a whole-percent discount off the base price, cut to the
+  // cent. Steamworks sets discounts as percentages, so a sale price is not a base
+  // price point and isn't snapped to the price grid ($14.99 at 50% off is $7.49).
+  salePrice: function(launch, pct) {
+    return launch > 0 ? Math.floor(launch * (1 - pct) * 100 + 1e-6) / 100 : 0;
+  },
   // Real money per copy: list price, then Steam's cut, refunds, discounts and
   // regional pricing, and tax/VAT. Each keep factor is a share from 0 to 1.
   netPerCopy: function(price, devShare, refundKeep, discountKeep, taxKeep) {
@@ -2818,12 +2824,6 @@ function pricingInvalidReason() {
   return '';
 }
 
-// A Steam sale price: a whole-percent discount off the base price, cut to the
-// cent. It is not a base price point, so it isn't snapped to the price grid
-// (Steamworks: discounts are set as percentages; a $14.99 game at 50% off is $7.49).
-function salePrice(launch, pct) {
-  return launch > 0 ? Math.floor(launch * (1 - pct) * 100 + 1e-6) / 100 : 0;
-}
 // Revenue per day of a two-week sale at this depth, against full price, as a badge.
 function saleRevenueHtml(pct) {
   var r = PricingModel.saleRevenuePerDay(pct);
@@ -2860,7 +2860,7 @@ function updatePricing() {
   var netFull = launchPrice * devShare;
   var netSale = dm.netSale;
   var unitsNeeded = netSale > 0 ? Math.round((netFull * 1000) / netSale) : 0;
-  var deepDiscountPrice = salePrice(launchPrice, 0.5);
+  var deepDiscountPrice = PricingModel.salePrice(launchPrice, 0.5);
   var netDeepDiscount = deepDiscountPrice * devShare;
 
   var launchPriceHtml = '$' + launchPrice.toFixed(2);
@@ -2882,7 +2882,7 @@ function updatePricing() {
     '<div class="output-row"><span class="output-label">50% Deep-Discount Price <span class="output-note">Deepest regular sale, 2+ years</span></span><span class="output-value">$' + deepDiscountPrice.toFixed(2) + '</span></div>' +
     '<div class="output-row"><span class="output-label">Net Revenue at 50% Discount <span class="output-note">' + steamOnlyNote() + '</span></span><span class="output-value">$' + netDeepDiscount.toFixed(2) + '</span></div>';
 
-  var launchDiscPrice = salePrice(launchPrice, 0.125);
+  var launchDiscPrice = PricingModel.salePrice(launchPrice, 0.15);
   var fullNetComp = launchPrice * devShare;
   var discLaunchNet = launchDiscPrice * devShare;
   document.getElementById('discount-compare').innerHTML =
@@ -2890,8 +2890,8 @@ function updatePricing() {
     '<div class="output-row"><span class="output-label">Launch Price</span><span class="output-value">' + fmtSnappedPrice(launchPrice) + '</span></div>' +
     '<div class="output-row"><span class="output-label">Net Revenue per Unit <span class="output-note">' + steamOnlyNote() + '</span></span><span class="output-value">$' + fullNetComp.toFixed(2) + '</span></div>' +
     '<div class="tradeoff">Higher margin per copy. For a first launch, the data shows no clear long-run difference between full-price and discounted launches.</div></div>' +
-    '<div class="compare-card"><h4>(B) Launch With 10\u201415% Discount</h4>' +
-    '<div class="output-row"><span class="output-label">Launch Price</span><span class="output-value">$' + launchDiscPrice.toFixed(2) + ' <span class="output-note">12.5% off</span></span></div>' +
+    '<div class="compare-card"><h4>(B) Launch With a 15% Discount</h4>' +
+    '<div class="output-row"><span class="output-label">Launch Price</span><span class="output-value">$' + launchDiscPrice.toFixed(2) + ' <span class="output-note">15% off</span></span></div>' +
     '<div class="output-row"><span class="output-label">Net Revenue per Unit <span class="output-note">' + steamOnlyNote() + '</span></span><span class="output-value">$' + discLaunchNet.toFixed(2) + '</span></div>' +
     '<div class="tradeoff">Most indies now do this: about 70% launched with a discount in 2024\u201325, and the median was 15%. Below 20%, so no wishlist email. It clearly helped Early Access games at 1.0.</div></div>';
 
@@ -2908,7 +2908,7 @@ function updatePricing() {
   ];
   var lowest = launchPrice;
   staircase.forEach(function (s) {
-    s.price = salePrice(launchPrice, s.pct);
+    s.price = PricingModel.salePrice(launchPrice, s.pct);
     s.realPct = s.pct;
     // A repeat of an earlier price lifts sales about half as much as a new low.
     s.repeat = !s.optional && s.price >= lowest - 0.005;
@@ -2929,7 +2929,7 @@ function updatePricing() {
       var rev = s.launch ? '<span class="output-note">Launch price, not a sale</span>' : saleRevenueHtml(s.realPct * 100);
       return '<tr' + (s.optional ? ' class="stage-optional"' : '') + '><td data-label="Stage"><strong>' + s.stage + '</strong></td><td data-label="When">' + s.when + '</td><td data-label="Discount">' + discCell + '</td><td data-label="Price" style="color:var(--teal);font-weight:500">$' + s.price.toFixed(2) + '</td><td data-label="Revenue per Day">' + rev + '</td><td data-label="Purpose">' + s.purpose + '</td></tr>';
     }).join('') +
-    '<tr class="floor-row"><td data-label="Stage"><strong>Price Floor</strong></td><td data-label="When">Long-term minimum</td><td data-label="Discount">' + floorPct + '%</td><td data-label="Price">$' + salePrice(launchPrice, floorPct / 100).toFixed(2) + '</td><td data-label="Revenue per Day">' + saleRevenueHtml(floorPct) + '</td><td data-label="Purpose">Permanent price floor threshold</td></tr>';
+    '<tr class="floor-row"><td data-label="Stage"><strong>Price Floor</strong></td><td data-label="When">Long-term minimum</td><td data-label="Discount">' + floorPct + '%</td><td data-label="Price">$' + PricingModel.salePrice(launchPrice, floorPct / 100).toFixed(2) + '</td><td data-label="Revenue per Day">' + saleRevenueHtml(floorPct) + '</td><td data-label="Purpose">Permanent price floor threshold</td></tr>';
   updateRegionalTable();
   renderReconciliation();
   renderBreakEven();
@@ -5303,6 +5303,27 @@ function runSelfTest() {
   // Shown (rounded) prices drive the net: 17.49 shows as 16.99
   t('shownPrice(17.49) == 16.99', shownPrice(17.49) === 16.99);
   t('shownPrice(12.495) == 11.99', shownPrice(12.495) === 11.99);
+
+  // Sale prices are whole-percent discounts cut to the cent, not grid points
+  t('salePrice(24.99, 15%) == 21.24', PricingModel.salePrice(24.99, 0.15) === 21.24);
+  t('salePrice(14.99, 50%) == 7.49', PricingModel.salePrice(14.99, 0.5) === 7.49);
+  t('salePrice(19.99, 90%) == 1.99', PricingModel.salePrice(19.99, 0.9) === 1.99);
+  t('salePrice(20.00, 50%) == 10.00', PricingModel.salePrice(20, 0.5) === 10);
+  var stepsNewLow = true, prevStep = 24.99;
+  [0.15, 0.20, 0.30, 0.40, 0.50].forEach(function(p){ var sp = PricingModel.salePrice(24.99, p); if (sp >= prevStep) stepsNewLow = false; prevStep = sp; });
+  t('discount plan steps are each a new lowest price at $24.99', stepsNewLow);
+
+  // Sale revenue per day against full price (Haro 2026): +40% at 20% off,
+  // about even near 40%, below full price past 50%, a third less at 68%,
+  // more than half less at 84%; no data under 20% off.
+  var rpd = function(p){ return PricingModel.saleRevenuePerDay(p); };
+  t('revenue per day at 20% off ~ +40%', Math.abs(rpd(20) - 0.40) < 0.01);
+  t('revenue per day at 40% off is about even', Math.abs(rpd(40)) < 0.15);
+  t('revenue per day past 50% off is below full price', rpd(55) < 0 && rpd(60) < 0);
+  t('revenue per day at 68% off ~ a third less', Math.abs(rpd(68) + 0.34) < 0.02);
+  t('revenue per day at 84% off is more than half less', rpd(84) < -0.5);
+  t('daily sales at 84% off ~ 2.7x normal', Math.abs((1 + PricingModel.saleMonthLift(84) * 30 / 14) - 2.7) < 0.05);
+  t('no estimate under 20% off', rpd(15) === null);
 
   // Conversion rate tiers at boundaries
   t('conversion 4999 -> 0.15', PricingModel.getWishlistConversion(4999) === 0.15);
