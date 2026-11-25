@@ -54,7 +54,7 @@
       ],
       spark: { type: 'line', values: [18, 19, 19.5, 20, 20.8, 21, 21.4] },
       detailNote:
-        'Discount staircase built to 20%+ from first seasonal sale to trigger wishlist emails.',
+        'Discount plan: first sale 2 to 3 months after launch at 20%+, each step a new lowest price, regular sales at 50% off or less.',
       keyReadings: [
         'The four-variable pricing score (genre, scope, comp set, production value) maps to a recommended tier and launch price range.',
         'Wishlist conversion estimator projects Week 1 units from live wishlist count using Steam benchmarks.',
@@ -63,7 +63,7 @@
         'DLC pricing and Early Access discount recommendations are included as separate workbook sheets.',
       ],
       howToRead:
-        'SEB generates a defensible launch price from four variables: genre expectations, content scope, comparable-game pricing, and production value perception. The discount staircase is built so your first seasonal sale at 20%+ triggers Steam wishlist emails. Treat the Wishlist \u2192 Week 1 estimate as a directional range, not a forecast.',
+        'SEB generates a defensible launch price from four variables: genre expectations, content scope, comparable-game pricing, and production value perception. The discount plan starts with a first sale 2 to 3 months after launch at 20%+, which triggers Steam wishlist emails, makes each later step a new lowest price, and keeps regular sales at 50% off or less. Treat the Wishlist \u2192 Week 1 estimate as a directional range, not a forecast.',
     },
     pmf: {
       name: 'PMF',
