@@ -1,0 +1,18 @@
+{
+  "about": "Festivals and showcases outside Steam's own calendar, maintained by hand. Steam Next Fest and Steam's themed fests come from window-planner/model.js (WindowModel.EVENTS), so don't add them here. Every entry needs a source URL (the page the dates came from) and the date it was checked; entries without them are not shown. Entries checked more than 90 days ago show a warning that the dates may have changed. Don't add a festival or date you haven't read on its own site.",
+  "schema": {
+    "id": "short unique slug, e.g. \"example-showcase-2027\"",
+    "name": "festival or showcase name",
+    "url": "https link to the festival's page (defaults to source)",
+    "submissionOpens": "YYYY-MM-DD or empty",
+    "submissionCloses": "YYYY-MM-DD or empty (the deadline the list sorts by)",
+    "eventStart": "YYYY-MM-DD or empty",
+    "eventEnd": "YYYY-MM-DD or empty (defaults to eventStart)",
+    "cost": "free text as the festival states it, e.g. \"Free\" or \"$50 submission fee\"",
+    "platforms": ["PC", "Steam", "Switch"],
+    "tags": ["genre tags it accepts; empty means any genre"],
+    "source": "https URL the dates were read from (required)",
+    "checked": "YYYY-MM-DD the source was read (required)"
+  },
+  "festivals": []
+}
