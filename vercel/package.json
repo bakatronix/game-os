@@ -19,6 +19,7 @@
     "test:health": "node tests/agent-health.mjs",
     "test:oauth": "node tests/agent-oauth.mjs",
     "test:browser": "playwright test",
+    "test:models": "node --test \"tests/models/*.test.mjs\"",
     "test:session": "node tests/save-session.mjs"
   },
   "dependencies": {
