@@ -67,6 +67,92 @@ async function main() {
       "steamAppId" TEXT,
       "createdAt" TIMESTAMP NOT NULL DEFAULT now()
     )`,
+    // --- Shared game spine (additive) ---
+    `ALTER TABLE "game" ADD COLUMN IF NOT EXISTS genre TEXT`,
+    `ALTER TABLE "game" ADD COLUMN IF NOT EXISTS stage INTEGER NOT NULL DEFAULT 1`,
+    `ALTER TABLE "game" ADD COLUMN IF NOT EXISTS "createdBy" TEXT REFERENCES "user"(id) ON DELETE SET NULL`,
+    `CREATE INDEX IF NOT EXISTS game_studio_idx ON "game" ("studioId")`,
+    `CREATE TABLE IF NOT EXISTS "thesis_version" (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      "gameId" UUID NOT NULL REFERENCES "game"(id) ON DELETE CASCADE,
+      version INTEGER NOT NULL,
+      audience TEXT,
+      hook TEXT,
+      "compSet" TEXT,
+      "priceHypothesis" TEXT,
+      targets TEXT,
+      "changedFields" TEXT,
+      source TEXT,
+      note TEXT,
+      "createdBy" TEXT REFERENCES "user"(id) ON DELETE SET NULL,
+      "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
+      UNIQUE ("gameId", version)
+    )`,
+    `CREATE TABLE IF NOT EXISTS "signal" (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      "gameId" UUID NOT NULL REFERENCES "game"(id) ON DELETE CASCADE,
+      "toolId" TEXT NOT NULL,
+      key TEXT NOT NULL,
+      label TEXT,
+      value DOUBLE PRECISION,
+      unit TEXT,
+      meta TEXT,
+      "observedAt" TIMESTAMP NOT NULL DEFAULT now(),
+      "createdBy" TEXT REFERENCES "user"(id) ON DELETE SET NULL
+    )`,
+    `CREATE INDEX IF NOT EXISTS signal_game_key_idx ON "signal" ("gameId", key, "observedAt" DESC)`,
+    // Chicken Brûlée (Discord playtest scanner), moved off Supabase.
+    `CREATE TABLE IF NOT EXISTS "playtest_config" (
+      "gameId" UUID PRIMARY KEY REFERENCES "game"(id) ON DELETE CASCADE,
+      "botToken" TEXT,
+      channels TEXT,
+      "staffPrefixes" TEXT,
+      "roleMapping" TEXT,
+      "gameContext" TEXT,
+      "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
+      "updatedBy" TEXT REFERENCES "user"(id) ON DELETE SET NULL
+    )`,
+    `CREATE TABLE IF NOT EXISTS "playtest_scan" (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      "gameId" UUID NOT NULL REFERENCES "game"(id) ON DELETE CASCADE,
+      "channelIds" TEXT,
+      "messagesFetched" INTEGER DEFAULT 0,
+      "observationsFound" INTEGER DEFAULT 0,
+      summary TEXT,
+      insights TEXT,
+      recommendations TEXT,
+      error TEXT,
+      "startedAt" TIMESTAMP NOT NULL DEFAULT now(),
+      "completedAt" TIMESTAMP,
+      "createdBy" TEXT REFERENCES "user"(id) ON DELETE SET NULL
+    )`,
+    `CREATE INDEX IF NOT EXISTS playtest_scan_game_idx ON "playtest_scan" ("gameId", "startedAt" DESC)`,
+    `CREATE TABLE IF NOT EXISTS "playtest_observation" (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      "gameId" UUID NOT NULL REFERENCES "game"(id) ON DELETE CASCADE,
+      "scanId" UUID REFERENCES "playtest_scan"(id) ON DELETE SET NULL,
+      "messageId" TEXT NOT NULL,
+      "timestamp" TIMESTAMP NOT NULL,
+      "channelId" TEXT NOT NULL,
+      "channelName" TEXT NOT NULL,
+      kind TEXT NOT NULL DEFAULT 'observation',
+      speaker TEXT NOT NULL,
+      role TEXT NOT NULL DEFAULT 'Player',
+      theme TEXT NOT NULL,
+      signal TEXT NOT NULL,
+      severity TEXT NOT NULL DEFAULT 'Medium',
+      excerpt TEXT NOT NULL,
+      paraphrase TEXT,
+      UNIQUE ("gameId", "messageId")
+    )`,
+    `CREATE INDEX IF NOT EXISTS playtest_obs_game_ts_idx ON "playtest_observation" ("gameId", "timestamp" DESC)`,
+    `CREATE TABLE IF NOT EXISTS "tool_state" (
+      "userId" TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+      "toolId" TEXT NOT NULL,
+      data TEXT NOT NULL,
+      "savedAt" TIMESTAMP NOT NULL DEFAULT now(),
+      PRIMARY KEY ("userId", "toolId")
+    )`,
     `CREATE TABLE IF NOT EXISTS "invitation" (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       "studioId" UUID NOT NULL REFERENCES "studio"(id) ON DELETE CASCADE,
@@ -98,6 +184,7 @@ async function main() {
     `ALTER TABLE "app" ADD COLUMN IF NOT EXISTS "cxoQuestion" TEXT`,
     `ALTER TABLE "app" ADD COLUMN IF NOT EXISTS "description" TEXT`,
     `ALTER TABLE "app" ADD COLUMN IF NOT EXISTS "status" TEXT`,
+    `ALTER TABLE "user" ADD COLUMN IF NOT EXISTS "platformRole" TEXT`,
     `ALTER TABLE "app" ADD COLUMN IF NOT EXISTS "statusLabel" TEXT`,
     `ALTER TABLE "app" ADD COLUMN IF NOT EXISTS "metrics" TEXT`,
     `ALTER TABLE "app" ADD COLUMN IF NOT EXISTS "spark" TEXT`,
@@ -165,6 +252,17 @@ async function main() {
       ('seismic', 'Seismic', '/seismic', 'public', '1', 4, 'cxo'),
       ('steam-page-audit', 'Steam Page Audit', '/game-os/steam-page-audit', 'public', '1', 10, 'tools')
     ON CONFLICT (id) DO NOTHING`,
+    // Mobile Calculator: its own tool, beside the Steam pricing calculator.
+    `INSERT INTO "app" (id, name, path, access, version, "sortOrder", "group") VALUES
+      ('mobile-calc', 'Mobile Calculator', '/game-os/mobile-calc', 'authenticated', '1', 5, 'cxo')
+    ON CONFLICT (id) DO NOTHING`,
+    `UPDATE "app" SET
+       "toolName"='Mobile Calculator', "cxoQuestion"='Does an install pay for itself?',
+       "description"='Unit economics and funding runway for a mobile game: lifetime value per install, the cost per install you can afford, payback, and how long the round lasts in a stress, base and upside case.',
+       "status"='nodata', "statusLabel"='No data',
+       "metrics"='[{"label":"LTV per install","value":"—"},{"label":"Max CPI at target","value":"—"},{"label":"Runway","value":"—"}]',
+       "spark"='{"type":"line","values":[0.10,0.30,0.41,0.49,0.55,0.61,0.66,0.70]}'
+     WHERE id='mobile-calc'`,
     // Seismic's tools + shared objects, surfaced as Game OS widgets.
     `INSERT INTO "app" (id, name, path, access, version, "sortOrder", "group", "anchor", "stage") VALUES
       ('market-scope',        'Market Scope',        '/seismic', 'public', '1', 11, 'tools', '?tool=market-scope',     'Concept'),
@@ -279,6 +377,48 @@ async function main() {
     `UPDATE "app" SET "cxoQuestion"='One system, eight stages.', "metrics"='[{"label":"Tools","value":"15"},{"label":"Stages","value":"8"},{"label":"Momentum","value":"84"}]', "spark"='{"type":"line","values":[58,64,70,78,84]}' WHERE id='seismic'`,
     // Market Scope is now a standalone Game OS widget (not a Seismic deep-link).
     `UPDATE "app" SET path='/game-os/market-scope', anchor=NULL WHERE id='market-scope'`,
+    // Market Scope now reads live Steam releases; drop the demo tile numbers.
+    // Signal Ledger is a real page with the Momentum Score; top row, live tile.
+    `UPDATE "app" SET path='/game-os/ledger-view', anchor=NULL, "group"='cxo', "sortOrder"=0, "stage"=NULL,
+       "toolName"='Signal Ledger', "cxoQuestion"='Is the game gaining momentum?',
+       "description"='Every figure your tools record for a game, scored against benchmarks and rolled into one Momentum Score weighted for your stage, with a daily Steam snapshot.',
+       "status"='nodata', "statusLabel"='No data',
+       "metrics"='[{"label":"Momentum","value":"—"},{"label":"30-day change","value":"—"},{"label":"Coverage","value":"—"}]'
+     WHERE id='ledger-view'`,
+    // Audience Map is a working tool: top row, live tile.
+    `UPDATE "app" SET "group"='cxo', "sortOrder"=7, "stage"=NULL, "toolName"='Audience Map',
+       "cxoQuestion"='Where do your players gather?',
+       "description"='Start from games like yours: their Discord communities with live member counts, the games Steam recommends alongside them, the words players use, and whether your name is free.',
+       "status"='nodata', "statusLabel"='No data',
+       "metrics"='[{"label":"Comp Discord members","value":"—"},{"label":"Online now","value":"—"},{"label":"Comps mapped","value":"—"}]'
+     WHERE id='audience-map'`,
+    // PMF Analyzer rebuilt as a Game OS tool on Steam's working endpoints.
+    `UPDATE "app" SET
+       "toolName"='PMF Analyzer',
+       "description"='Is a Steam game finding its market? Satisfaction, engagement and reach scored against similar games, with its trailer, screenshots, review history and what to do next.',
+       "metrics"='[{"label":"Satisfaction","value":"—"},{"label":"Engagement","value":"—"},{"label":"Reach","value":"—"}]'
+     WHERE id='pmf'`,
+    // Launch Runbook is a dated Steam launch checklist: top row, live tile.
+    `UPDATE "app" SET "group"='cxo', "sortOrder"=9, "stage"=NULL, "toolName"='Launch Runbook',
+       "cxoQuestion"='Are you ready to launch?',
+       "description"='A dated Steam launch checklist worked back from your launch day: Steam review and Coming Soon deadlines, price and launch discount, press keys, launch day and the first 30 days.',
+       "status"='nodata', "statusLabel"='No data',
+       "metrics"='[{"label":"Days to launch","value":"—"},{"label":"Steps done","value":"—"},{"label":"Past their date","value":"—"}]'
+     WHERE id='launch-runbook'`,
+    // Window Planner reads Steam's upcoming releases and event calendar: top row, live tile.
+    `UPDATE "app" SET "group"='cxo', "sortOrder"=8, "stage"=NULL, "toolName"='Window Planner',
+       "cxoQuestion"='When should you launch?',
+       "description"='Pick a Steam launch week: how many games under your tags are coming out each week, how crowded that week usually is, and which Steam sales and Next Fest dates to avoid or aim for.',
+       "status"='nodata', "statusLabel"='No data',
+       "metrics"='[{"label":"Launch week","value":"—"},{"label":"Week score","value":"—"},{"label":"Same-tag releases","value":"—"}]'
+     WHERE id='window-planner'`,
+    // It is a working tool, so it sits in the top row with the other real tools.
+    `UPDATE "app" SET
+       "group"='cxo', "sortOrder"=6, "stage"=NULL, "toolName"='Market Scope',
+       "description"='Size a Steam market from real releases: what games under your tags earn, whether the space is getting crowded, which added tag is an opening, and which games to use as comps.',
+       "status"='nodata', "statusLabel"='No data',
+       "metrics"='[{"label":"Median revenue","value":"—"},{"label":"Over $100K","value":"—"},{"label":"Releases a year","value":"—"}]'
+     WHERE id='market-scope'`,
     // The remaining Seismic tools are extracted as standalone widgets too.
     `UPDATE "app" SET path='/game-os/'||id, anchor=NULL WHERE id IN
       ('thesis-builder','audience-map','page-engine','community-scaffold',

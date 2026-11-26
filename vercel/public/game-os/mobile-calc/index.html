@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mobile Calculator — Game OS</title>
+<meta name="description" content="Unit economics and funding runway for a mobile game: lifetime value per install, the cost per install you can afford, payback, and how long the round lasts.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/game-os/toolkit/tokens.css">
+<link rel="stylesheet" href="/game-os/mobile-calc/styles.css?v=1">
+<script src="/track.js" data-tool="mobile-calc" data-version="1"></script>
+<script src="/game-os/toolkit/spine.js?v=2"></script>
+</head>
+<body>
+
+<header class="top">
+  <div class="container">
+    <div class="gos-topbar">
+      <a class="gos-brand" href="/game-os" aria-label="Game OS home"><img src="/game-os/assets/logo.svg?v=6" alt="Game OS"></a>
+      <a class="gos-back" href="/game-os">&larr; Back to dashboard</a>
+    </div>
+    <div class="title-row">
+      <h1><span class="kicker">Unit economics &amp; funding runway</span>Mobile Calculator</h1>
+      <div class="toolbar">
+        <button class="btn-small" id="btn-example" type="button">Load Studio Falak example</button>
+        <button class="btn-small" id="btn-save" type="button">Save workbook (.json)</button>
+        <button class="btn-small" id="btn-open" type="button">Open workbook</button>
+        <button class="btn-small" id="btn-print" type="button">Print / PDF</button>
+        <button class="btn-small" id="btn-clear" type="button">Clear</button>
+        <input type="file" id="file-open" accept="application/json,.json" hidden>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="sticky">
+  <div class="container"><nav class="steps" id="steps" aria-label="Steps"></nav></div>
+  <div class="live" aria-live="polite"><div class="container" id="live"></div></div>
+</div>
+
+<main>
+  <div class="container">
+    <div id="gameBar"></div>
+
+    <!-- 1. Players -->
+    <section class="step input-step" id="step-players" data-title="Players">
+      <h2>Players: acquisition and retention</h2>
+      <p class="lead">What an install costs you and how long players stay. Use soft-launch numbers, not hopes. If you have no soft launch yet, say in each source line that it is an estimate and what it rests on.</p>
+      <div class="card" data-fields="cpi organic d1 d7 d30"></div>
+      <div class="card">
+        <h3>Retention check</h3>
+        <div id="ret-check"></div>
+        <div class="derived" id="ret-derived"></div>
+        <p class="note">The curve passes through your day 1 and day 30 and decays smoothly between and after them. Day 7 only checks that the two fit together.</p>
+      </div>
+    </section>
+
+    <!-- 2. Money -->
+    <section class="step input-step" id="step-money" data-title="Money">
+      <h2>Money: what an active player earns you</h2>
+      <p class="lead">Revenue per player before the stores take their cut. Enter 0 for any stream you don't have.</p>
+      <div class="card"><h3>In-app purchases</h3><div data-fields="iapArpdau"></div></div>
+      <div class="card"><h3>Ads</h3><div data-fields="adImps ecpm adKeep"></div></div>
+      <div class="card"><h3>Subscriptions</h3><div data-fields="subShare subPrice subRenew"></div></div>
+      <div class="card"><h3>Paid download</h3><div data-fields="paidPrice"></div></div>
+    </section>
+
+    <!-- 3. Fees & costs -->
+    <section class="step input-step" id="step-costs" data-title="Fees &amp; costs">
+      <h2>Fees, costs and your target</h2>
+      <p class="lead">What comes off the top before the money reaches you, and how long a player life you count.</p>
+      <div class="card" data-fields="storeFee subFee taxKeep refunds varCost horizon target"></div>
+      <div class="card">
+        <h3>Store fees: check the current terms</h3>
+        <p class="note">Apple&rsquo;s Small Business Program lists a 15% commission for developers with up to US$1M in proceeds the previous year. Google Play lists 15% on the first US$1M a year and 30% above it, and 15% on auto-renewing subscriptions, with different rates in some regions. Terms change: read <a href="https://developer.apple.com/app-store/small-business-program/" target="_blank" rel="noopener">Apple&rsquo;s page</a> and <a href="https://support.google.com/paymentscenter/answer/112622" target="_blank" rel="noopener">Google&rsquo;s page</a> on the day you build your plan.</p>
+      </div>
+    </section>
+
+    <!-- 4. Cases -->
+    <section class="step input-step" id="step-cases" data-title="Cases">
+      <h2>Stress and upside cases</h2>
+      <p class="lead">Soft-launch numbers rarely hold at scale. Say how much worse, and how much better, things could get. The base case uses your numbers as entered.</p>
+      <div class="grid-2">
+        <div class="card"><h3>Stress case</h3><div data-fields="stressRet stressMon stressCpi"></div></div>
+        <div class="card"><h3>Upside case</h3><div data-fields="upRet upMon upCpi"></div></div>
+      </div>
+    </section>
+
+    <!-- 5. Unit economics -->
+    <section class="step result-step" id="step-ue" data-title="Unit economics" data-result="1">
+      <h2>Unit economics</h2>
+      <p class="lead">What each install is worth over your horizon, after store fees, tax, refunds and running cost, against what it cost to get.</p>
+      <div id="ue-out"></div>
+    </section>
+
+    <!-- 6. Funding plan -->
+    <section class="step input-step" id="step-fund" data-title="Funding plan">
+      <h2>Funding plan</h2>
+      <p class="lead">Your launch plan, running costs and the round. Each month you spend the acquisition budget; the installs it buys earn money over the next 12 months along the curve from the unit economics. Money here is in your own currency.</p>
+      <div class="card" data-fields="currency fx"></div>
+      <div class="card"><h3>Dates</h3><div data-fields="start launch oneOffMonth roundMonth"></div></div>
+      <div class="card"><h3>Spend</h3><div data-fields="uaBudget uaMonths running oneOff"></div></div>
+      <div class="card"><h3>Cash and the round</h3><div data-fields="cash round preMoney"></div></div>
+    </section>
+
+    <!-- 7. Runway & ask -->
+    <section class="step result-step" id="step-run" data-title="Runway &amp; ask" data-result="1">
+      <h2>Runway and the ask</h2>
+      <p class="lead">When cash runs out in each case, where the money goes, and what the round buys. These figures feed slides 9&ndash;14 of your investor deck.</p>
+      <div id="run-out"></div>
+    </section>
+
+    <!-- About -->
+    <section class="step" id="step-about" data-title="About">
+      <h2>How this calculator works</h2>
+      <div class="card">
+        <h3>What it does</h3>
+        <p>It builds a retention curve from your day 1 and day 30 retention, then adds up what each install is worth over the horizon you choose: in-app purchases, ads, subscriptions and any upfront price, after store fees, tax and refunds, minus variable cost. It compares that value with what the install cost you.</p>
+        <p><b>Lifetime value (LTV)</b> here means profit per install before acquisition cost. <b>Profit per install</b> is LTV minus the blended cost per install. <b>Payback</b> is the first day on which cumulative LTV covers the blended cost.</p>
+        <p>The funding plan then spends your monthly acquisition budget, buys installs at each case&rsquo;s cost per install (plus organic installs on top), and lets each month&rsquo;s installs earn for 12 months. Revenue is added to cash, running costs and the round are applied, and the plan shows when cash runs out.</p>
+      </div>
+      <div class="card">
+        <h3>Assumptions that can mislead you</h3>
+        <ul class="plain">
+          <li>Retention beyond day 30 is the curve&rsquo;s extension, not data. Real games often retain differently later on.</li>
+          <li>Paid and organic installs are assumed to behave the same. Organic installs cost nothing and lower your blended cost.</li>
+          <li>Ad and purchase revenue per active user is held flat. In practice it changes with player age and level.</li>
+          <li>Subscription revenue is charged at day 0 and every 30 days after, with the renewal rate applied each month.</li>
+          <li>One store fee is used for all sales. Fees differ by store, region and yearly revenue: use an honest blend.</li>
+          <li>No regional pricing, seasonality, featured placements, or paying versus non-paying players.</li>
+          <li>Funding plan: cash basis, monthly. Earnings after an install&rsquo;s 12th month are left out to stay conservative. No payout delay (stores usually pay one to two months later), no tax on profit, no hiring changes, no second round. The model stops after 36 months.</li>
+          <li>The acquisition budget is spent whether or not it pays back. A real team would cut spend if payback were poor; the stress case shows what happens if it does not.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Glossary</h3>
+        <p class="note"><b>Install</b>: one download. <b>DAU</b>: daily active users. <b>ARPDAU</b>: average revenue per daily active user. <b>CPI</b>: cost per install. <b>eCPM</b>: ad revenue per 1,000 impressions. <b>LTV</b>: lifetime value, here per install and before acquisition cost. <b>Blended cost</b>: what an average install costs once organic installs count as zero.</p>
+        <p class="note">Based on the Llama &amp; Griffin mobile unit economics and funding model workbooks. Studio Falak is fictional; its numbers are illustrative for a small mobile team, not a benchmark.</p>
+      </div>
+    </section>
+
+    <div class="step-nav no-print" id="step-nav"></div>
+  </div>
+</main>
+
+<div class="chart-tip" id="chart-tip" role="tooltip"></div>
+
+<script src="/game-os/mobile-calc/model.js?v=1"></script>
+<script src="/game-os/mobile-calc/app.js?v=1"></script>
+</body>
+</html>

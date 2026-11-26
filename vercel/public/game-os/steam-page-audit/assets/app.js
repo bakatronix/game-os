@@ -22,6 +22,13 @@
   var btn = document.getElementById("runBtn");
 
   input.value = localStorage.getItem("gos_last_appid") || "";
+  // Prefer the current Game OS game's own App ID when it has one.
+  if (window.GOS) {
+    window.GOS.ready.then(function () {
+      var g = window.GOS.game;
+      if (g && g.steamAppId && !reportEl.innerHTML) input.value = g.steamAppId;
+    });
+  }
 
   form.addEventListener("submit", function (e) {
     e.preventDefault();
@@ -51,6 +58,7 @@
         }
         statusEl.textContent = "";
         render(res.body);
+        if (typeof window.gosAfterAudit === "function") window.gosAfterAudit(appId, res.body);
         once("viewed", function () {
           track("journey_step", { step_name: "audit_viewed", step_index: 2 });
           track("audit_viewed", { app_id: Number(appId), overall: res.body.overall, grade: res.body.grade });
@@ -69,8 +77,11 @@
         return (
           '<div class="criterion">' +
           '<span class="lbl">' + esc(c.label) + "</span>" +
-          '<div class="bar ' + barClass(c.score) + '"><span style="width:' + Math.round(c.score) + '%"></span></div>' +
-          '<span class="val">' + Math.round(c.score) + "</span>" +
+          (typeof c.score === "number"
+            ? '<div class="bar ' + barClass(c.score) + '"><span style="width:' + Math.round(c.score) + '%"></span></div>' +
+              '<span class="val">' + Math.round(c.score) + "</span>"
+            : '<div class="bar"><span style="width:0%"></span></div>' +
+              '<span class="val">—</span>') +
           '<span class="detail">' + esc(c.detail) + "</span>" +
           "</div>"
         );
@@ -100,7 +111,7 @@
     if (copyBtn) {
       copyBtn.addEventListener("click", function () {
         var text = "Steam Page Audit — " + r.game_name + "\nScore: " + r.overall + "/100 (grade " + r.grade + ")\n" +
-          r.criteria.map(function (c) { return "  " + c.label + ": " + Math.round(c.score) + " — " + c.detail; }).join("\n");
+          r.criteria.map(function (c) { return "  " + c.label + ": " + (typeof c.score === "number" ? Math.round(c.score) : "not scored") + " — " + c.detail; }).join("\n");
         if (navigator.clipboard) navigator.clipboard.writeText(text);
         once("actioned", function () { track("output_action", { action: "copy" }); });
         copyBtn.textContent = "Copied";

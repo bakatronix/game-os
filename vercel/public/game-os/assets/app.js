@@ -211,9 +211,9 @@
      Component helpers
      ============================================================ */
 
-  function statusBadge(kind, label) {
+  function statusBadge(kind, label, tip) {
     var glyphMap = { healthy: '\u25CF', watch: '\u25B2', concern: '\u25A0', demo: '' };
-    return '<span class="ss-badge ' + kind + '">' + (glyphMap[kind] ? glyphMap[kind] + ' ' : '') + escapeHtml(label) + '</span>';
+    return '<span class="ss-badge ' + kind + '"' + (tip ? ' title="' + escapeHtml(tip) + '"' : '') + '>' + (glyphMap[kind] ? glyphMap[kind] + ' ' : '') + escapeHtml(label) + '</span>';
   }
 
   function pageHeader(kicker, page, right) {
@@ -249,12 +249,117 @@
      ============================================================ */
 
   function renderOverview() {
-    var s = loadSettings();
-    var kicker = 'Game OS \u00b7 ' + (s.gameTitle || 'Demo Game');
+    var g = window.GOS && window.GOS.game;
+    var kicker = 'Game OS \u00b7 ' + (g ? g.title : 'Your studio');
     return (
-      pageHeader(kicker, 'Studio Health', '<span class="ss-demo">Demo data</span>') +
+      pageHeader(kicker, 'Studio Health', '') +
+      '<div id="gameBar"></div>' +
+      '<div id="gamePanel"></div>' +
       '<div id="widgetsSection" class="gos-meta">Loading widgets\u2026</div>'
     );
+  }
+
+  /* ============================================================
+     Shared game spine \u2014 current game, its thesis and signal ledger
+     (toolkit/spine.js). Rendered above the tool widgets.
+     ============================================================ */
+
+  var SIGNAL_TOOL_NAMES = {
+    'price-calc': 'Pricing Calculator',
+    'steam-page-audit': 'Steam Page Audit',
+    'thesis-builder': 'Thesis Builder',
+    'market-scope': 'Market Scope',
+    'mobile-calc': 'Mobile Calculator',
+    'pmf': 'PMF Analyzer',
+    'chicken-brulee': 'Chicken Br\u00fbl\u00e9e',
+    'steam': 'Daily Steam snapshot',
+    'audience-map': 'Audience Map',
+  };
+
+  function fmtSignal(s) {
+    var v = s.value;
+    if (v == null) return '\u2014';
+    switch (s.unit) {
+      case 'usd': return '$' + Number(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      case 'units': return Math.round(v).toLocaleString();
+      case 'score': return Math.round(v) + '/100';
+      case 'pct': return (Math.round(v * 10) / 10) + '%';
+      default: return String(Math.round(v * 100) / 100);
+    }
+  }
+
+  function fmtDate(d) {
+    try { return new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); } catch (e) { return ''; }
+  }
+
+  function renderGamePanel() {
+    var el = document.getElementById('gamePanel');
+    var G = window.GOS;
+    if (!el || !G) return;
+    if (!G.game) { el.innerHTML = ''; return; }
+
+    var t = G.thesis;
+    var thesisHtml = t
+      ? '<dl class="spine-facts">' +
+          '<div><dt>Price hypothesis</dt><dd>' + (t.priceHypothesis ? '$' + escapeHtml(t.priceHypothesis) : '\u2014') + '</dd></div>' +
+          '<div><dt>Comp set</dt><dd>' + ((t.compSet && t.compSet.length) ? t.compSet.length + ' games' : '\u2014') + '</dd></div>' +
+        '</dl>' +
+        (t.hook ? '<p class="spine-hook">\u201c' + escapeHtml(t.hook) + '\u201d</p>' : '')
+      : '<p class="module-desc">No thesis yet. Write down who it\u2019s for, the hook, and the price you\u2019re testing \u2014 every tool reads from it.</p>';
+
+    // Headline signals only: per-criterion page-audit scores live in the tool.
+    var ledger = (G.ledger || []).filter(function (s) { return !/^page_audit_(?!overall$)/.test(s.key); });
+    var ledgerHtml = ledger.length
+      ? '<ul class="spine-ledger">' + ledger.slice(0, 5).map(function (s) {
+          return '<li title="' + escapeHtml((SIGNAL_TOOL_NAMES[s.toolId] || s.toolId) + ' \u00b7 ' + fmtDate(s.observedAt)) + '">' +
+            '<span class="spine-ledger-label">' + escapeHtml(s.label || s.key) +
+            ' <small>' + escapeHtml(SIGNAL_TOOL_NAMES[s.toolId] || s.toolId) + '</small></span>' +
+            '<span class="spine-ledger-val">' + escapeHtml(fmtSignal(s)) + '</span></li>';
+        }).join('') + '</ul>' +
+        (ledger.length > 5 ? '<p class="spine-more">+ ' + (ledger.length - 5) + ' more signal' + (ledger.length - 5 === 1 ? '' : 's') + '</p>' : '')
+      : '<p class="module-desc">Empty so far. Run <a href="/game-os/steam-page-audit/">Steam Page Audit</a> or send a price from the <a href="/game-os/price-calc/">Pricing Calculator</a> and the results land here.</p>';
+
+    // Momentum lives in this panel now (it used to be a separate, duplicate tile).
+    var mo = LIVE_TILES['ledger-view'] ? LIVE_TILES['ledger-view'](G) : null;
+    var moScore = mo && mo.metrics[0].value !== '\u2014' ? mo.metrics[0].value : null;
+    var moBadge = moScore ? statusBadge(mo.kind, 'Momentum ' + moScore + ' \u00b7 ' + mo.label) : '<span class="ss-badge healthy">Live</span>';
+    var moLine = moScore
+      ? '<p class="spine-momentum">30-day change ' + escapeHtml(mo.metrics[1].value) + ' \u00b7 coverage ' + escapeHtml(mo.metrics[2].value) + '</p>'
+      : '';
+
+    el.innerHTML =
+      '<div class="module-grid spine-grid">' +
+        '<div class="ss-card module-card">' +
+          '<div class="module-head"><div><h3>Publishing Thesis</h3><div class="module-q">What are we claiming, and why?</div></div>' +
+          '<span class="ss-badge healthy">Live</span></div>' +
+          thesisHtml +
+          '<div class="card-actions"><a class="ss-btn" href="/game-os/thesis-builder/">' + (t ? 'Revise thesis' : 'Write thesis') + ' \u2192</a>' +
+          (t ? '<span class="gos-meta">v' + t.version + ' \u00b7 ' + fmtDate(t.createdAt) + ' from ' + escapeHtml(SIGNAL_TOOL_NAMES[t.source] || t.source || 'manual') + '</span>' : '') +
+          '</div>' +
+        '</div>' +
+        '<div class="ss-card module-card">' +
+          '<div class="module-head"><div><h3>Signal Ledger</h3><div class="module-q">What have we measured? Is it gaining momentum?</div></div>' +
+          moBadge + '</div>' +
+          moLine +
+          ledgerHtml +
+          '<div class="card-actions"><a class="ss-btn" href="/game-os/ledger-view">Open ledger and Momentum \u2192</a></div>' +
+        '</div>' +
+      '</div>';
+  }
+
+  function mountSpine() {
+    if (!window.GOS) return;
+    window.GOS.mountBar('#gameBar', { toolId: 'game-os' });
+    renderGamePanel();
+  }
+
+  if (window.GOS) {
+    window.GOS.onChange(function () {
+      renderGamePanel();
+      if (cachedApps && document.getElementById('widgetsSection')) renderWidgets(cachedApps);
+      var k = document.querySelector('.ss-header-row .ss-header .k');
+      if (k && window.GOS.game) k.textContent = 'Game OS \u00b7 ' + window.GOS.game.title;
+    });
   }
 
   function renderDetailPage(key) {
@@ -382,6 +487,8 @@
       case 'overview':
       default:
         content.innerHTML = renderOverview();
+        mountSpine();
+        if (cachedApps) renderWidgets(cachedApps);
         break;
     }
 
@@ -447,14 +554,237 @@
     try { return JSON.parse(s); } catch (e) { return null; }
   }
 
+  /* ---- Live tiles: read the current game's thesis + signal ledger ----
+     Returns { metrics, spark, kind, label } for tools wired to the spine, or
+     null for tools that only have demo data so far. */
+  function sig(key) { return window.GOS && window.GOS.signal ? window.GOS.signal(key) : null; }
+  function sigVal(key) { var s = sig(key); return s ? fmtSignal(s) : '\u2014'; }
+  function sigSpark(key, type) {
+    var s = sig(key);
+    var vals = s && s.history ? s.history.map(function (h) { return h.value; }).filter(function (v) { return v != null; }) : [];
+    return vals.length >= 2 ? { type: type || 'line', values: vals } : null;
+  }
+  var LIVE_TILES = {
+    'price-calc': function (G) {
+      var lp = sig('launch_price');
+      // Revenue sent before the all-in method counted only Steam's cut: don't show it as current.
+      var rev = sig('week1_net_revenue');
+      var old = !!(rev && rev.outdated);
+      return {
+        metrics: [
+          { label: 'Launch price', value: sigVal('launch_price') },
+          { label: 'Week 1 units', value: sigVal('week1_units') },
+          { label: old ? 'Week 1 net revenue (re-send)' : 'Week 1 net revenue, all-in', value: old ? '\u2014' : sigVal('week1_net_revenue') }
+        ],
+        spark: sigSpark('launch_price'),
+        kind: !lp ? 'demo' : old ? 'watch' : 'healthy',
+        label: !lp ? 'No data yet' : old ? 'Needs refresh' : 'Live',
+        note: old ? 'Revenue was worked out the old way (after Steam\u2019s cut only). Open the calculator and press Send to thesis to update it.' : ''
+      };
+    },
+    'steam-page-audit': function (G) {
+      var o = sig('page_audit_overall');
+      var crit = (G.ledger || []).filter(function (s) { return /^page_audit_(?!overall$)/.test(s.key); });
+      var score = o ? Math.round(o.value) : null;
+      return {
+        metrics: [
+          { label: 'Overall', value: sigVal('page_audit_overall') },
+          { label: 'Grade', value: (o && o.meta && o.meta.grade) || '\u2014' },
+          { label: 'Criteria scored', value: crit.length ? String(crit.length) : '\u2014' }
+        ],
+        spark: crit.length ? { type: 'bars', values: crit.map(function (c) { return c.value; }) } : null,
+        kind: score == null ? 'demo' : score >= 75 ? 'healthy' : score >= 55 ? 'watch' : 'concern',
+        label: score == null ? 'No data yet' : 'Live'
+      };
+    },
+    'chicken-brulee': function (G) {
+      var o = sig('playtest_observations');
+      var b = sig('playtest_blockers');
+      return {
+        metrics: [
+          { label: 'Observations', value: sigVal('playtest_observations') },
+          { label: 'Blockers', value: sigVal('playtest_blockers') },
+          { label: 'Positive', value: sigVal('playtest_positive_share') }
+        ],
+        spark: sigSpark('playtest_observations'),
+        kind: !o ? 'demo' : b && b.value > 0 ? 'watch' : 'healthy',
+        label: o ? 'Live' : 'No data yet'
+      };
+    },
+    'pmf': function (G) {
+      var sat = sig('pmf_satisfaction'), eng = sig('pmf_engagement'), rea = sig('pmf_reach');
+      function sc(s) { return s && s.value != null ? Math.round(s.value) + '/100' : '\u2014'; }
+      var low = [sat, eng, rea].filter(function (s) { return s && s.value != null; }).map(function (s) { return s.value; });
+      var min = low.length ? Math.min.apply(null, low) : null;
+      return {
+        metrics: [
+          { label: 'Satisfaction', value: sc(sat) },
+          { label: 'Engagement', value: sc(eng) },
+          { label: 'Reach', value: sc(rea) }
+        ],
+        spark: sigSpark('pmf_satisfaction'),
+        kind: min == null ? 'demo' : min >= 60 ? 'healthy' : min >= 40 ? 'watch' : 'concern',
+        label: min == null ? 'No data yet' : 'Live'
+      };
+    },
+    'audience-map': function (G) {
+      var m = sig('audience_discord_members'), o = sig('audience_discord_online'), c = sig('audience_comps_mapped');
+      function k(s) { return s && s.value != null ? (s.value >= 1000 ? Math.round(s.value / 1000) + 'K' : String(Math.round(s.value))) : '\u2014'; }
+      return {
+        metrics: [
+          { label: 'Comp Discord members', value: k(m) },
+          { label: 'Online now', value: k(o) },
+          { label: 'Comps mapped', value: c ? String(Math.round(c.value)) : '\u2014' }
+        ],
+        spark: null,
+        kind: m ? 'healthy' : 'demo',
+        label: m ? 'Live' : 'No data yet'
+      };
+    },
+    'market-scope': function (G) {
+      var m = sig('market_median_revenue');
+      var h = sig('market_hit_rate');
+      var r = sig('market_releases_last_year');
+      function short(v) {
+        if (v == null) return '\u2014';
+        return v >= 1e6 ? '$' + (v / 1e6).toFixed(1).replace(/\.0$/, '') + 'M' : v >= 1e3 ? '$' + Math.round(v / 1e3) + 'K' : '$' + Math.round(v);
+      }
+      return {
+        metrics: [
+          { label: 'Median revenue', value: m ? short(m.value) : '\u2014' },
+          { label: 'Over $100K', value: h && h.value != null ? (Math.round(h.value * 10) / 10) + '%' : '\u2014' },
+          { label: 'Releases a year', value: r && r.value != null ? Math.round(r.value).toLocaleString() : '\u2014' }
+        ],
+        spark: sigSpark('market_median_revenue'),
+        kind: m ? 'healthy' : 'demo',
+        label: m ? 'Live' : 'No data yet'
+      };
+    },
+    'mobile-calc': function (G) {
+      var l = sig('mobile_ltv_per_install');
+      var c = sig('mobile_max_cpi_target');
+      var rw = sig('mobile_runway_months');
+      var ratio = sig('mobile_ltv_cpi_ratio');
+      var target = ratio && ratio.meta && ratio.meta.target;
+      return {
+        metrics: [
+          { label: 'LTV per install', value: l ? sigVal('mobile_ltv_per_install') : '\u2014' },
+          { label: 'Max CPI at target', value: c ? sigVal('mobile_max_cpi_target') : '\u2014' },
+          { label: 'Runway', value: rw && rw.value != null ? Math.round(rw.value) + ' months' : '\u2014' }
+        ],
+        spark: sigSpark('mobile_ltv_per_install'),
+        kind: !l ? 'demo' : ratio && target && ratio.value < target ? 'watch' : 'healthy',
+        label: l ? 'Live' : 'No data yet'
+      };
+    },
+    'window-planner': function (G) {
+      var w = sig('window_launch_score');
+      var c = sig('window_competing_releases');
+      var wk = w && w.meta && w.meta.week;
+      var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      var label = wk ? MON[+wk.slice(5, 7) - 1] + ' ' + (+wk.slice(8, 10)) + ', ' + wk.slice(0, 4) : '\u2014';
+      return {
+        metrics: [
+          { label: 'Launch week', value: label },
+          { label: 'Week score', value: w && w.value != null ? Math.round(w.value) + '/100' : '\u2014' },
+          { label: 'Same-tag releases', value: c && c.value != null ? String(c.value) : '\u2014' }
+        ],
+        spark: sigSpark('window_launch_score'),
+        kind: !w ? 'demo' : w.value >= 55 ? 'healthy' : 'watch',
+        label: w ? 'Live' : 'No data yet'
+      };
+    },
+    'launch-runbook': function (G) {
+      var d = sig('runbook_days_to_launch');
+      var p = sig('runbook_done_pct');
+      var o = sig('runbook_overdue');
+      return {
+        metrics: [
+          { label: 'Days to launch', value: d && d.value != null ? (d.value >= 0 ? String(Math.round(d.value)) : 'Launched') : '\u2014' },
+          { label: 'Steps done', value: p && p.value != null ? Math.round(p.value) + '%' : '\u2014' },
+          { label: 'Past their date', value: o && o.value != null ? String(Math.round(o.value)) : '\u2014' }
+        ],
+        spark: sigSpark('runbook_done_pct'),
+        kind: !p ? 'demo' : o && o.value > 0 ? 'watch' : 'healthy',
+        label: p ? 'Live' : 'No data yet'
+      };
+    },
+    'thesis-builder': thesisTile,
+    'thesis-view': thesisTile,
+    'ledger-view': function (G) {
+      var l = G.ledger || [];
+      var MO = window.Momentum;
+      if (!MO) return null;
+      // Rebuild readings from each key's short history, so the 30-day change works too.
+      var rows = [];
+      l.forEach(function (s) {
+        (s.history && s.history.length ? s.history : [{ value: s.value, observedAt: s.observedAt }]).forEach(function (h) {
+          rows.push({ key: s.key, toolId: s.toolId, meta: s.meta, value: h.value, observedAt: h.observedAt });
+        });
+      });
+      var stage = (G.game && G.game.stage) || 1;
+      var m = MO.compute(MO.latest(rows), stage);
+      var ago = MO.scoreAt(rows, stage, 30 * 86400000);
+      var hist = MO.history(rows, stage).map(function (p) { return Math.round(p.score); });
+      var d = m.score != null && ago != null ? Math.round(m.score - ago) : null;
+      var b = MO.band(m.score);
+      return {
+        metrics: [
+          { label: 'Momentum', value: m.score == null ? '\u2014' : Math.round(m.score) + '/100' },
+          { label: '30-day change', value: d == null ? '\u2014' : (d > 0 ? '+' : d < 0 ? '\u2212' : '') + Math.abs(d) },
+          { label: 'Coverage', value: m.score == null ? '\u2014' : Math.round(m.coverage * 100) + '%' }
+        ],
+        spark: hist.length >= 2 ? { type: 'line', values: hist.slice(-12) } : null,
+        kind: m.score == null ? 'demo' : b.key === 'strong' || b.key === 'building' ? 'healthy' : b.key === 'watch' ? 'watch' : 'concern',
+        label: m.score == null ? 'No data yet' : b.label
+      };
+    }
+  };
+  function thesisTile(G) {
+    var t = G.thesis;
+    return {
+      metrics: [
+        { label: 'Price hypothesis', value: t && t.priceHypothesis ? '$' + t.priceHypothesis : '\u2014' },
+        { label: 'Comp set', value: t && t.compSet && t.compSet.length ? String(t.compSet.length) : '\u2014' },
+        { label: 'Version', value: t ? 'v' + t.version : '\u2014' }
+      ],
+      spark: null,
+      kind: t ? 'healthy' : 'demo',
+      label: t ? 'Live' : 'No data yet'
+    };
+  }
+  function liveTile(a) {
+    var G = window.GOS;
+    if (!G || !G.game || !LIVE_TILES[a.id]) return null;
+    return LIVE_TILES[a.id](G);
+  }
+
+  /* Seismic tools that still run on demo data only. Their tiles are greyed
+     out and marked "Under construction", but still open for a preview.
+     Remove an id once that tool reads and writes the game spine. */
+  var UNDER_CONSTRUCTION = {
+    'seismic': 1, 'page-engine': 1,
+    'community-scaffold': 1, 'test-loop': 1, 'festival-radar': 1,
+    'playtest-pipeline': 1, 'creator-match': 1, 'sentiment-radar': 1,
+    'demo-command': 1,
+    'long-tail-engine': 1, 'sequel-signal': 1, 'gate-log': 1
+  };
+
   function widgetCard(a) {
     var name = a.name || a.id;
-    var toolName = a.toolName;
+    var toolName = a.toolName && a.toolName !== name ? a.toolName : null;
     var href = a.path + (a.anchor || '');
-    var badge = a.status ? statusBadge(a.status === 'nodata' ? 'demo' : a.status, a.statusLabel || a.status) : '';
+    var building = !!UNDER_CONSTRUCTION[a.id];
+    var live = building ? null : liveTile(a);
+    // Only tiles backed by the current game's data get a health status;
+    // everything else is honestly labelled as demo data.
+    var badge = building
+      ? statusBadge('construction', 'Under construction')
+      : live ? statusBadge(live.kind, live.label) : statusBadge('demo', 'Sample numbers', 'Example figures so you can see what this tool shows. They are not your game\u2019s data yet.');
 
-    var metrics = parseJSON(a.metrics) || [];
-    var spark = parseJSON(a.spark);
+    // Under-construction tiles hide their demo numbers.
+    var metrics = building ? [] : live ? live.metrics : (parseJSON(a.metrics) || []);
+    var spark = building ? null : live ? live.spark : parseJSON(a.spark);
     var metricsHtml = metrics.length
       ? '<div class="metrics-grid">' +
           metrics
@@ -477,7 +807,7 @@
       : '';
 
     return (
-      '<div class="ss-card module-card">' +
+      '<div class="ss-card module-card' + (live ? ' is-live' : '') + (building ? ' is-construction' : '') + '">' +
       '<div class="module-head">' +
       '<div>' +
       '<h3>' + escapeHtml(name) + (toolName ? ' \u2014 ' + escapeHtml(toolName) : '') + '</h3>' +
@@ -488,8 +818,11 @@
       (a.description ? '<p class="module-desc">' + escapeHtml(a.description) + '</p>' : '') +
       metricsHtml +
       sparkHtml +
+      (live && live.note ? '<p class="tile-note">' + escapeHtml(live.note) + '</p>' : '') +
       '<div class="card-actions">' +
-      '<a class="ss-btn" href="' + escapeHtml(href) + '">Open \u2192</a>' +
+      (building
+        ? '<a class="ss-btn ghost" href="' + escapeHtml(href) + '" aria-label="Preview ' + escapeHtml(name) + ' (under construction)">Preview \u2192</a>'
+        : '<a class="ss-btn" href="' + escapeHtml(href) + '">Open \u2192</a>') +
       (stageTag ? stageTag : '') +
       '</div>' +
       '</div>'
@@ -500,46 +833,70 @@
     var el = document.getElementById('widgetsSection');
     if (!el) return;
 
+    // With a game picked, the Publishing Thesis and Signal Ledger panels at the top
+    // already show these three, so their tiles would only repeat the same numbers.
+    // (Thesis Builder opens from "Revise thesis"; the ledger from its own button.)
+    var inPanels = (window.GOS && window.GOS.game) ? { 'thesis-builder': 1, 'thesis-view': 1, 'ledger-view': 1 } : {};
     var sorted = apps
-      .filter(function (a) { return a.id !== 'dashboard'; })
+      .filter(function (a) { return a.id !== 'dashboard' && !inPanels[a.id]; })
       .sort(function (a, b) { return (a.sortOrder || 0) - (b.sortOrder || 0); });
 
     if (!sorted.length) { el.innerHTML = ''; return; }
 
-    var cxo = sorted.filter(function (a) { return a.group === 'cxo'; });
-    var tools = sorted.filter(function (a) { return a.group !== 'cxo'; });
+    // Two sections: studio tools first, then everything that belongs to Seismic.
+    var isSeismic = function (a) { return a.id === 'seismic' || a.toolName === 'Seismic'; };
+    var studio = sorted.filter(function (a) { return !isSeismic(a); });
+    // Working Seismic tools first, then the ones under construction.
+    var seismic = sorted.filter(function (a) { return isSeismic(a) && !UNDER_CONSTRUCTION[a.id]; })
+      .concat(sorted.filter(function (a) { return isSeismic(a) && UNDER_CONSTRUCTION[a.id]; }));
 
     var html = '';
 
-    // Top CXO tiles.
-    if (cxo.length) {
+    if (studio.length) {
       html += '<div class="module-grid">' +
-        cxo.map(widgetCard).join('') +
+        studio.map(widgetCard).join('') +
         '</div>';
     }
 
-    // Everything else — one continuous responsive grid so widgets sit
-    // beside each other (not stacked per stage). Stage is a small in-card tag.
-    if (tools.length) {
-      html += '<h2 class="tools-heading">More tools</h2>' +
+    if (seismic.length) {
+      html += '<h2 class="tools-heading">Seismic (Under Construction)</h2>' +
         '<div class="module-grid module-grid-tools">' +
-        tools.map(widgetCard).join('') +
+        seismic.map(widgetCard).join('') +
         '</div>';
     }
 
     el.innerHTML = html;
+    evenTiles();
   }
+
+  /* Every tile on the dashboard gets the height of the tallest one. */
+  function evenTiles() {
+    var cards = document.querySelectorAll('#widgetsSection .module-card');
+    if (!cards.length) return;
+    var max = 0;
+    cards.forEach(function (c) { c.style.minHeight = ''; });
+    cards.forEach(function (c) { max = Math.max(max, c.offsetHeight); });
+    cards.forEach(function (c) { c.style.minHeight = max + 'px'; });
+  }
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(evenTiles);
+  var evenTimer = null;
+  window.addEventListener('resize', function () {
+    clearTimeout(evenTimer);
+    evenTimer = setTimeout(evenTiles, 120);
+  });
 
   /* ============================================================
      Session — unified identity (GET /api/me)
      ============================================================ */
+
+  var cachedApps = null;
 
   function loadSession() {
     fetch('/api/me', { credentials: 'same-origin' })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (data) {
         if (!data) return;
-        if (data.apps) renderWidgets(data.apps);
+        if (data.apps) { cachedApps = data.apps; renderWidgets(data.apps); }
         if (!data.user) return;
         var info = document.getElementById('sessionInfo');
         var acct = document.getElementById('accountLink');

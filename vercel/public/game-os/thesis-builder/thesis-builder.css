@@ -1,0 +1,40 @@
+/* Thesis Builder form — Sandstone fields on top of the Seismic shim. */
+.tb-field { display: block; margin: 0 0 14px; }
+.tb-field > span { display: block; font-weight: 700; color: var(--ink); }
+.tb-field > small { display: block; font-size: 13px; color: var(--ink-muted); margin: 2px 0 6px; }
+.tb-field input,
+.tb-field textarea {
+  display: block; width: 100%; box-sizing: border-box;
+  font: 400 15px/1.45 var(--font-sans); color: var(--ink);
+  background: #fff; border: 1px solid var(--sand-deep); border-radius: var(--radius-field);
+  padding: 8px 10px;
+}
+.tb-field textarea { resize: vertical; }
+.tb-field input:focus-visible,
+.tb-field textarea:focus-visible,
+.tb-btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.tb-field input:disabled,
+.tb-field textarea:disabled { background: var(--sand); color: var(--ink-secondary); }
+.tb-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.tb-btn {
+  font: 700 15px/1 var(--font-sans); cursor: pointer;
+  background: var(--slate); color: #fff; border: 0; border-radius: var(--radius-field);
+  padding: 10px 16px; min-height: 40px;
+}
+.tb-btn:disabled { opacity: .6; cursor: default; }
+.tb-note { font-size: 14px; color: var(--ink-muted); margin: 6px 0 0; }
+.tb-note a { color: var(--teal-deep); }
+.tb-date { font-size: 12px; color: var(--ink-muted); white-space: nowrap; }
+.gate-log-entry { flex-wrap: wrap; }
+
+/* Revision history rows */
+.gate-log-entry {
+  display: flex; align-items: baseline; gap: 6px 12px;
+  padding: 10px 0; border-top: 1px solid var(--sand-deep);
+}
+.gate-log-entry:first-of-type { border-top: 0; }
+.gate-log-decision {
+  flex: none; font: 700 12px/18px var(--font-sans); color: #fff;
+  background: var(--teal-deep); border-radius: var(--radius-pill); padding: 1px 9px;
+}
+.gate-log-entry > span:nth-child(2) { flex: 1 1 260px; min-width: 0; }

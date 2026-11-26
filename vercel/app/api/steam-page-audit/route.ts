@@ -12,7 +12,7 @@ export const maxDuration = 30;
 type Criterion = {
   key: string;
   label: string;
-  score: number; // 0..100
+  score: number | null; // 0..100, or null when the data couldn't be loaded (left out of the overall score)
   weight: number;
   detail: string;
 };
@@ -39,11 +39,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ detail: "Invalid app_id" }, { status: 400 });
   }
 
-  const [detailsRaw, reviewsRaw] = await Promise.all([
-    jfetch(`https://store.steampowered.com/api/appdetails?appids=${appId}&l=english`),
+  const [detailsRaw, reviewsRaw, spyRaw] = await Promise.all([
+    jfetch(`https://store.steampowered.com/api/appdetails?appids=${appId}&l=english&cc=us`),
     jfetch(
       `https://store.steampowered.com/appreviews/${appId}?json=1&language=all&purchase_type=all&num_per_page=0`,
     ),
+    // Backup for the positive share: Steam often blocks the review endpoint for
+    // server requests. SteamSpy publishes positive/negative counts (refreshed daily).
+    jfetch(`https://steamspy.com/api.php?request=appdetails&appid=${appId}`),
   ]);
 
   const app = detailsRaw?.[String(appId)];
@@ -51,7 +54,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ detail: "App not found" }, { status: 404 });
   }
   const d = app.data;
-  const summary = reviewsRaw?.query_summary ?? {};
+  // The reviews endpoint often fails or comes back empty for server-side
+  // requests. A failed lookup must never be reported as "no reviews".
+  const summary =
+    reviewsRaw?.success === 1 && typeof reviewsRaw?.query_summary?.total_reviews === "number"
+      ? reviewsRaw.query_summary
+      : null;
 
   const name: string = d.name ?? `App ${appId}`;
   const genres: string[] = (d.genres ?? []).map((g: any) => g.description);
@@ -65,9 +73,31 @@ export async function POST(req: NextRequest) {
   const comingSoon = !!d.release_date?.coming_soon;
   const price = d.price_overview ?? null;
 
-  const total: number = summary.total_reviews ?? 0;
-  const positive: number = summary.total_positive ?? 0;
-  const posPct = total > 0 ? (positive / total) * 100 : 0;
+  // Fallback count: appdetails carries Steam's own review ("recommendations") total.
+  const recTotal: number | null =
+    typeof d.recommendations?.total === "number" ? d.recommendations.total : null;
+
+  const spyPos = typeof spyRaw?.positive === "number" ? spyRaw.positive : 0;
+  const spyNeg = typeof spyRaw?.negative === "number" ? spyRaw.negative : 0;
+  const spyOk = Number(spyRaw?.appid) === appId && spyPos + spyNeg > 0;
+
+  // reviewsSource: "reviews" = Steam's summary; "steamspy" = Steam's count with
+  // SteamSpy's positive share; "recommendations" = count only; null = unknown.
+  let reviewsSource: "reviews" | "steamspy" | "recommendations" | null = null;
+  let total: number | null = null;
+  let posPct: number | null = null;
+  if (summary && (summary.total_reviews > 0 || !recTotal)) {
+    reviewsSource = "reviews";
+    total = summary.total_reviews;
+    posPct = total! > 0 ? ((summary.total_positive ?? 0) / total!) * 100 : null;
+  } else if (spyOk) {
+    reviewsSource = "steamspy";
+    total = recTotal ?? spyPos + spyNeg;
+    posPct = (spyPos / (spyPos + spyNeg)) * 100;
+  } else if (recTotal !== null) {
+    reviewsSource = "recommendations";
+    total = recTotal;
+  }
 
   const criteria: Criterion[] = [];
 
@@ -114,11 +144,24 @@ export async function POST(req: NextRequest) {
     key: "reviews",
     label: "Reviews",
     weight: 20,
-    score: total === 0 ? 30 : clamp(posPct * 0.7 + clamp(Math.log10(total + 1) * 18, 0, 30)),
+    score:
+      total === null
+        ? null
+        : total === 0
+          ? 30
+          : posPct === null
+            ? null
+            : clamp(posPct * 0.7 + clamp(Math.log10(total + 1) * 18, 0, 30)),
     detail:
-      total === 0
-        ? "No reviews yet — page is still building social proof."
-        : `${total.toLocaleString()} reviews, ${posPct.toFixed(1)}% positive.`,
+      total === null
+        ? "Couldn't load reviews from Steam. Not counted in the score; try again later."
+        : total === 0
+          ? "No reviews yet — page is still building social proof."
+          : posPct === null
+            ? `About ${total.toLocaleString()} reviews on Steam. Couldn't load the positive share, so this isn't counted in the score.`
+            : reviewsSource === "steamspy"
+              ? `About ${total.toLocaleString()} reviews on Steam, ${posPct.toFixed(1)}% positive (positive share from SteamSpy, updated daily).`
+              : `${total.toLocaleString()} reviews, ${posPct.toFixed(1)}% positive.`,
   });
 
   // Genres / tags clarity
@@ -137,21 +180,25 @@ export async function POST(req: NextRequest) {
     weight: 10,
     score: price ? 85 : comingSoon ? 60 : 40,
     detail: price
-      ? `${price.final_formatted ?? ""} at launch window.`
+      ? price.discount_percent > 0
+        ? `${price.final_formatted ?? ""} now, on sale ${price.discount_percent}% off ${price.initial_formatted ?? "the usual price"}.`
+        : `${price.final_formatted ?? ""} current price.`
       : comingSoon
         ? "Coming soon — no price set yet."
         : "No price info on the payload.",
   });
 
-  const weightSum = criteria.reduce((a, c) => a + c.weight, 0);
+  // Only criteria with real data count toward the overall score.
+  const scored = criteria.filter((c): c is Criterion & { score: number } => c.score !== null);
+  const weightSum = scored.reduce((a, c) => a + c.weight, 0);
   const overall = Math.round(
-    criteria.reduce((a, c) => a + c.score * c.weight, 0) / weightSum,
+    scored.reduce((a, c) => a + c.score * c.weight, 0) / weightSum,
   );
 
   const grade = overall >= 85 ? "A" : overall >= 70 ? "B" : overall >= 55 ? "C" : overall >= 40 ? "D" : "F";
 
-  const strengths = criteria.filter((c) => c.score >= 75).map((c) => c.label);
-  const gaps = criteria.filter((c) => c.score < 55).map((c) => c.label);
+  const strengths = scored.filter((c) => c.score >= 75).map((c) => c.label);
+  const gaps = scored.filter((c) => c.score < 55).map((c) => c.label);
 
   return NextResponse.json({
     app_id: appId,
@@ -169,7 +216,8 @@ export async function POST(req: NextRequest) {
       screenshots,
       videos: movies,
       reviews: total,
-      review_score_pct: Math.round(posPct * 10) / 10,
+      reviews_source: reviewsSource,
+      review_score_pct: posPct === null ? null : Math.round(posPct * 10) / 10,
     },
   });
 }

@@ -3,12 +3,12 @@ import { auth } from "@/auth";
 import { getDb } from "@/db";
 import { sql } from "drizzle-orm";
 import GosShell from "@/components/GosShell";
+import { assertPlatformAdmin, requirePlatformAdmin } from "@/lib/admin";
 
 export const dynamic = "force-dynamic";
 
 export default async function AnalyticsPage() {
-  const session = await auth();
-  if (!session?.user) redirect("/login?callbackUrl=/admin/analytics");
+  const session = await requirePlatformAdmin("/admin/analytics");
 
   const db = getDb();
 
@@ -53,7 +53,7 @@ export default async function AnalyticsPage() {
   );
 
   return (
-    <GosShell title="Analytics" active="admin" subnav="funnel">
+    <GosShell title="Analytics" active="analytics" subnav="funnel">
       <div className="gos-card">
         <h2>Funnel (unique actors)</h2>
         <p className="gos-muted" style={{ marginTop: -4 }}>

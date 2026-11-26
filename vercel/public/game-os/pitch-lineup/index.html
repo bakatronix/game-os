@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pitch Lineup — Llama &amp; Griffin</title>
+<meta name="description" content="Score demo day pitches 1, 2, 3 or HR with up to six scorers and watch the combined totals build up.">
+<link rel="icon" href="/favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f7f4ee; --card:#fdfcf9; --line:#eae7e0; --line2:#d2cdc3;
+  --ink:#232323; --muted:#6b6660; --faint:#bab9b4;
+  --gold:#c3a55f; --gold-deep:#a8893a; --teal:#2a8f76; --coral:#b85a3a; --purple:#6b64b3;
+  --serif:"Playfair Display",Georgia,serif; --sans:"DM Sans",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--sans)}
+a{color:var(--teal)}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 20px 60px}
+header{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;border-bottom:1px solid var(--gold);padding-bottom:16px;margin-bottom:22px}
+.eyebrow{font:500 12px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--gold-deep)}
+h1{font:700 34px/1.1 var(--serif);margin:6px 0 6px}
+.lede{color:var(--muted);max-width:640px;margin:0}
+.brand{font:600 14px var(--serif);color:var(--muted);text-decoration:none}
+.grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:22px}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px}
+.card h2{font:700 19px var(--serif);margin:0 0 4px}
+.card .sub{color:var(--muted);font-size:13px;margin:0 0 14px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:22px}
+@media(max-width:700px){.stats{grid-template-columns:repeat(2,1fr)}}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.stat .k{font:500 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.stat .v{font:700 26px/1.2 var(--serif);margin-top:4px}
+.stat .n{font-size:12px;color:var(--muted)}
+table{width:100%;border-collapse:collapse}
+th{font:500 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;padding:6px 6px;border-bottom:1px solid var(--line2)}
+td{padding:5px 4px;border-bottom:1px solid var(--line);vertical-align:middle}
+td.num,th.num{text-align:center;font-family:var(--mono)}
+tr.group-start td{border-top:2px solid var(--line2)}
+tr.dragging{opacity:.4}
+tr.drop-above td{box-shadow:inset 0 2px 0 var(--gold)}
+.handle{cursor:grab;color:var(--faint);user-select:none;font-size:16px;padding:0 2px}
+.slot{font-family:var(--mono);color:var(--muted);width:28px}
+.grp{font:500 11px var(--mono);color:var(--gold-deep)}
+input[type=text]{width:100%;border:1px solid transparent;background:transparent;font:inherit;padding:4px 6px;border-radius:6px;color:var(--ink)}
+input[type=text]:hover{border-color:var(--line)}
+input[type=text]:focus{outline:none;border-color:var(--gold);background:#fff}
+.bases{display:inline-flex;border:1px solid var(--line2);border-radius:7px;overflow:hidden}
+.bases button{border:0;background:transparent;font:500 12px var(--mono);padding:4px 6px;cursor:pointer;color:var(--muted)}
+.bases button+button{border-left:1px solid var(--line2)}
+.bases button.on{color:#fff}
+.bases button.on[data-b="1"]{background:var(--faint);color:var(--ink)}
+.bases button.on[data-b="2"]{background:var(--purple)}
+.bases button.on[data-b="3"]{background:var(--gold-deep)}
+.bases button.on[data-b="4"]{background:var(--teal)}
+.runs{font:700 15px var(--mono)}
+.runs.zero{color:var(--faint);font-weight:400}
+.acts{white-space:nowrap}
+.mini{border:0;background:transparent;cursor:pointer;color:var(--faint);font-size:13px;padding:2px 4px}
+.mini:hover{color:var(--coral)}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.btn{border:1px solid var(--line2);background:var(--card);border-radius:7px;padding:7px 12px;font:500 13px var(--sans);cursor:pointer;color:var(--ink)}
+.btn:hover{border-color:var(--gold)}
+.btn.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.settings{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.settings label{font:500 11px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:4px}
+.settings input[type=range]{width:100%;accent-color:var(--gold-deep)}
+.settings .val{font:500 13px var(--mono)}
+.settings input[type=number]{width:70px;font:500 13px var(--mono);border:1px solid var(--line2);border-radius:6px;padding:3px 6px;background:#fff}
+.chart{width:100%;height:auto;display:block}
+.chart text{font-family:var(--mono);font-size:11px;fill:var(--muted)}
+.chart .title{font:700 14px var(--sans);fill:var(--ink)}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin:6px 0 2px;flex-wrap:wrap}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.charts .card+.card{margin-top:16px}
+.notes{margin:0;padding-left:18px;color:var(--ink)}
+.notes li{margin:4px 0}
+.rules{font-size:13px;color:var(--muted);margin-top:22px}
+.rules b{color:var(--ink)}
+dialog{border:1px solid var(--line2);border-radius:10px;background:var(--card);padding:18px;max-width:560px;width:92vw}
+dialog textarea{width:100%;height:240px;font:13px var(--mono);border:1px solid var(--line2);border-radius:6px;padding:8px}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+.tip{position:fixed;pointer-events:none;background:var(--ink);color:var(--bg);font:12px var(--sans);padding:5px 8px;border-radius:6px;opacity:0;transition:opacity .1s;z-index:5}
+.mine{font:700 15px var(--mono)}
+.who{font-size:12px;color:var(--muted);font-family:var(--mono)}
+.sync{font-size:12px;color:var(--muted);margin-left:auto;align-self:center}
+.sync.err{color:var(--coral)}
+.scorers{list-style:none;margin:0;padding:0}
+.scorers li{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--line);font-size:14px}
+.scorers li span{font-family:var(--mono);color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow">Demo day tool</div>
+      <h1>Pitch Lineup</h1>
+      <p class="lede">Score each pitch 1, 2, 3 or HR (HR counts as 4 points). Every scorer signs in and scores on their own; the totals and graphs add everyone's scores together and update as people score.</p>
+    </div>
+    <a class="brand" href="/">Llama &amp; Griffin</a>
+  </header>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="grid">
+    <section class="card">
+      <h2>Lineup</h2>
+      <p class="sub">Teams are in demo day running order; the last pitch is the Closer. Click 1, 2, 3 or HR to give your score — click it again to clear it. <b>Total</b> is everyone's points added together.</p>
+      <table>
+        <thead><tr><th>#</th><th>Team</th><th>Your score</th><th class="num">Total</th><th class="num">Scored by</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <div class="toolbar">
+        <button class="btn" id="reset">Clear my scores</button>
+        <button class="btn" id="csv">Download CSV</button>
+        <span class="sync" id="sync"></span>
+      </div>
+    </section>
+
+    <section class="charts">
+      <div class="card">
+        <h2>Points by team</h2>
+        <div class="legend"><span><i style="background:var(--gold)"></i>Total points (all scorers)</span><span><i style="background:var(--teal)"></i>Running total (right axis)</span></div>
+        <svg class="chart" id="c1" viewBox="0 0 600 250"></svg>
+      </div>
+      <div class="card">
+        <h2>By group</h2>
+        <table><thead><tr><th>Group</th><th class="num">Teams</th><th class="num">Points</th><th class="num">Per team</th></tr></thead><tbody id="groups"></tbody></table>
+      </div>
+      <div class="card">
+        <h2>Scorers</h2>
+        <ul class="scorers" id="scorers"></ul>
+      </div>
+    </section>
+  </div>
+
+  <p class="rules"><b>How scoring works.</b> 1 = 1 point, 2 = 2, 3 = 3, HR = 4. A team's total is the sum of every scorer's points for it, so a team's total keeps growing as more people score it — check <b>Scored by</b> to see how many have. The running total adds up the points through the running order. Your scores are saved to your Game OS account; everyone signed in sees the combined totals, refreshed every few seconds.</p>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="tip" id="tip"></div>
+
+<script>
+(function(){
+  const TEAMS = ['Zohal Studio','Folded Reality','Game Hermits','Three Pixels','Struck Knight Games','Henkaa Studio','Neurospike','Hemova','Sparkling Sand Studio','Optimistic Studio','CrownLight Games','Three Coins','Raheebeen','TWW Studios','End Games Studio','Kreationware','Purple Milk','Golden Game Productions','Duwit','Dinomite Studios','MeemWow Games'];
+  const GROUP_SIZE = 4;
+  const LABEL = {1:'1',2:'2',3:'3',4:'HR'};
+  const LOCAL_KEY = 'lg-pitch-lineup-scores-v3';
+  const SAVE_URL = '/api/tool-state/pitch-lineup';
+  const ALL_URL = '/api/pitch-lineup/scores';
+  const POLL_MS = 5000;
+
+  let mine = loadLocal();          // { team: 1..4 } — this scorer's scores
+  let others = [];                 // [{ name, scores }] — everyone else, from the server
+  let myName = 'You';
+  let online = false, dirty = false, saving = false, saveTimer = null;
+
+  function cleanScores(o){ const out = {}; if(o && typeof o==='object') for(const t of TEAMS){ const v = +o[t]; if([1,2,3,4].includes(v)) out[t] = v; } return out; }
+  function loadLocal(){ try{ return cleanScores(JSON.parse(localStorage.getItem(LOCAL_KEY))); }catch(e){ return {}; } }
+  function saveLocal(){ try{ localStorage.setItem(LOCAL_KEY, JSON.stringify(mine)); }catch(e){} }
+
+  // ---------- model ----------
+  function groupOf(i){
+    const n = TEAMS.length;
+    if(n>1 && i===n-1) return 'Closer';
+    const ngroups = Math.max(1, Math.floor((n-1)/GROUP_SIZE));
+    return String.fromCharCode(65+Math.min(Math.floor(i/GROUP_SIZE), ngroups-1));
+  }
+  function compute(){
+    const all = [{name:myName, me:true, scores:mine}].concat(others);
+    const active = all.filter(s=>s.me || Object.keys(s.scores).length);
+    const total = TEAMS.map(t=>all.reduce((a,s)=>a+(s.scores[t]||0),0));
+    const count = TEAMS.map(t=>all.filter(s=>s.scores[t]).length);
+    let c = 0; const running = total.map(v=>c+=v);
+    return {all:active, total, count, running, sum:c};
+  }
+
+  // ---------- render ----------
+  const $ = id => document.getElementById(id);
+  function esc(s){ return String(s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
+
+  function render(){
+    const c = compute();
+    renderRows(c); renderStats(c); renderChart(c); renderGroups(c); renderScorers(c);
+  }
+
+  function renderRows(c){
+    const nScorers = c.all.length;
+    $('rows').innerHTML = TEAMS.map((t,i)=>{
+      const g = groupOf(i), gs = i>0 && g!==groupOf(i-1);
+      return `<tr class="${gs?'group-start':''}">
+        <td class="slot">${i+1}<div class="grp">${(i===0||gs)?g:''}</div></td>
+        <td>${esc(t)}</td>
+        <td style="white-space:nowrap"><span class="bases">${[1,2,3,4].map(b=>`<button data-b="${b}" data-i="${i}" class="${mine[t]===b?'on':''}" aria-label="${LABEL[b]}">${LABEL[b]}</button>`).join('')}</span></td>
+        <td class="num"><span class="runs ${c.total[i]?'':'zero'}">${c.total[i]}</span></td>
+        <td class="num who">${c.count[i]}/${nScorers}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  function renderStats(c){
+    const max = Math.max(0,...c.total);
+    const leaders = TEAMS.filter((_,i)=>max && c.total[i]===max);
+    const full = c.count.filter(n=>n===c.all.length && n>0).length;
+    $('stats').innerHTML = [
+      ['Scorers', c.all.length, c.all.map(s=>s.me?'You':s.name).map(esc).join(', ')],
+      ['Points awarded', c.sum, `across ${TEAMS.length} teams`],
+      ['Top team', max? `${max} pts`:'—', leaders.length? esc(leaders.join(', ')):'Nothing scored yet'],
+      ['Fully scored', `${full}/${TEAMS.length}`, 'teams scored by every scorer']
+    ].map(([k,v,s])=>`<div class="stat"><div class="k">${k}</div><div class="v">${v}</div><div class="n">${s}</div></div>`).join('');
+  }
+
+  function renderChart(c){
+    const n = TEAMS.length, W=600, H=250, L=34, R=40, T=14, B=30, w=W-L-R, h=H-T-B, step=w/n;
+    const x = i => L + step*(i+.5);
+    const maxBar = Math.max(4, ...c.total), top = Math.ceil(maxBar/4)*4;
+    const yb = v => T + h - h*v/top;
+    const maxRun = Math.max(1, c.sum), yr = v => T + h - h*v/maxRun;
+    const ticks = [0,.25,.5,.75,1].map(f=>Math.round(top*f));
+    const grid = ticks.map(t=>`<line x1="${L}" x2="${W-R}" y1="${yb(t)}" y2="${yb(t)}" stroke="${t?'#eae7e0':'#bab9b4'}"/><text x="${L-8}" y="${yb(t)+4}" text-anchor="end">${t}</text>`).join('');
+    const rt = [0, Math.round(maxRun/2), maxRun].map(t=>`<text x="${W-R+8}" y="${yr(t)+4}" fill="#2a8f76">${c.sum?t:''}</text>`).join('');
+    const bw = Math.min(18, step*.6);
+    const bars = TEAMS.map((t,i)=>`<rect x="${x(i)-bw/2}" y="${yb(c.total[i])}" width="${bw}" height="${yb(0)-yb(c.total[i])}" rx="2" fill="#c3a55f" data-tip="#${i+1} ${esc(t)}: ${c.total[i]} pts from ${c.count[i]} scorer${c.count[i]===1?'':'s'}"/>`).join('');
+    const line = c.sum? `<path d="${c.running.map((v,i)=>(i?'L':'M')+x(i).toFixed(1)+' '+yr(v).toFixed(1)).join(' ')}" fill="none" stroke="#2a8f76" stroke-width="2"/>`
+      + c.running.map((v,i)=>`<circle cx="${x(i)}" cy="${yr(v)}" r="3" fill="#2a8f76" data-tip="Running total after #${i+1} ${esc(TEAMS[i])}: ${v}"/>`).join('') : '';
+    const every = Math.max(1, Math.ceil(18/step));
+    const xl = TEAMS.map((_,i)=> i%every===0 ? `<text x="${x(i)}" y="${H-10}" text-anchor="middle">${i+1}</text>`:'').join('');
+    $('c1').innerHTML = grid + rt + bars + line + xl;
+  }
+
+  function renderGroups(c){
+    const g = {};
+    TEAMS.forEach((_,i)=>{ const k = groupOf(i); g[k] = g[k]||{n:0,p:0}; g[k].n++; g[k].p += c.total[i]; });
+    $('groups').innerHTML = Object.keys(g).map(k=>`<tr><td>${k}</td><td class="num">${g[k].n}</td><td class="num">${g[k].p}</td><td class="num">${(g[k].p/g[k].n).toFixed(1)}</td></tr>`).join('');
+  }
+
+  function renderScorers(c){
+    $('scorers').innerHTML = c.all.map(s=>{ const k = Object.keys(s.scores).length; return `<li>${esc(s.me?myName+' (you)':s.name)}<span>${k}/${TEAMS.length} scored</span></li>`; }).join('');
+  }
+
+  function setSync(t, err){ const el = $('sync'); el.textContent = t; el.classList.toggle('err', !!err); }
+
+  // ---------- server ----------
+  async function pull(){
+    if(dirty || saving) return;
+    try{
+      const res = await fetch(ALL_URL, {cache:'no-store', credentials:'same-origin'});
+      if(!res.ok) throw new Error(res.status);
+      const data = await res.json();
+      if(dirty || saving) return;
+      const list = Array.isArray(data.scorers) ? data.scorers : [];
+      const me = list.find(s=>s.isMe);
+      others = list.filter(s=>!s.isMe).map(s=>({name:String(s.name||'Scorer'), scores:cleanScores(s.scores)}));
+      if(me){ myName = String(me.name||'You'); mine = cleanScores(me.scores); saveLocal(); }
+      else if(Object.keys(mine).length){ queueSave(0); }   // first visit with scores from this browser: push them up
+      if(!online) setSync('Live');
+      online = true;
+      render();
+    }catch(e){
+      online = false;
+      setSync('Offline — your scores are kept in this browser only', true);
+    }
+  }
+  function queueSave(delay){ dirty = true; clearTimeout(saveTimer); saveTimer = setTimeout(push, delay==null?400:delay); }
+  async function push(){
+    saving = true; dirty = false;
+    const body = JSON.stringify({state:{scores:mine}});
+    try{
+      const res = await fetch(SAVE_URL, {method:'PUT', headers:{'Content-Type':'application/json'}, body, credentials:'same-origin'});
+      if(!res.ok) throw new Error(res.status);
+      setSync('Saved');
+    }catch(e){ setSync('Not saved — check you are signed in', true); }
+    saving = false;
+  }
+
+  // ---------- events ----------
+  $('rows').addEventListener('click', e=>{
+    const b = e.target.closest('button[data-b]'); if(!b) return;
+    const t = TEAMS[+b.dataset.i], v = +b.dataset.b;
+    if(mine[t]===v) delete mine[t]; else mine[t] = v;
+    saveLocal(); render(); queueSave(); setSync('Saving…');
+  });
+  $('reset').onclick = ()=>{
+    if(!Object.keys(mine).length) return;
+    if(confirm('Clear all of your scores? Other scorers’ scores are not affected.')){ mine = {}; saveLocal(); render(); queueSave(0); toast('Your scores cleared'); }
+  };
+  $('csv').onclick = ()=>{
+    const c = compute();
+    const names = c.all.map(s=>s.me?myName+' (you)':s.name);
+    const lines = [['Slot','Group','Team'].concat(names,['Total','Scored by'])].concat(TEAMS.map((t,i)=>[i+1,groupOf(i),t].concat(c.all.map(s=>s.scores[t]?LABEL[s.scores[t]]:''),[c.total[i],c.count[i]])));
+    const csv = lines.map(r=>r.map(v=>{ v=String(v); if(/^[=+\-@]/.test(v)) v="'"+v; return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }).join(',')).join('\n');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download = 'pitch-lineup-scores.csv'; a.click(); URL.revokeObjectURL(a.href);
+  };
+  function toast(t){ const el=$('toast'); el.textContent=t; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),1800); }
+
+  const tip = $('tip');
+  document.addEventListener('mousemove', e=>{ const t = e.target.closest && e.target.closest('[data-tip]'); if(t){ tip.textContent=t.getAttribute('data-tip'); tip.style.left=(e.clientX+12)+'px'; tip.style.top=(e.clientY+12)+'px'; tip.style.opacity=1; } else tip.style.opacity=0; });
+
+  render();
+  setSync('Connecting…');
+  pull();
+  setInterval(()=>{ if(!document.hidden) pull(); }, POLL_MS);
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) pull(); });
+})();
+</script>
+</body>
+</html>

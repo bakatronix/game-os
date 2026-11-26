@@ -5,12 +5,12 @@ import { getDb } from "@/db";
 import { discordSnapshots } from "@/db/schema";
 import { desc } from "drizzle-orm";
 import GosShell from "@/components/GosShell";
+import { assertPlatformAdmin, requirePlatformAdmin } from "@/lib/admin";
 
 export const dynamic = "force-dynamic";
 
 export default async function EngagementPage() {
-  const session = await auth();
-  if (!session?.user) redirect("/login?callbackUrl=/admin/analytics/engagement");
+  const session = await requirePlatformAdmin("/admin/analytics/engagement");
 
   const db = getDb();
   const rows = await db
@@ -26,7 +26,7 @@ export default async function EngagementPage() {
       : null;
 
   return (
-    <GosShell title="Analytics" active="admin" subnav="engagement">
+    <GosShell title="Analytics" active="analytics" subnav="engagement">
       <div className="gos-card">
         <h2>Engagement ratio</h2>
         <p className="gos-muted" style={{ marginTop: -4 }}>
@@ -83,6 +83,7 @@ export default async function EngagementPage() {
         <form
           action={async (fd: FormData) => {
             "use server";
+            await assertPlatformAdmin();
             const num = (k: string) => {
               const v = parseInt(String(fd.get(k) || ""), 10);
               return Number.isNaN(v) ? null : v;

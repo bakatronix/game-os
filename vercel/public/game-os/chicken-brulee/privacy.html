@@ -20,7 +20,7 @@
 <p>The data controller for the Service is the Service administrator, reachable through the Service's hosting platform. For GDPR purposes, the Service provider acts as both a data controller (for account data) and a data processor (for Discord message data scanned at your direction).</p>
 
 <h2>3. Data We Collect</h2>
-<p><strong>Account data:</strong> When you create an account, we collect your email address and a hashed password. We use Supabase Auth for authentication; Supabase's privacy policy also applies to authentication data.</p>
+<p><strong>Account data:</strong> You sign in with your Game OS account (Google or Discord sign-in). Chicken Brûlée does not keep a separate password. Your name and email come from Game OS, and the Game OS privacy terms apply to them.</p>
 <p><strong>Bot configuration data:</strong> You provide a Discord bot token and channel IDs. These are stored encrypted at rest and are never shared, sold, or exposed to third parties.</p>
 <p><strong>Scanned Discord data:</strong> When you trigger a scan, the Service reads publicly visible messages from the Discord channels you configure. We store: message timestamps, speaker usernames, message content (excerpts), channel IDs, and our automated classification results (themes, severity, signals). This data is stored solely to power the analytics dashboard you see.</p>
 
@@ -44,16 +44,16 @@
 <p>We do not sell, rent, share, or monetise your data. We do not use your data for advertising or marketing.</p>
 
 <h2>6. Data Storage and Security</h2>
-<p>Data is stored in a Supabase PostgreSQL database with the following security measures:</p>
+<p>Data is stored in the Game OS PostgreSQL database (Neon, served through Vercel) with the following security measures:</p>
 <ul>
-  <li><strong>Row-Level Security (RLS):</strong> Each database row is access-controlled so that your account can only read your own data. Other users cannot access your data under any circumstances.</li>
-  <li><strong>Encryption at rest:</strong> Bot tokens are stored encrypted. All database connections use TLS.</li>
-  <li><strong>Encryption in transit:</strong> All communication between your browser, the Service, Supabase, and the Discord API uses HTTPS/TLS.</li>
-  <li><strong>Read-only bot permissions:</strong> The bot only requires Read Messages and Read Message History permissions. It cannot send messages, modify channels, or access any administrative functions.</li>
+  <li><strong>Access control:</strong> Playtest data belongs to a game in your studio. Every request is checked on the server: only members of that studio can read it, and only owners and editors can change settings or run scans.</li>
+  <li><strong>Encryption at rest:</strong> Bot tokens are encrypted (AES-256-GCM) before they are stored and are never sent back to the browser. All database connections use TLS.</li>
+  <li><strong>Encryption in transit:</strong> All communication between your browser, the Service, the database, and the Discord API uses HTTPS/TLS.</li>
+  <li><strong>Read-only bot permissions:</strong> The bot only requires View Channel and Read Message History permissions. It cannot send messages, modify channels, or access any administrative functions.</li>
 </ul>
 
 <h2>7. Data Retention</h2>
-<p>Your scanned Discord data is retained until you delete your account or request deletion. When you delete your account, all associated data (profile, bot configuration, scans, and observations) is permanently deleted from the database. There is no backup retention or secondary storage.</p>
+<p>Your scanned Discord data is retained until you delete your account or request deletion. When you delete your account, all associated data (bot configuration, scans, and observations) is permanently deleted from the database. There is no backup retention or secondary storage.</p>
 
 <h2>8. Your Rights (GDPR)</h2>
 <p>Under GDPR, you have the following rights:</p>
@@ -76,12 +76,12 @@
 <p>You may withdraw consent at any time by deleting your account.</p>
 
 <h2>10. International Data Transfers</h2>
-<p>Data is stored on Supabase servers. Depending on your Supabase project region, data may be stored in the EU, US, or Asia-Pacific. By default, data is stored in the region you select when creating your Supabase project. For users in the European Economic Area, we recommend selecting an EU-based Supabase region.</p>
+<p>Data is stored on Neon servers in the United States (AWS us-east-1). If you are in the European Economic Area, your data is transferred to the US for processing.</p>
 
 <h2>11. Third-Party Services</h2>
 <p>The Service relies on the following third-party services:</p>
 <ul>
-  <li><strong>Supabase:</strong> Authentication and database hosting. Subject to Supabase's privacy policy.</li>
+  <li><strong>Vercel and Neon:</strong> Application and database hosting. Subject to their privacy policies.</li>
   <li><strong>Discord API:</strong> Message retrieval. Subject to Discord's privacy policy and developer terms.</li>
   <li><strong>AI Classification Service (optional):</strong> AI-powered classification and summarisation. Only used if you configure an API key. Message excerpts are transmitted for processing but not stored by the service.</li>
 </ul>

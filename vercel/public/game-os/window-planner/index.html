@@ -1,24 +1,85 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Window Planner — Game OS</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Source+Sans+3:wght@400;500;700&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/game-os/toolkit/tokens.css">
-  <link rel="stylesheet" href="/game-os/toolkit/sandstone.css">
-  <script src="/track.js" data-tool="window-planner" data-version="1"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Window Planner — Game OS</title>
+<meta name="description" content="Pick a Steam launch week: how many games under your tags are coming out each week, how crowded that week usually is, and which Steam sales and Next Fest dates to avoid or aim for.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/game-os/toolkit/tokens.css">
+<link rel="stylesheet" href="/game-os/window-planner/styles.css?v=1">
+<script src="/track.js" data-tool="window-planner" data-version="2"></script>
+<script src="/game-os/toolkit/spine.js?v=2"></script>
 </head>
 <body>
-  <div class="widget-shell">
-    <div class="widget-breadcrumb"><a href="/game-os">&larr; Game OS</a> · Seismic</div>
-    <div id="widget-root"></div>
+
+<header class="top">
+  <div class="container">
+    <div class="gos-topbar">
+      <a class="gos-brand" href="/game-os" aria-label="Game OS home"><img src="/game-os/assets/logo.svg?v=6" alt="Game OS"></a>
+      <a class="gos-back" href="/game-os">&larr; Back to dashboard</a>
+    </div>
+    <div class="title-row">
+      <h1><span class="kicker">Launch timing</span>Window Planner</h1>
+      <div class="toolbar">
+        <button class="btn-small" id="btn-print" type="button">Print / PDF</button>
+        <button class="btn-small" id="btn-clear" type="button">Clear</button>
+      </div>
+    </div>
+    <p class="lead">When should you launch on Steam? Pick your game&rsquo;s tags and this checks the next six months week by week: how many games like yours are coming out, how crowded that week usually is, and which Steam sales and Next Fest dates get in the way.</p>
   </div>
-  <script src="/game-os/toolkit/data.js"></script>
-  <script src="/game-os/toolkit/toolkit.js"></script>
-  <script src="/game-os/window-planner/render.js"></script>
-  <script>bootWidget('window-planner');</script>
+</header>
+
+<main>
+  <div class="container">
+    <div id="gameBar"></div>
+
+    <section class="card accent" id="picker">
+      <h3>Your game</h3>
+      <p class="note">Two or three tags work best: your genre plus what makes it different. Steam counts a game only if it has <b>all</b> the tags you pick.</p>
+      <div class="chips" id="chips"></div>
+      <div class="tag-search">
+        <div class="inwrap"><input id="tag-q" type="text" autocomplete="off" placeholder="Search Steam tags, e.g. roguelike" aria-label="Search Steam tags" aria-controls="tag-list" aria-expanded="false" role="combobox"></div>
+        <ul class="tag-list" id="tag-list" role="listbox" hidden></ul>
+      </div>
+      <div class="picker-foot">
+        <label class="horizon">Look ahead
+          <select id="weeks">
+            <option value="13">3 months</option>
+            <option value="26">6 months</option>
+            <option value="39">9 months</option>
+          </select>
+        </label>
+        <label class="horizon">Next Fest demo
+          <select id="next-fest"></select>
+        </label>
+        <button class="btn" id="btn-run" type="button">Plan my launch window</button>
+        <span class="feedback" id="run-msg" role="status"></span>
+      </div>
+    </section>
+
+    <div id="out"></div>
+
+    <section class="card" id="calendar"></section>
+
+    <section class="card" id="about">
+      <h3>How the weeks are scored</h3>
+      <ul class="plain">
+        <li><b>Coming out that week:</b> unreleased games under all your tags that Steam lists with a release date in that week. Games listed only by month (&ldquo;March 2027&rdquo;) are spread evenly over the month. Games with no date yet (&ldquo;Coming soon&rdquo;) can&rsquo;t be placed, so far-off weeks always look emptier than they will be.</li>
+        <li><b>Usual for that week:</b> how many games under your tags came out in the same seven days one, two and three years ago, averaged. That fills the gap for weeks that haven&rsquo;t been announced yet.</li>
+        <li><b>Expected:</b> whichever of the two is higher. A week is <i>quiet</i> at 80% or less of the typical week in your window and <i>busy</i> at 125% or more.</li>
+        <li><b>Score:</b> starts at 70. Quiet weeks gain up to 20 and busy ones lose up to 30. A Steam seasonal sale takes off 35, Next Fest 25, Christmas and Lunar New Year 15, and Black Friday 5. Launching less than 30 days before a seasonal sale takes off 10, because you can&rsquo;t join that sale. Launching in time to join one within about ten weeks adds 5. If you pick the Next Fest you&rsquo;re showing a demo in, weeks before it ends lose 50 (Next Fest is only for unreleased games), launching one to six weeks after it adds 15, seven to twelve weeks adds 5, and later takes off 10.</li>
+        <li>Each week assumes a <b>Tuesday</b> launch, a common choice. The count includes small releases as well as big ones; check the games listed for your week to see who you&rsquo;d really be up against.</li>
+        <li>Steam dates and rules come from Steamworks and were checked on <span id="checked"></span>. Valve adds new events through the year: dates after <span id="known"></span> aren&rsquo;t announced yet.</li>
+      </ul>
+    </section>
+  </div>
+</main>
+
+<div class="chart-tip" id="chart-tip" role="tooltip"></div>
+
+<script src="/game-os/window-planner/model.js?v=2"></script>
+<script src="/game-os/window-planner/app.js?v=2"></script>
 </body>
 </html>

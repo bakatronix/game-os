@@ -87,7 +87,7 @@ describe("Tools (all gated to Game OS accounts)", (t) => {
     "/game-os/steam-page-audit/assets/app.js",
     "/game-os/toolkit/data.js",
     "/game-os/toolkit/toolkit.js",
-    "/game-os/market-scope/render.js",
+    "/game-os/market-scope/app.js",
   ];
   for (const a of assets) {
     t.it(`${a} serves (200)`, async () => {
@@ -105,9 +105,9 @@ describe("Public APIs", (t) => {
     assert(Array.isArray(d.gates) && d.gates.length >= 5, "5+ gates");
     assert(d.gates.some((g) => g.id === "price-calc"), "has price-calc");
     const seismicTools = d.gates.filter((g) => g.path === "/seismic" && g.group === "tools");
-    // Only the Seismic overview + 3 shared views remain deep-linked; the 15
-    // tools are now standalone /game-os/<id> widgets.
-    assert(seismicTools.length >= 4, `Seismic overview + 3 shared views (got ${seismicTools.length})`);
+    // Only the Seismic overview + 2 shared views (thesis, gate log) remain
+    // deep-linked; the Signal Ledger is its own page at /game-os/ledger-view.
+    assert(seismicTools.length >= 3, `Seismic overview + 2 shared views (got ${seismicTools.length})`);
     const linked = seismicTools.filter((g) => g.id !== "seismic");
     assert(linked.every((g) => g.anchor), "each deep-linked shared view has an anchor");
   });

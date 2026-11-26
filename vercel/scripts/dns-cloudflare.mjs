@@ -30,6 +30,7 @@ import {
   fail,
   info,
   bold,
+  appendWorkerModules,
 } from "./lib.mjs";
 
 const DRY = process.argv.includes("--dry-run");
@@ -205,7 +206,6 @@ async function main() {
     fail("VERCEL_ORIGIN missing — set it to your project's vercel.app host");
     process.exit(1);
   }
-  const workerSrc = readFileSync(resolve(VERCEL_DIR, "edge/router.worker.js"), "utf8");
   const scriptName = "game-os-router";
   if (DRY) {
     info(`Would upload Worker "${scriptName}"`);
@@ -231,11 +231,7 @@ async function main() {
       "metadata",
       new Blob([JSON.stringify(metadata)], { type: "application/json" }),
     );
-    form.append(
-      "router.worker.js",
-      new Blob([workerSrc], { type: "application/javascript+module" }),
-      "router.worker.js",
-    );
+    appendWorkerModules(form);
     const res = await fetch(
       `${CF}/accounts/${accountId}/workers/scripts/${scriptName}`,
       {

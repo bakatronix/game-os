@@ -1,24 +1,76 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Launch Runbook — Game OS</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Source+Sans+3:wght@400;500;700&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/game-os/toolkit/tokens.css">
-  <link rel="stylesheet" href="/game-os/toolkit/sandstone.css">
-  <script src="/track.js" data-tool="launch-runbook" data-version="1"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Launch Runbook — Game OS</title>
+<meta name="description" content="A dated Steam launch checklist worked back from your launch day: Steam's review and Coming Soon deadlines, price and launch discount, press keys, launch day and the first 30 days.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/game-os/toolkit/tokens.css">
+<link rel="stylesheet" href="/game-os/launch-runbook/styles.css?v=1">
+<script src="/track.js" data-tool="launch-runbook" data-version="2"></script>
+<script src="/game-os/toolkit/spine.js?v=2"></script>
 </head>
 <body>
-  <div class="widget-shell">
-    <div class="widget-breadcrumb"><a href="/game-os">&larr; Game OS</a> · Seismic</div>
-    <div id="widget-root"></div>
+
+<header class="top">
+  <div class="container">
+    <div class="gos-topbar">
+      <a class="gos-brand" href="/game-os" aria-label="Game OS home"><img src="/game-os/assets/logo.svg?v=6" alt="Game OS"></a>
+      <a class="gos-back" href="/game-os">&larr; Back to dashboard</a>
+    </div>
+    <div class="title-row">
+      <h1><span class="kicker">Launch</span>Launch Runbook</h1>
+      <div class="toolbar">
+        <button class="btn-small" id="btn-ics" type="button">Add to calendar (.ics)</button>
+        <button class="btn-small" id="btn-print" type="button">Print / PDF</button>
+        <button class="btn-small" id="btn-clear" type="button">Clear</button>
+      </div>
+    </div>
+    <p class="lead">Everything that has to happen before and after you press Release on Steam, with a date on each step. Set your launch day and this works back from it: Steam&rsquo;s review and Coming Soon deadlines, price and launch discount, press keys, launch day and the first 30 days.</p>
   </div>
-  <script src="/game-os/toolkit/data.js"></script>
-  <script src="/game-os/toolkit/toolkit.js"></script>
-  <script src="/game-os/launch-runbook/render.js"></script>
-  <script>bootWidget('launch-runbook');</script>
+</header>
+
+<main>
+  <div class="container">
+    <div id="gameBar"></div>
+
+    <section class="card accent" id="setup">
+      <h3>Your launch</h3>
+      <div class="setup-grid">
+        <label class="field-inline"><span class="name">Launch day</span>
+          <span class="inwrap"><input id="f-launch" type="date"></span>
+          <span class="help" id="launch-hint"></span></label>
+        <label class="field-inline"><span class="name">What are you launching?</span>
+          <select id="f-type" class="sel">
+            <option value="full">A new game, full release</option>
+            <option value="ea">A new game, into Early Access</option>
+            <option value="leave-ea">Leaving Early Access (1.0)</option>
+          </select></label>
+        <label class="field-inline"><span class="name">Launch discount</span>
+          <span class="inwrap"><input id="f-discount" type="number" min="0" max="40" step="5" inputmode="numeric"><span class="affix">% off</span></span>
+          <span class="help">0 for none. Steam allows 10&ndash;40%.</span></label>
+        <label class="check-row"><input id="f-demo" type="checkbox"> We have, or will have, a playable demo</label>
+      </div>
+    </section>
+
+    <div id="out"></div>
+
+    <section class="card" id="about">
+      <h3>Where the dates come from</h3>
+      <ul class="plain">
+        <li><span class="kind rule">Steam rule</span> tasks come from Steamworks documentation, checked <span id="checked"></span>. Each links to its page. Valve changes these rules from time to time, so follow the link when a date matters.</li>
+        <li><span class="kind tip">Suggested</span> tasks are common practice, not requirements. Skip the ones that don&rsquo;t fit your plan.</li>
+        <li>Business days skip weekends but not public holidays. Dates that would land on a weekend move to the Friday before.</li>
+        <li>Your ticks and own tasks are saved to your account, separately for each game. Other people on the team keep their own list.</li>
+      </ul>
+    </section>
+  </div>
+</main>
+
+<script src="/game-os/window-planner/model.js?v=1"></script>
+<script src="/game-os/launch-runbook/model.js?v=1"></script>
+<script src="/game-os/launch-runbook/app.js?v=1"></script>
 </body>
 </html>

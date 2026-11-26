@@ -8,19 +8,20 @@
  * Load AFTER tokens.css (Sandstone tokens) so this can override.
  */
 
-/* Map Seismic's legacy variable names onto Sandstone tokens. */
+/* Map Seismic's legacy variable names onto Sandstone tokens.
+ * Never define a variable in terms of itself (e.g. --x: var(--x, ...)): that
+ * is a cycle, which invalidates it and silently overrides tokens.css. */
 :root {
   --bg: var(--surface-page, #f0e3c3);
   --bg2: var(--surface-card, #fdfcf9);
   --bg3: var(--surface-muted, #eae7e0);
-  --border: var(--border, #d2cdc3);
+  --border: var(--sand-deep, #d2cdc3);
   --text: var(--ink, #2f2a20);
   --text-muted: var(--ink-secondary, #4d4139);
   --text-dim: var(--ink-muted, #655e4b);
   --gold: var(--orange-deep, #b84c27);
   --gold-light: var(--orange, #e3683f);
   --gold-dim: rgba(227, 104, 63, 0.12);
-  --teal: var(--teal, #3b8d83);
   --teal-light: var(--teal, #3b8d83);
   --teal-dim: rgba(59, 141, 131, 0.10);
   --coral: var(--orange-deep, #b84c27);
@@ -29,12 +30,8 @@
   --amber: var(--mustard, #f3b43e);
   --blue: var(--slate, #304d4f);
   --blue-dim: rgba(48, 77, 79, 0.10);
-  --font-display: var(--font-display, "Archivo", sans-serif);
-  --font-sans: var(--font-sans, "Source Sans 3", sans-serif);
-  --font-mono: var(--font-mono, "IBM Plex Mono", monospace);
-  --radius-card: var(--radius-card, 8px);
-  --radius-sm: var(--radius-sm, 2px);
-  --radius-pill: var(--radius-pill, 999px);
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --radius-sm: 2px;
 }
 
 /* ---- Widget shell ---- */
