@@ -88,6 +88,7 @@ describe("Tools (all gated to Game OS accounts)", (t) => {
     "/game-os/toolkit/data.js",
     "/game-os/toolkit/toolkit.js",
     "/game-os/market-scope/app.js",
+    "/game-os/creator-match/app.js",
   ];
   for (const a of assets) {
     t.it(`${a} serves (200)`, async () => {
@@ -116,6 +117,12 @@ describe("Public APIs", (t) => {
     assertEq(r.status, 200, "status");
     assertEq(JSON.parse(r.body).user, null, "user null");
   });
+  for (const path of ["/api/creator-match/youtube?q=Terraria", "/api/creator-match/twitch?name=Terraria"]) {
+    t.it(`GET ${path} needs sign-in (401)`, async () => {
+      const r = await http(`${BASE}${path}`);
+      assertEq(r.status, 401, "status");
+    });
+  }
   t.it("GET /api/steam proxies live data", async () => {
     const r = await http(`${BASE}/api/steam?appid=105600`);
     assertEq(r.status, 200, "status");

@@ -223,18 +223,6 @@ var PLAYTEST_PIPELINE = {
   demoScope: { include: ['First biome (Coral Shallows)', 'Core crafting loop', 'One boss encounter'], cut: ['Vehicle building (unpolished)', 'Multi-biome traversal (needs more content)'] },
 };
 
-var CREATOR_MATCH = {
-  creators: [
-    { name: 'Splattercatgaming', platform: 'YouTube', subs: 890000, overlapScore: 94, genres: ['survival', 'indie', 'roguelike'], status: 'contacted', response: 'interested' },
-    { name: 'Wanderbots', platform: 'YouTube', subs: 420000, overlapScore: 91, genres: ['roguelike', 'indie', 'action'], status: 'contacted', response: 'pending' },
-    { name: 'Retromation', platform: 'YouTube', subs: 280000, overlapScore: 87, genres: ['roguelike', 'strategy', 'deckbuilder'], status: 'researched', response: null },
-    { name: 'Alpha Beta Gamer', platform: 'YouTube', subs: 320000, overlapScore: 83, genres: ['indie', 'horror', 'survival'], status: 'emailed', response: 'interested' },
-    { name: 'PC Gamer (Evan Lahti)', platform: 'Press', reach: '12M monthly', overlapScore: 78, genres: ['indie', 'PC'], status: 'researched', response: null },
-  ],
-  coverageResponseRate: 14, // percentage
-  avgLiftPerEvent: 412, // wishlists
-};
-
 var SENTIMENT_RADAR = {
   currentIndex: 78,
   baseline: { comps: 72, ownCommunity: 84 },
@@ -415,16 +403,6 @@ var QUADRANT = {
     { name: 'Coverage Response Rate', value: '14%', label: '', percentile: 82, weight: 'medium' },
     { name: 'Wishlist-to-Sale Rate', value: '8.1%', label: '', percentile: 74, weight: 'medium', family: 'wishlist', note: 'Resonance — what share of accumulated attention actually converts. Same metric family as Wishlist Velocity, opposite half.' },
   ],
-};
-
-// === CREATOR AMBIENT FOOTPRINT (Stage 3 onward) ===
-var AMBIENT_FOOTPRINT = {
-  twitchHoursWatched: [120, 340, 210, 890, 560, 1420, 2100, 1800],
-  youtubeViews: [2400, 5100, 3800, 12400, 9800, 28000, 45000, 38000],
-  youtubeVideoCount: [2, 4, 3, 8, 7, 14, 22, 18],
-  weekLabels: ['W1', 'W2', 'W3', 'W4', 'W5', 'W6', 'W7', 'W8'],
-  trend: '+32% week-over-week',
-  interpretation: 'Organic interest before any outreach — Twitch and YouTube creators are finding the game on their own. Strong leading indicator.',
 };
 
 // === EXPECTATION-DELIVERY GAP ===

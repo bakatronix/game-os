@@ -36,7 +36,7 @@
   var UTM_SOURCE = "https://partner.steamgames.com/doc/marketing/utm_analytics";
 
   var BEAT_TYPES = ["announcement", "trailer", "festival", "demo launch", "sale", "update", "creator coverage", "press embargo", "other"];
-  var CHANNELS = ["Steam", "X", "Reddit", "TikTok", "YouTube", "Discord", "press", "festival"];
+  var CHANNELS = ["Steam", "X", "Reddit", "TikTok", "YouTube", "Twitch", "Discord", "press", "festival"];
   var ASSETS = ["capsule", "header", "trailer", "screenshots", "short description"];
 
   var WISHLIST_FIELDS = ["adds", "deletes", "purchases", "outstanding"];

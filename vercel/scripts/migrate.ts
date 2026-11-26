@@ -433,6 +433,13 @@ async function main() {
        "status"='nodata', "statusLabel"='No data',
        "metrics"='[{"label":"Adds, 28 days","value":"—"},{"label":"Per 100 visits","value":"—"},{"label":"Click-through","value":"—"}]'
      WHERE id='page-engine'`,
+    // Creator Match: Twitch footprint from the studio's export, live YouTube/Twitch lists, outreach log: top row, live tile.
+    `UPDATE "app" SET "group"='cxo', "sortOrder"=12, "stage"=NULL, "toolName"='Creator Match',
+       "cxoQuestion"='Who covers games like yours, and is coverage bringing you players?',
+       "description"='Upload your Twitch developer analytics, see who is making videos and streams about your game and your comps right now, and keep your creator outreach log. Coverage you log shows on Page Engine''s wishlist chart.',
+       "status"='nodata', "statusLabel"='No data',
+       "metrics"='[{"label":"Contacted","value":"—"},{"label":"Covered","value":"—"},{"label":"Twitch hours, 28d","value":"—"}]'
+     WHERE id='creator-match'`,
     // The remaining Seismic tools are extracted as standalone widgets too.
     `UPDATE "app" SET path='/game-os/'||id, anchor=NULL WHERE id IN
       ('thesis-builder','audience-map','page-engine','community-scaffold',

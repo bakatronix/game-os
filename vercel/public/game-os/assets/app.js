@@ -694,6 +694,22 @@
         label: !a && !v && !c ? 'No data yet' : down ? 'Slipping' : 'Live'
       };
     },
+    'creator-match': function (G) {
+      var c = sig('outreach_contacted');
+      var v = sig('outreach_covered');
+      var h = sig('twitch_hours_watched_28d');
+      var none = !c && !v && !h;
+      return {
+        metrics: [
+          { label: 'Contacted', value: c && c.value != null ? Math.round(c.value).toLocaleString('en-US') : '\u2014' },
+          { label: 'Covered', value: v && v.value != null ? Math.round(v.value).toLocaleString('en-US') : '\u2014' },
+          { label: 'Twitch hours, 28d', value: h && h.value != null ? Math.round(h.value).toLocaleString('en-US') : '\u2014' }
+        ],
+        spark: sigSpark(h ? 'twitch_hours_watched_28d' : 'outreach_contacted'),
+        kind: none ? 'demo' : 'healthy',
+        label: none ? 'No data yet' : 'Live'
+      };
+    },
     'mobile-calc': function (G) {
       var l = sig('mobile_ltv_per_install');
       var c = sig('mobile_max_cpi_target');
@@ -799,7 +815,7 @@
   var UNDER_CONSTRUCTION = {
     'seismic': 1,
     'community-scaffold': 1, 'test-loop': 1, 'festival-radar': 1,
-    'playtest-pipeline': 1, 'creator-match': 1,
+    'playtest-pipeline': 1,
     'demo-command': 1,
     'long-tail-engine': 1, 'sequel-signal': 1, 'gate-log': 1
   };
