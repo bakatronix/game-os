@@ -10,6 +10,18 @@ import {
   getInvitationsForStudio,
 } from "@/lib/studio";
 import GosShell from "@/components/GosShell";
+import { assertPlatformAdmin, isPlatformAdmin } from "@/lib/admin";
+
+const ROLES = ["owner", "editor", "viewer"];
+const ACCESS = ["public", "authenticated", "studio", "role"];
+
+/** Server actions can be called directly with just their id, so each one
+ *  checks again that the caller still owns this studio. */
+async function assertStudioOwner(studioId: string) {
+  const s = await auth();
+  if (!s?.user?.id || !(await hasStudioRole(s.user.id, studioId, "owner"))) throw new Error("Not allowed");
+  return s;
+}
 
 export default async function AdminPage() {
   const session = await auth();
@@ -19,6 +31,8 @@ export default async function AdminPage() {
   if (!studioId) redirect("/account");
 
   const canAdmin = await hasStudioRole(session.user.id, studioId, "owner");
+  // The app registry is shared by every studio, so only platform admins edit it.
+  const canManageApps = await isPlatformAdmin(session.user.id);
   const db = getDb();
 
   const [studio] = await db
@@ -76,8 +90,10 @@ export default async function AdminPage() {
               <form
                 action={async (formData: FormData) => {
                   "use server";
+                  await assertStudioOwner(studioId);
                   const role = String(formData.get("role"));
                   const uid = String(formData.get("uid"));
+                  if (!ROLES.includes(role)) throw new Error("Unknown role");
                   const db = getDb();
                   await db
                     .update(memberships)
@@ -116,14 +132,16 @@ export default async function AdminPage() {
           <form
             action={async (formData: FormData) => {
               "use server";
+              const me = await assertStudioOwner(studioId);
               const email = String(formData.get("email") || "").trim();
               const role = String(formData.get("role") || "viewer");
+              if (!ROLES.includes(role)) throw new Error("Unknown role");
               if (email) {
                 await createInvitation(
                   studioId,
                   email,
                   role,
-                  session!.user.id,
+                  me.user!.id!,
                 );
               }
               revalidatePath("/admin");
@@ -180,12 +198,14 @@ export default async function AdminPage() {
             <span>
               {a.name} <span className="gos-muted">{a.path}</span>
             </span>
-            {canAdmin ? (
+            {canManageApps ? (
               <form
                 action={async (formData: FormData) => {
                   "use server";
+                  await assertPlatformAdmin();
                   const id = String(formData.get("id"));
                   const access = String(formData.get("access"));
+                  if (!ACCESS.includes(access)) throw new Error("Unknown access level");
                   const enabled = formData.get("enabled") === "on" ? 1 : 0;
                   const db = getDb();
                   await db
