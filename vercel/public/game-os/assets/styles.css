@@ -376,6 +376,8 @@ a:hover { color: var(--orange-deep); }
 .ss-badge.demo { color: var(--ink-muted); background: var(--sand-deep); }
 .module-card.is-live { border-width: 1.5px; border-color: var(--teal); }
 .module-head .ss-badge { flex: none; white-space: nowrap; }
+/* components.css centres .ss-card h3; tile titles sit beside a badge, so keep them left-aligned. */
+.module-head h3 { text-align: left; }
 
 /* Seismic tools still on demo data: greyed out, still clickable for a preview. */
 .module-card.is-construction { filter: grayscale(1); opacity: .62; border-style: dashed; border-color: var(--ink-muted); transition: opacity .15s; }
