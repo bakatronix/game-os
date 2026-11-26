@@ -406,3 +406,5 @@ a:hover { color: var(--orange-deep); }
 
 /* A tile whose numbers need refreshing says why. */
 .tile-note { font-size: 12px; line-height: 16px; color: var(--status-watch, #8a5a00); margin: 8px 0 0; }
+
+.spine-momentum { margin: 4px 0 0; font-size: 12px; color: var(--ink-muted); }

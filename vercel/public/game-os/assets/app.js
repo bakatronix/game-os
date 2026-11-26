@@ -319,6 +319,14 @@
         (ledger.length > 5 ? '<p class="spine-more">+ ' + (ledger.length - 5) + ' more signal' + (ledger.length - 5 === 1 ? '' : 's') + '</p>' : '')
       : '<p class="module-desc">Empty so far. Run <a href="/game-os/steam-page-audit/">Steam Page Audit</a> or send a price from the <a href="/game-os/price-calc/">Pricing Calculator</a> and the results land here.</p>';
 
+    // Momentum lives in this panel now (it used to be a separate, duplicate tile).
+    var mo = LIVE_TILES['ledger-view'] ? LIVE_TILES['ledger-view'](G) : null;
+    var moScore = mo && mo.metrics[0].value !== '\u2014' ? mo.metrics[0].value : null;
+    var moBadge = moScore ? statusBadge(mo.kind, 'Momentum ' + moScore + ' \u00b7 ' + mo.label) : '<span class="ss-badge healthy">Live</span>';
+    var moLine = moScore
+      ? '<p class="spine-momentum">30-day change ' + escapeHtml(mo.metrics[1].value) + ' \u00b7 coverage ' + escapeHtml(mo.metrics[2].value) + '</p>'
+      : '';
+
     el.innerHTML =
       '<div class="module-grid spine-grid">' +
         '<div class="ss-card module-card">' +
@@ -330,8 +338,9 @@
           '</div>' +
         '</div>' +
         '<div class="ss-card module-card">' +
-          '<div class="module-head"><div><h3>Signal Ledger</h3><div class="module-q">What have we measured?</div></div>' +
-          '<span class="ss-badge healthy">Live</span></div>' +
+          '<div class="module-head"><div><h3>Signal Ledger</h3><div class="module-q">What have we measured? Is it gaining momentum?</div></div>' +
+          moBadge + '</div>' +
+          moLine +
           ledgerHtml +
           '<div class="card-actions"><a class="ss-btn" href="/game-os/ledger-view">Open ledger and Momentum \u2192</a></div>' +
         '</div>' +
@@ -824,8 +833,12 @@
     var el = document.getElementById('widgetsSection');
     if (!el) return;
 
+    // With a game picked, the Publishing Thesis and Signal Ledger panels at the top
+    // already show these three, so their tiles would only repeat the same numbers.
+    // (Thesis Builder opens from "Revise thesis"; the ledger from its own button.)
+    var inPanels = (window.GOS && window.GOS.game) ? { 'thesis-builder': 1, 'thesis-view': 1, 'ledger-view': 1 } : {};
     var sorted = apps
-      .filter(function (a) { return a.id !== 'dashboard'; })
+      .filter(function (a) { return a.id !== 'dashboard' && !inPanels[a.id]; })
       .sort(function (a, b) { return (a.sortOrder || 0) - (b.sortOrder || 0); });
 
     if (!sorted.length) { el.innerHTML = ''; return; }
