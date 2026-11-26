@@ -6,7 +6,7 @@
  *
  * Public data only, but the route answers only Game OS users who are already signed in (no extra step for
  * them), limited to RATE_MAX calls a minute per user. Nothing here is stored.
- * Steam rate-limits anonymous calls (HTTP 429). We cache for a few hours and never retry in a loop.
+ * Steam rate-limits anonymous calls (HTTP 429). We cache in server memory for a few hours and never retry in a loop.
  * If Steam refuses or redirects the review request, we say so and add SteamSpy's public daily counts
  * as a labelled fallback (docs/PROJECT-GUIDE.md, rule 5). We never work around Steam's bot protection.
  */
@@ -25,8 +25,28 @@ const PER_PAGE = 100;
 /** Review text kept per review; enough for snippets, not a copy of the review. */
 const TEXT_CHARS = 600;
 
-const OK_CACHE = "public, max-age=1800, s-maxage=10800, stale-while-revalidate=3600";
-const SHORT_CACHE = "public, max-age=300, s-maxage=600";
+/**
+ * Caching. Answers go only to signed-in users, so the browser may keep them (private) but Vercel's shared
+ * edge cache may not: an edge copy would be served to anyone, signed in or not. Steam is protected instead
+ * by a cache in server memory, per instance: 3 hours for a good answer, 10 minutes when Steam refused.
+ */
+const OK_TTL_MS = 3 * 3600_000;
+const SHORT_TTL_MS = 10 * 60_000;
+const MAX_CACHED = 200; // entries kept per server instance; the oldest are dropped first
+const OK_CACHE = "private, max-age=1800";
+const SHORT_CACHE = "private, max-age=300";
+const memo = new Map<string, { at: number; ttl: number; body: unknown }>();
+function fromMemo(key: string, now = Date.now()) {
+  const hit = memo.get(key);
+  if (!hit) return null;
+  if (now - hit.at > hit.ttl) { memo.delete(key); return null; }
+  return hit;
+}
+function toMemo(key: string, body: unknown, ttl: number) {
+  memo.delete(key);
+  memo.set(key, { at: Date.now(), ttl, body });
+  while (memo.size > MAX_CACHED) memo.delete(memo.keys().next().value as string);
+}
 
 /** Calls a minute per signed-in user. One read of your game is 1 call; comps are at most 5. */
 const RATE_MAX = 30;
@@ -112,7 +132,11 @@ async function steamSpy(appid: number) {
 
 export async function GET(request: NextRequest) {
   const user = await requireUser();
-  if ("error" in user) return user.error;
+  if ("error" in user && user.error) {
+    user.error.headers.set("Cache-Control", "no-store");
+    return user.error;
+  }
+  if (!("user" in user) || !user.user) return NextResponse.json({ error: "Sign in required" }, { status: 401, headers: { "Cache-Control": "no-store" } });
   const wait = limiter.hit(String(user.user.id));
   if (wait) {
     return NextResponse.json(
@@ -128,6 +152,17 @@ export async function GET(request: NextRequest) {
   const asked = Number(sp.get("max"));
   const max = asked > 0 ? Math.min(MAX_REVIEWS, Math.floor(asked)) : MAX_REVIEWS;
 
+  const key = `${appid}:${max}`;
+  const cached = fromMemo(key);
+  if (cached) return NextResponse.json(cached.body, { headers: { "Cache-Control": cached.ttl === OK_TTL_MS ? OK_CACHE : SHORT_CACHE } });
+
+  const { body, ok } = await read(appid, max);
+  toMemo(key, body, ok ? OK_TTL_MS : SHORT_TTL_MS);
+  return NextResponse.json(body, { headers: { "Cache-Control": ok ? OK_CACHE : SHORT_CACHE } });
+}
+
+/** Everything for one app from Steam (and SteamSpy if Steam refuses the reviews). `ok` is false when Steam refused. */
+async function read(appid: number, max: number) {
   const [rev, hist, news] = await Promise.all([
     readReviews(appid, max),
     get(`https://store.steampowered.com/appreviewhistogram/${appid}?l=english&review_score_preference=0`),
@@ -139,10 +174,7 @@ export async function GET(request: NextRequest) {
 
   // Nothing at all came back: tell the page why, cache briefly, and let the user try later.
   if (!rev.reviews.length && !hist.ok && rev.reason) {
-    return NextResponse.json(
-      { appid, unavailable: true, reason: rev.reason, steamspy: spy },
-      { headers: { "Cache-Control": SHORT_CACHE } },
-    );
+    return { body: { appid, unavailable: true, reason: rev.reason, steamspy: spy }, ok: false };
   }
 
   const h = hist.ok ? hist.data?.results : null;
@@ -168,5 +200,5 @@ export async function GET(request: NextRequest) {
       ? news.data.appnews.newsitems.map((n: any) => ({ title: String(n.title || "").slice(0, 200), url: n.url || null, date: n.date || null, feedname: n.feedname || null }))
       : [],
   };
-  return NextResponse.json(body, { headers: { "Cache-Control": rev.reason ? SHORT_CACHE : OK_CACHE } });
+  return { body, ok: !rev.reason };
 }
