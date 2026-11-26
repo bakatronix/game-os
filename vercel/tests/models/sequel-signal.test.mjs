@@ -50,6 +50,7 @@ test("row keeps range, n, window, change and the tool link; the map label is mar
 test("steam_players stays unlabelled, as agreed", () => {
   assert.equal(M.halfOf({ key: "steam_players", meta: null }), null);
   assert.equal(M.halfOf({ key: "steam_players", meta: { half: "resonance" } }), "resonance");
+  assert.equal(M.halfOf({ key: "refund_rate", meta: { source: "studio-entered" } }), "resonance");
 });
 
 test("gap: not measured, then nearest evidence in a fixed order", () => {
@@ -72,6 +73,9 @@ test("gap: Sentiment Radar phase 2 rows with meta.flags, and a checked run with 
   assert.equal(g.status, "flags");
   assert.equal(g.flags.length, 2);
   assert.equal(g.read, 400);
+  assert.equal(g.found, null);
+  const trimmed = M.gap([e("expectation_gap_flag", 5, { found: 5, trimmed: true, flags: [{ claim: "a", complaint: "b" }] }, { unit: "units" })]);
+  assert.equal(trimmed.found, 5); assert.equal(trimmed.trimmed, true); assert.equal(trimmed.flags.length, 1);
   assert.equal(g.flags[0].window, "2026-10-28/2026-11-26");
   assert.equal(g.flags[0].quotes[0].url, "https://steamcommunity.com/profiles/1/recommended/2/");
   assert.equal(g.flags[0].quotes[1].url, null, "only Steam links are kept");

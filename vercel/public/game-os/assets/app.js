@@ -760,7 +760,7 @@
     },
     'sequel-signal': function (G) {
       // An evidence board, not a score: how many Reach and Resonance signals the game has, and the expectation gap.
-      var snap = { steam_reviews: 'reach', steam_reviews_30d: 'reach', steam_review_pct: 'resonance', steam_review_pct_30d: 'resonance' };
+      var snap = { steam_reviews: 'reach', steam_reviews_30d: 'reach', steam_review_pct: 'resonance', steam_review_pct_30d: 'resonance', refund_rate: 'resonance' };
       var reach = 0, res = 0;
       (G.ledger || []).forEach(function (s) {
         var m = s && s.meta || {};

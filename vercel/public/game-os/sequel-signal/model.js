@@ -21,6 +21,8 @@
     steam_reviews_30d: "reach",
     steam_review_pct: "resonance",
     steam_review_pct_30d: "resonance",
+    // Sentiment Radar phase 2's studio-entered refund rate: refunds are Resonance under §2.2 of the brief.
+    refund_rate: "resonance",
   };
   var HALVES = { reach: 1, resonance: 1, both: 1, market: 1 };
 
@@ -163,7 +165,7 @@
     var flags = gapFlags(entry);
     return {
       status: entry ? (flags.length ? "flags" : "none-found") : "not-measured",
-      flags: flags, read: num(meta(entry || {}).read), window: entry ? str(meta(entry).window) : null, observedAt: entry ? entry.observedAt || null : null, earlier: entry && Array.isArray(entry.history) ? Math.max(0, entry.history.length - 1) : 0,
+      flags: flags, read: num(meta(entry || {}).read), found: num(meta(entry || {}).found), trimmed: meta(entry || {}).trimmed === true, window: entry ? str(meta(entry).window) : null, observedAt: entry ? entry.observedAt || null : null, earlier: entry && Array.isArray(entry.history) ? Math.max(0, entry.history.length - 1) : 0,
       nearest: near,
     };
   }

@@ -129,6 +129,8 @@
           "<div>" + (f.complaint ? "Players say: " + esc(f.complaint) : "") + (share ? ". " + share + rng + "." : "") + "</div>" +
           f.quotes.map(function (q) { return "<blockquote>&ldquo;" + esc(q.text) + "&rdquo;" + (q.url ? ' <a href="' + esc(q.url) + '" target="_blank" rel="noopener">review</a>' : "") + "</blockquote>"; }).join("") + "</div>";
       }).join("");
+      var hidden = G.found != null ? G.found - G.flags.length : 0;
+      if (hidden > 0 || G.trimmed) h += '<p class="note">' + (hidden > 0 ? hidden + " smaller flag" + (hidden === 1 ? " isn&rsquo;t" : "s aren&rsquo;t") + " shown here" : "Some quotes aren&rsquo;t shown here") + ' because the ledger row has a size limit. <a href="/game-os/sentiment-radar">Sentiment Radar</a> has them all.</p>';
     } else if (G.status === "none-found") {
       h += '<p class="empty">Sentiment Radar checked on ' + when(G.observedAt) + (G.window ? " (" + esc(win(G.window)) + ")" : "") + " and found no store-page claim that negative reviews contradict. On its own that&rsquo;s a tight gap.</p>";
     } else {
