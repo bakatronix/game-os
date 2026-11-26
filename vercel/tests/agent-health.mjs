@@ -116,6 +116,10 @@ describe("Public APIs", (t) => {
     assertEq(r.status, 200, "status");
     assertEq(JSON.parse(r.body).user, null, "user null");
   });
+  t.it("GET /api/sentiment-radar needs sign-in (401)", async () => {
+    const r = await http(`${BASE}/api/sentiment-radar?appid=105600`);
+    assertEq(r.status, 401, "status");
+  });
   t.it("GET /api/steam proxies live data", async () => {
     const r = await http(`${BASE}/api/steam?appid=105600`);
     assertEq(r.status, 200, "status");
