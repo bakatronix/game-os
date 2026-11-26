@@ -392,6 +392,18 @@
     return out;
   }
 
+  /**
+   * SteamSpy fallback, used only when Steam refuses the review request. SteamSpy publishes all-time positive
+   * and negative counts (refreshed daily) and playtime across all owners. It is a third-party source: shown
+   * with a label, never sent to the ledger, and its playtime is not playtime at review.
+   */
+  function steamspy(spy) {
+    if (!spy || !(spy.positive + spy.negative > 0)) return null;
+    var n = spy.positive + spy.negative;
+    var med = typeof spy.medianForeverMin === "number" && spy.medianForeverMin > 0 ? spy.medianForeverMin / 60 : null;
+    return { n: n, share: wilson(spy.positive, n), medianHours: med, owners: spy.owners || null, source: spy.source || "https://steamspy.com/about" };
+  }
+
   return {
     MIN_GAME_REVIEWS: MIN_GAME_REVIEWS, MIN_RECENT_N: MIN_RECENT_N, MIN_WINDOW_COUNT: MIN_WINDOW_COUNT,
     MIN_PLAYTIME_N: MIN_PLAYTIME_N, MIN_NEG_N: MIN_NEG_N, MIN_VOCAB_REVIEWS: MIN_VOCAB_REVIEWS,
@@ -399,6 +411,6 @@
     EARLY_MINUTES: EARLY_MINUTES, CHECKED: CHECKED, SOURCE: SOURCE,
     wilson: wilson, poisson: poisson, change: change, median: median,
     mode: mode, updates: updates, splitAt: splitAt, decay: decay, velocity: velocity,
-    playtime: playtime, vocabulary: vocabulary, snippet: snippet, signals: signals,
+    playtime: playtime, vocabulary: vocabulary, snippet: snippet, signals: signals, steamspy: steamspy,
   };
 });

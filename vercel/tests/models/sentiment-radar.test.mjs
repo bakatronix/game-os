@@ -183,3 +183,13 @@ test("early-share signal appears with enough negative reviews and states its rul
   assert.equal(e.value, 40); assert.equal(e.meta.half, "resonance");
   assert.equal(e.meta.rule_source, M.SOURCE);
 });
+
+test("steamspy fallback gives a Wilson share and owners' median hours, or nothing", () => {
+  const x = M.steamspy({ positive: 61, negative: 39, medianForeverMin: 150, owners: "20,000 .. 50,000" });
+  assert.equal(x.n, 100);
+  close(x.share.lo, 0.5122, 0.0005); close(x.share.hi, 0.7003, 0.0005);
+  assert.equal(x.medianHours, 2.5);
+  assert.equal(M.steamspy({ positive: 0, negative: 0 }), null);
+  assert.equal(M.steamspy(null), null);
+  assert.equal(M.steamspy({ positive: 5, negative: 1, medianForeverMin: 0 }).medianHours, null);
+});

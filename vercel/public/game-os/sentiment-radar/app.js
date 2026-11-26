@@ -65,6 +65,16 @@
         : "Steam didn't answer (" + esc(reason || "unknown") + "). Try again later.";
   }
 
+  /** SteamSpy's daily counts, shown only when Steam refused the reviews. Labelled, and never sent to the game. */
+  function spyBlock(spy, heading) {
+    var x = M.steamspy(spy);
+    if (!x) return "";
+    return (heading ? "<h4>" + heading + "</h4>" : "") +
+      '<p class="note">From SteamSpy instead (a third-party site; counts refreshed daily): <b>' + pc(x.share.p) + " positive</b> (" + rng(x.share) + ", n = " + num(x.n) + " reviews, all time)" +
+      (x.medianHours != null ? "; median playtime across all owners " + hrs(x.medianHours) + " (that&rsquo;s everyone who played, not reviewers, so it isn&rsquo;t playtime at review)" : "") +
+      '. <a href="' + esc(x.source) + '" target="_blank" rel="noopener">About SteamSpy</a>. Nothing from SteamSpy is sent to your game.</p>';
+  }
+
   /* ---------------- Run ---------------- */
   function run() {
     if (loading) return;
@@ -84,7 +94,7 @@
     getJ(API + "?appid=" + md.appid).then(function (d) {
       if (id !== runId) return;
       loading = false;
-      if (d.unavailable) { out.innerHTML = '<div class="notice warn">' + why(d.reason) + "</div>"; return; }
+      if (d.unavailable) { out.innerHTML = '<div class="notice warn">' + why(d.reason) + "</div>" + (d.steamspy ? '<section class="card">' + spyBlock(d.steamspy, "While Steam isn&rsquo;t answering") + "</section>" : ""); return; }
       var reviews = d.reviews || [], hist = d.histogram;
       var created = reviews.map(function (r) { return r.created; }).filter(Boolean).sort();
       var readWindow = created.length ? new Date(created[0] * 1000).toISOString().slice(0, 10) + "/" + new Date(created[created.length - 1] * 1000).toISOString().slice(0, 10) : null;
@@ -317,7 +327,8 @@
   function renderGame() {
     var d = R.data;
     var s = answer();
-    if (d.partial) s += '<div class="notice warn">Steam stopped answering part-way, so ' + num(d.read) + " reviews were read instead of up to " + num(d.cap) + ". " + why(d.partial) + "</div>";
+    if (d.partial) s += '<div class="notice warn">' + (d.read ? "Steam stopped answering part-way, so " + num(d.read) + " reviews were read instead of up to " + num(d.cap) + ". " : "Steam didn&rsquo;t return any review text, so playtime and phrases can&rsquo;t be read. ") + why(d.partial) + "</div>";
+    if (d.steamspy) s += '<section class="card">' + spyBlock(d.steamspy, "While Steam isn&rsquo;t answering") + "</section>";
     s += decayCard() + velocityCard() + playtimeCard() +
       vocabCard("Players&rsquo; own words make the best store copy. Use the positive phrases in your description and capsules; treat the negative ones as the list to fix or to answer in update notes.") +
       sendCard();
@@ -349,8 +360,8 @@
       s += '<section class="card answer"><h3>What the genre&rsquo;s players feel</h3>' + lines.map(function (l) { return '<p class="verdict">' + l + "</p>"; }).join("") +
         '<p class="next">Next: promise what they praise, and say plainly how your game avoids what they complain about. Unusual games often beat their comps, so treat this as positioning input, not a ceiling.</p></section>';
       s += '<section class="card"><h3>How long had comp players played?</h3>' + res.comps.map(function (x) {
-        if (x.data.unavailable) return "<h4>" + esc(x.comp.name) + '</h4><p class="note">' + why(x.data.reason) + "</p>";
-        return "<h4>" + esc(x.comp.name) + ' <span class="range">(' + num(x.data.read) + " recent reviews read" + (x.data.total ? " of " + num(x.data.total) : "") + ")</span></h4>" + playtimeBlock(x.playtime, false);
+        if (x.data.unavailable) return "<h4>" + esc(x.comp.name) + '</h4><p class="note">' + why(x.data.reason) + "</p>" + spyBlock(x.data.steamspy);
+        return "<h4>" + esc(x.comp.name) + ' <span class="range">(' + num(x.data.read) + " recent reviews read" + (x.data.total ? " of " + num(x.data.total) : "") + ")</span></h4>" + playtimeBlock(x.playtime, false) + (x.data.steamspy ? spyBlock(x.data.steamspy) : "");
       }).join("") + '<p class="method">Method: as for your own game; medians of Steam&rsquo;s <code>playtime_at_review</code>, Wilson ranges on the early share (under 2 hours; <a href="' + M.SOURCE + '" target="_blank" rel="noopener">Steam refunds</a>, checked ' + M.CHECKED + "). Up to " + MAX_COMP_REVIEWS + " most recent reviews per comp, all languages.</p></section>";
       s += vocabCard("Phrases across all your comps&rsquo; recent reviews, pooled. Comp names are left out.");
     }
@@ -431,7 +442,7 @@
   /* ---------------- About ---------------- */
   function about() {
     var items = [
-      "<b>Sources:</b> public Steam data only. Reviews from Steam&rsquo;s <code>GetAppReviews</code> (most recent first, all languages); daily and weekly counts from Steam&rsquo;s review histogram; positive shares from the daily Steam snapshot in your game&rsquo;s ledger; update dates from your Steam news feed. Nothing needs a key, and review text is never saved.",
+      "<b>Sources:</b> public Steam data. If Steam refuses the review request, the page says so and shows SteamSpy&rsquo;s daily all-time counts instead, labelled as third-party and never sent to your game. Reviews from Steam&rsquo;s <code>GetAppReviews</code> (most recent first, all languages); daily and weekly counts from Steam&rsquo;s review histogram; positive shares from the daily Steam snapshot in your game&rsquo;s ledger; update dates from your Steam news feed. Nothing needs a key, and review text is never saved.",
       "<b>Two modes:</b> your game, when it has a Steam App ID and at least " + M.MIN_GAME_REVIEWS + " reviews (Steam shows no score below that); otherwise your comps. Comps mode sends nothing to your game.",
       "<b>Ranges, not single numbers:</b> shares carry 95% Wilson ranges; counts per day carry exact 95% Poisson ranges. A change is called up or down only when the two ranges don&rsquo;t overlap. That is cautious on purpose.",
       "<b>Minimums:</b> decay alarm " + M.MIN_RECENT_N + " reviews in 30 days; velocity " + M.MIN_WINDOW_COUNT + " reviews across both windows; playtime medians " + M.MIN_PLAYTIME_N + " reviews per side; early-exit share " + M.MIN_NEG_N + " negative reviews; phrases " + M.MIN_VOCAB_REVIEWS + " reviews per side and " + M.MIN_PHRASE_REVIEWS + " reviews per phrase. Below these the page says &ldquo;too few to read yet&rdquo; and sends nothing.",
