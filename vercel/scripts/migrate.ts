@@ -440,6 +440,13 @@ async function main() {
        "status"='nodata', "statusLabel"='No data',
        "metrics"='[{"label":"Contacted","value":"—"},{"label":"Covered","value":"—"},{"label":"Twitch hours, 28d","value":"—"}]'
      WHERE id='creator-match'`,
+    // Festival Radar: Steam events + hand-checked festivals, the studio's entries, measured lift: top row, live tile.
+    `UPDATE "app" SET "group"='cxo', "sortOrder"=13, "stage"=NULL, "toolName"='Festival Radar',
+       "cxoQuestion"='Which festivals should we enter, and did the last one move wishlists?',
+       "description"='Steam Next Fest, Steam''s themed fests and other showcases matched to your tags, nearest deadline first. Track your entries, and measure the wishlist lift from each festival you attended against the weeks before.',
+       "status"='nodata', "statusLabel"='No data',
+       "metrics"='[{"label":"Last festival","value":"—"},{"label":"Wishlist lift","value":"—"},{"label":"95% range","value":"—"}]'
+     WHERE id='festival-radar'`,
     // The remaining Seismic tools are extracted as standalone widgets too.
     `UPDATE "app" SET path='/game-os/'||id, anchor=NULL WHERE id IN
       ('thesis-builder','audience-map','page-engine','community-scaffold',

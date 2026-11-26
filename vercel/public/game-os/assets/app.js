@@ -710,6 +710,22 @@
         label: none ? 'No data yet' : 'Live'
       };
     },
+    'festival-radar': function (G) {
+      // One festival_lift row per measured event; the ledger snapshot keeps the latest per key.
+      var l = sig('festival_lift');
+      var m = (l && l.meta) || {};
+      var fmt = function (v) { return v == null ? '\u2014' : (v > 0 ? '+' : v < 0 ? '\u2212' : '') + Math.abs(Math.round(v)).toLocaleString('en-US'); };
+      return {
+        metrics: [
+          { label: 'Last festival', value: m.festival ? String(m.festival).slice(0, 28) : '\u2014' },
+          { label: 'Wishlist lift', value: l ? fmt(l.value) : '\u2014' },
+          { label: '95% range', value: l && m.lo != null && m.hi != null ? fmt(m.lo) + ' to ' + fmt(m.hi) : '\u2014' }
+        ],
+        spark: sigSpark('festival_lift', 'bars'),
+        kind: l ? 'healthy' : 'demo',
+        label: l ? 'Live' : 'No data yet'
+      };
+    },
     'mobile-calc': function (G) {
       var l = sig('mobile_ltv_per_install');
       var c = sig('mobile_max_cpi_target');
@@ -814,7 +830,7 @@
      Remove an id once that tool reads and writes the game spine. */
   var UNDER_CONSTRUCTION = {
     'seismic': 1,
-    'community-scaffold': 1, 'test-loop': 1, 'festival-radar': 1,
+    'community-scaffold': 1, 'test-loop': 1,
     'playtest-pipeline': 1,
     'demo-command': 1,
     'long-tail-engine': 1, 'sequel-signal': 1, 'gate-log': 1

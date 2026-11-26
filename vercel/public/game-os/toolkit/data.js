@@ -197,18 +197,6 @@ var TEST_LOOP = {
   liftNorm: { genreAvg: '+12%', topQuartile: '+22%' },
 };
 
-var FESTIVAL_RADAR = {
-  upcoming: [
-    { name: 'Steam Next Fest (October)', deadline: '2025-09-15', status: 'submitted', liftAvg: '+3,200 wishlists' },
-    { name: 'DreamHack Indie Showcase', deadline: '2025-07-01', status: 'accepted', liftAvg: '+1,800 wishlists' },
-    { name: 'PC Gamer Weekender', deadline: '2025-12-01', status: 'tracking', liftAvg: '+900 wishlists' },
-    { name: 'The MIX (GDC)', deadline: '2026-01-15', status: 'tracking', liftAvg: '+2,100 wishlists' },
-  ],
-  past: [
-    { name: 'INDIE Live Expo', lift: 620, date: '2025-04-12' },
-  ],
-};
-
 var PLAYTEST_PIPELINE = {
   sessions: [
     { id: 1, players: 8, date: '2025-05-10', duration: '45 min', focus: 'Core loop — diving, gathering, crafting, combat' },
