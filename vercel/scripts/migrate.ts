@@ -461,6 +461,13 @@ async function main() {
        "status"='nodata', "statusLabel"='No data', "spark"=NULL,
        "metrics"='[{"label":"Last test","value":"—"},{"label":"Lift, points","value":"—"},{"label":"Verdict","value":"—"}]'
      WHERE id='test-loop'`,
+    // Long Tail Engine: legs and player floor from public Steam data and the daily snapshots: top row, live tile.
+    `UPDATE "app" SET "group"='cxo', "sortOrder"=16, "stage"=NULL, "toolName"='Long Tail Engine',
+       "cxoQuestion"='How long can it keep earning, and what moves it?',
+       "description"='Reviews per day now against launch, players now against launch week, your revenue or a labelled estimate, and what happened to reviews and players around each update and sale.',
+       "status"='nodata', "statusLabel"='No data', "spark"=NULL,
+       "metrics"='[{"label":"Reviews vs launch","value":"—"},{"label":"95% bounds","value":"—"},{"label":"Players vs launch","value":"—"}]'
+     WHERE id='long-tail-engine'`,
     // The remaining Seismic tools are extracted as standalone widgets too.
     `UPDATE "app" SET path='/game-os/'||id, anchor=NULL WHERE id IN
       ('thesis-builder','audience-map','page-engine','community-scaffold',
