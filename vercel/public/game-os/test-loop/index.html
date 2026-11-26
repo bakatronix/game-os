@@ -1,24 +1,54 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Test Loop — Game OS</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Source+Sans+3:wght@400;500;700&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/game-os/toolkit/tokens.css">
-  <link rel="stylesheet" href="/game-os/toolkit/sandstone.css?v=2">
-  <script src="/track.js" data-tool="test-loop" data-version="1"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Test Loop — Game OS</title>
+<meta name="description" content="Did the change we made beat what it replaced? Read each store page change before and after, from your Page Engine numbers, and test ads, posts and positioning lines off Steam.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/game-os/toolkit/tokens.css">
+<link rel="stylesheet" href="/game-os/test-loop/styles.css?v=1">
+<script src="/track.js" data-tool="test-loop" data-version="2"></script>
+<script src="/game-os/toolkit/spine.js?v=2"></script>
 </head>
 <body>
-  <div class="widget-shell">
-    <div class="widget-breadcrumb"><a href="/game-os">&larr; Game OS</a> · Seismic</div>
-    <div id="widget-root"></div>
+
+<header class="top">
+  <div class="container">
+    <div class="gos-topbar">
+      <a class="gos-brand" href="/game-os" aria-label="Game OS home"><img src="/game-os/assets/logo.svg?v=6" alt="Game OS"></a>
+      <a class="gos-back" href="/game-os">&larr; Back to dashboard</a>
+    </div>
+    <div class="title-row">
+      <h1><span class="kicker">Pre-Alpha &rarr; Launch</span>Test Loop</h1>
+      <div class="toolbar">
+        <button class="btn-small" id="btn-print" type="button">Print / PDF</button>
+      </div>
+    </div>
+    <p class="lead">Did the change we made beat what it replaced? Pick a store page change from Page Engine&rsquo;s log and compare the days before it with the days after. Test ads, posts and positioning lines off Steam with your own impressions and clicks.</p>
   </div>
-  <script src="/game-os/toolkit/data.js"></script>
-  <script src="/game-os/toolkit/toolkit.js"></script>
-  <script src="/game-os/test-loop/render.js"></script>
-  <script>bootWidget('test-loop');</script>
+</header>
+
+<main>
+  <div class="container">
+    <div id="gameBar"></div>
+    <div id="out"></div>
+    <section class="card" id="variants-card"></section>
+    <section class="card" id="new-card"></section>
+
+    <section class="card" id="about">
+      <h3>How the numbers are made</h3>
+      <ul class="plain" id="about-list"></ul>
+    </section>
+  </div>
+</main>
+
+<script src="/game-os/sentiment-radar/model.js?v=3"></script>
+<script src="/game-os/page-engine/model.js?v=2"></script>
+<script src="/game-os/window-planner/model.js?v=2"></script>
+<script src="/game-os/demo-command/model.js?v=1"></script>
+<script src="/game-os/test-loop/model.js?v=1"></script>
+<script src="/game-os/test-loop/app.js?v=1"></script>
 </body>
 </html>
