@@ -660,6 +660,40 @@
         label: m ? 'Live' : 'No data yet'
       };
     },
+    'sentiment-radar': function (G) {
+      var d = sig('sentiment_divergence');
+      var v = sig('review_velocity_28d');
+      var e = sig('neg_review_early_share');
+      var alarm = d && d.meta && d.meta.alarm;
+      var ch = v && v.meta && v.meta.change;
+      return {
+        metrics: [
+          { label: 'Recent vs all-time', value: d && d.value != null ? (d.value > 0 ? '+' : '') + d.value + ' pts' : '\u2014' },
+          { label: 'Reviews a day', value: v && v.value != null ? v.value + (ch === 'up' ? ' \u2191' : ch === 'down' ? ' \u2193' : '') : '\u2014' },
+          { label: 'Early negatives', value: e && e.value != null ? Math.round(e.value) + '%' : '\u2014' }
+        ],
+        spark: sigSpark('sentiment_divergence'),
+        kind: !d && !v && !e ? 'demo' : alarm ? 'concern' : 'healthy',
+        label: !d && !v && !e ? 'No data yet' : alarm ? 'Slipping' : 'Live'
+      };
+    },
+    'page-engine': function (G) {
+      var a = sig('wishlist_adds_28d');
+      var v = sig('page_visits_to_wishlist_28d');
+      var c = sig('page_ctr_28d');
+      var ch = a && a.meta && a.meta.change;
+      var down = (ch === 'down') || (v && v.meta && v.meta.change === 'down') || (c && c.meta && c.meta.change === 'down');
+      return {
+        metrics: [
+          { label: 'Adds, 28 days', value: a && a.value != null ? Math.round(a.value).toLocaleString('en-US') + (ch === 'up' ? ' \u2191' : ch === 'down' ? ' \u2193' : '') : '\u2014' },
+          { label: 'Per 100 visits', value: v && v.value != null ? String(v.value) : '\u2014' },
+          { label: 'Click-through', value: c && c.value != null ? c.value + '%' : '\u2014' }
+        ],
+        spark: sigSpark('wishlist_adds_28d'),
+        kind: !a && !v && !c ? 'demo' : down ? 'concern' : 'healthy',
+        label: !a && !v && !c ? 'No data yet' : down ? 'Slipping' : 'Live'
+      };
+    },
     'mobile-calc': function (G) {
       var l = sig('mobile_ltv_per_install');
       var c = sig('mobile_max_cpi_target');
@@ -763,9 +797,9 @@
      out and marked "Under construction", but still open for a preview.
      Remove an id once that tool reads and writes the game spine. */
   var UNDER_CONSTRUCTION = {
-    'seismic': 1, 'page-engine': 1,
+    'seismic': 1,
     'community-scaffold': 1, 'test-loop': 1, 'festival-radar': 1,
-    'playtest-pipeline': 1, 'creator-match': 1, 'sentiment-radar': 1,
+    'playtest-pipeline': 1, 'creator-match': 1,
     'demo-command': 1,
     'long-tail-engine': 1, 'sequel-signal': 1, 'gate-log': 1
   };

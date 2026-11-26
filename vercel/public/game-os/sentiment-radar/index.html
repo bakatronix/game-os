@@ -1,24 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sentiment Radar — Game OS</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Source+Sans+3:wght@400;500;700&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/game-os/toolkit/tokens.css">
-  <link rel="stylesheet" href="/game-os/toolkit/sandstone.css?v=2">
-  <script src="/track.js" data-tool="sentiment-radar" data-version="1"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sentiment Radar — Game OS</title>
+<meta name="description" content="What do players feel, and is it slipping? Reads your game's public Steam reviews, or your comps' before you have reviews: the decay alarm, review velocity, playtime at review and the words players use.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/game-os/toolkit/tokens.css">
+<link rel="stylesheet" href="/game-os/sentiment-radar/styles.css?v=2">
+<script src="/track.js" data-tool="sentiment-radar" data-version="2"></script>
+<script src="/game-os/toolkit/spine.js?v=2"></script>
 </head>
 <body>
-  <div class="widget-shell">
-    <div class="widget-breadcrumb"><a href="/game-os">&larr; Game OS</a> · Seismic</div>
-    <div id="widget-root"></div>
+
+<header class="top">
+  <div class="container">
+    <div class="gos-topbar">
+      <a class="gos-brand" href="/game-os" aria-label="Game OS home"><img src="/game-os/assets/logo.svg?v=6" alt="Game OS"></a>
+      <a class="gos-back" href="/game-os">&larr; Back to dashboard</a>
+    </div>
+    <div class="title-row">
+      <h1><span class="kicker">Closed Beta &rarr; Post-launch</span>Sentiment Radar</h1>
+      <div class="toolbar">
+        <button class="btn-small" id="btn-reload" type="button">Read again</button>
+        <button class="btn-small" id="btn-print" type="button">Print / PDF</button>
+      </div>
+    </div>
+    <p class="lead">What do players feel, and is it slipping? This reads public Steam reviews of your game. Before your game has reviews, it reads your comps&rsquo; reviews instead, so you can see what the genre&rsquo;s players praise and what they&rsquo;re tired of.</p>
   </div>
-  <script src="/game-os/toolkit/data.js"></script>
-  <script src="/game-os/toolkit/toolkit.js"></script>
-  <script src="/game-os/sentiment-radar/render.js"></script>
-  <script>bootWidget('sentiment-radar');</script>
+</header>
+
+<main>
+  <div class="container">
+    <div id="gameBar"></div>
+    <div id="mode"></div>
+    <div id="out"></div>
+
+    <section class="card" id="about">
+      <h3>How the numbers are made</h3>
+      <ul class="plain" id="about-list"></ul>
+    </section>
+  </div>
+</main>
+
+<div class="chart-tip" id="chart-tip" role="tooltip"></div>
+
+<script src="/game-os/audience-map/model.js?v=sr2"></script>
+<script src="/game-os/sentiment-radar/model.js?v=3"></script>
+<script src="/game-os/sentiment-radar/app.js?v=3"></script>
 </body>
 </html>
