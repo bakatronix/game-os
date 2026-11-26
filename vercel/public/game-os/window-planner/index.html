@@ -51,6 +51,9 @@
             <option value="39">9 months</option>
           </select>
         </label>
+        <label class="horizon">Next Fest demo
+          <select id="next-fest"></select>
+        </label>
         <button class="btn" id="btn-run" type="button">Plan my launch window</button>
         <span class="feedback" id="run-msg" role="status"></span>
       </div>
@@ -66,7 +69,7 @@
         <li><b>Coming out that week:</b> unreleased games under all your tags that Steam lists with a release date in that week. Games listed only by month (&ldquo;March 2027&rdquo;) are spread evenly over the month. Games with no date yet (&ldquo;Coming soon&rdquo;) can&rsquo;t be placed, so far-off weeks always look emptier than they will be.</li>
         <li><b>Usual for that week:</b> how many games under your tags came out in the same seven days one, two and three years ago, averaged. That fills the gap for weeks that haven&rsquo;t been announced yet.</li>
         <li><b>Expected:</b> whichever of the two is higher. A week is <i>quiet</i> at 80% or less of the typical week in your window and <i>busy</i> at 125% or more.</li>
-        <li><b>Score:</b> starts at 70. Quiet weeks gain up to 20 and busy ones lose up to 30. A Steam seasonal sale takes off 35, Next Fest 25, Christmas and Lunar New Year 15, and Black Friday 5. Launching less than 30 days before a seasonal sale takes off 10, because you can&rsquo;t join that sale. Launching in time to join one within about ten weeks adds 5.</li>
+        <li><b>Score:</b> starts at 70. Quiet weeks gain up to 20 and busy ones lose up to 30. A Steam seasonal sale takes off 35, Next Fest 25, Christmas and Lunar New Year 15, and Black Friday 5. Launching less than 30 days before a seasonal sale takes off 10, because you can&rsquo;t join that sale. Launching in time to join one within about ten weeks adds 5. If you pick the Next Fest you&rsquo;re showing a demo in, weeks before it ends lose 50 (Next Fest is only for unreleased games), launching one to six weeks after it adds 15, seven to twelve weeks adds 5, and later takes off 10.</li>
         <li>Each week assumes a <b>Tuesday</b> launch, a common choice. The count includes small releases as well as big ones; check the games listed for your week to see who you&rsquo;d really be up against.</li>
         <li>Steam dates and rules come from Steamworks and were checked on <span id="checked"></span>. Valve adds new events through the year: dates after <span id="known"></span> aren&rsquo;t announced yet.</li>
       </ul>
@@ -76,7 +79,7 @@
 
 <div class="chart-tip" id="chart-tip" role="tooltip"></div>
 
-<script src="/game-os/window-planner/model.js?v=1"></script>
-<script src="/game-os/window-planner/app.js?v=1"></script>
+<script src="/game-os/window-planner/model.js?v=2"></script>
+<script src="/game-os/window-planner/app.js?v=2"></script>
 </body>
 </html>

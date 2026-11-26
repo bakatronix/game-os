@@ -10,13 +10,14 @@
   var MAX_TAGS = 5;
 
   /* ---------------- State ---------------- */
-  function emptyState() { return { tags: [], weeks: 26, chosen: null, savedAt: 0 }; }
+  function emptyState() { return { tags: [], weeks: 26, chosen: null, nextFest: "", savedAt: 0 }; }
   function normalise(s) {
     if (!s || typeof s !== "object") return null;
     var b = emptyState();
     if (Array.isArray(s.tags)) b.tags = s.tags.map(Number).filter(function (n) { return n > 0; }).slice(0, MAX_TAGS);
     if ([13, 26, 39].indexOf(Number(s.weeks)) >= 0) b.weeks = Number(s.weeks);
     if (typeof s.chosen === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s.chosen)) b.chosen = s.chosen;
+    if (typeof s.nextFest === "string" && M.EVENTS.some(function (e) { return e.id === s.nextFest && e.kind === "nextfest"; })) b.nextFest = s.nextFest;
     b.savedAt = Number(s.savedAt) || 0;
     return b;
   }
@@ -106,14 +107,36 @@
   qEl.addEventListener("blur", function () { setTimeout(function () { listEl.hidden = true; qEl.setAttribute("aria-expanded", "false"); }, 120); });
   weeksEl.addEventListener("change", function () { S.weeks = Number(weeksEl.value) || 26; renderChips(); changed(); });
 
+  // Next Fest the game shows a demo in. Rescores without refetching.
+  var festEl = document.getElementById("next-fest");
+  function renderFestOptions() {
+    var today = new Date().toISOString().slice(0, 10);
+    var fests = M.EVENTS.filter(function (e) { return e.kind === "nextfest" && e.end >= today; });
+    if (S.nextFest && !fests.some(function (e) { return e.id === S.nextFest; })) S.nextFest = "";
+    festEl.innerHTML = '<option value="">Not doing one</option>' + fests.map(function (e) {
+      return '<option value="' + e.id + '">' + esc(M.fmtRange(e.start, e.end)) + "</option>";
+    }).join("");
+    festEl.value = S.nextFest;
+  }
+  if (festEl) {
+    renderFestOptions();
+    festEl.addEventListener("change", function () { S.nextFest = festEl.value; changed(); if (UP) analyse(); });
+  }
+
   function say(text, err) { runMsg.textContent = text || ""; runMsg.className = "feedback" + (err ? " err" : ""); }
 
   /* ---------------- Fetch ---------------- */
   var out = document.getElementById("out");
   function getJSON(url) {
     return fetch(url, { credentials: "same-origin" }).then(function (r) {
-      return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || ("Error " + r.status)); return j; });
-    });
+      return r.text().then(function (txt) {
+        var j = null; try { j = JSON.parse(txt); } catch (e) {}
+        if (j && r.ok) return j;
+        if (j && j.error) throw new Error(j.error);
+        if (r.redirected && /sign-?in|login/i.test(r.url)) throw new Error("you've been signed out. Reload the page and sign in again");
+        throw new Error(r.status === 504 || /timeout|timed out/i.test(txt) ? "Steam took too long to answer. Try fewer or narrower tags" : "the server had a problem (error " + r.status + ")");
+      });
+    }, function () { throw new Error("couldn't reach the server. Check your connection"); });
   }
   function run() {
     if (!S.tags.length || loading) return;
@@ -129,7 +152,7 @@
       analyse();
       if (window.gosTrack) gosTrack("journey_step", { tool_id: TOOL_ID, step_name: "window_planned", step_index: 2, tags: S.tags.length, upcoming: UP.rows.length, ms: Date.now() - t0 });
     }).catch(function (err) {
-      say("Couldn't read Steam: " + err.message + ". Try again in a minute.", true);
+      say("Couldn't read Steam: " + err.message + ".", true);
       if (!R) out.innerHTML = "";
     }).then(function () { loading = false; renderChips(); });
   }
@@ -137,7 +160,7 @@
 
   function analyse() {
     if (!UP) return;
-    R = M.analyse(UP, HIST, { weeks: UP.weeks, tagNames: UP.tags.map(tagName) });
+    R = M.analyse(UP, HIST, { weeks: UP.weeks, tagNames: UP.tags.map(tagName), nextFest: S.nextFest });
     if (S.chosen && !R.weeks.some(function (w) { return w.start === S.chosen; })) S.chosen = null;
     render();
   }
@@ -353,7 +376,7 @@
   document.getElementById("btn-print").addEventListener("click", function () { window.print(); });
   document.getElementById("btn-clear").addEventListener("click", function () {
     if (!confirm("Clear your tags and planned week?")) return;
-    S = emptyState(); UP = HIST = R = null; out.innerHTML = ""; weeksEl.value = "26"; renderChips(); renderCalendar(); say(""); persist();
+    S = emptyState(); UP = HIST = R = null; out.innerHTML = ""; weeksEl.value = "26"; if (festEl) festEl.value = ""; renderChips(); renderCalendar(); say(""); persist();
   });
 
   /* ---------------- Account sync ---------------- */
@@ -404,7 +427,7 @@
         .then(function (j) {
           var server = j && j.state ? normalise(j.state) : null;
           if (server && (server.savedAt || 0) > (S.savedAt || 0) + 1000) {
-            S = server; weeksEl.value = String(S.weeks); renderChips();
+            S = server; weeksEl.value = String(S.weeks); if (festEl) renderFestOptions(); renderChips();
             try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch (e) {}
           }
           accountReady = true;

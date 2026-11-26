@@ -148,13 +148,32 @@
     say("Reading Steam releases for " + tagList(S.tags) + "… this can take up to a minute for broad tags.");
     if (!DATA) out.innerHTML = '<div class="loading">Reading Steam&hellip;</div>';
     var t0 = Date.now();
-    fetch(API + "?tags=" + key, { credentials: "same-origin" })
-      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || ("Error " + r.status)); return j; }); })
+    // The server can answer with an HTML page instead of data (a timeout on
+    // broad tags, a signed-out redirect). Read text first, explain it in
+    // plain words, and retry a timeout once before giving up.
+    function get(attempt) {
+      return fetch(API + "?tags=" + key, { credentials: "same-origin" }).then(function (r) {
+        return r.text().then(function (txt) {
+          var j = null;
+          try { j = JSON.parse(txt); } catch (e) {}
+          if (j && r.ok) return j;
+          if (j && j.error) throw new Error(j.error);
+          if (r.redirected && /sign-?in|login/i.test(r.url)) throw new Error("you've been signed out. Reload the page and sign in again");
+          var slow = r.status === 504 || r.status === 502 || /timeout|timed out/i.test(txt);
+          if (slow && attempt < 2) {
+            say("Steam is slow for " + tagList(S.tags) + ". Trying once more…");
+            return new Promise(function (res) { setTimeout(res, 1500); }).then(function () { return get(attempt + 1); });
+          }
+          throw new Error(slow ? "Steam took too long to answer. Try fewer or narrower tags" : "the server had a problem (error " + r.status + ")");
+        });
+      }, function () { throw new Error("couldn't reach the server. Check your connection"); });
+    }
+    get(1)
       .then(function (j) {
         DATA = j; say(""); analyse();
         if (window.gosTrack) gosTrack("journey_step", { tool_id: TOOL_ID, step_name: "market_sized", step_index: 2, tags: S.tags.length, games: j.rows.length, ms: Date.now() - t0 });
       })
-      .catch(function (err) { say("Couldn't read Steam: " + err.message + ". Try again in a minute.", true); if (!DATA) out.innerHTML = ""; })
+      .catch(function (err) { say("Couldn't read Steam: " + err.message + ".", true); if (!DATA) out.innerHTML = ""; })
       .then(function () { loading = false; renderChips(); });
   }
   runBtn.addEventListener("click", run);

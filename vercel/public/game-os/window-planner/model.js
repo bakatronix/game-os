@@ -3,7 +3,8 @@
  * Inputs:
  *   upcoming: /api/window-planner payload (Steam coming-soon rows under the tags)
  *   history:  /api/market-scope payload (releases under the same tags, last 36 months)
- *   opts:     { today: "YYYY-MM-DD", weeks: 26, tagNames: ["Roguelike", ...] }
+ *   opts:     { today: "YYYY-MM-DD", weeks: 26, tagNames: ["Roguelike", ...], nextFest: "nf-feb27" }
+ *             nextFest is the Next Fest the game shows a demo in, if any.
  * Output: one entry per candidate launch week (Monday to Sunday) with crowding,
  * Steam events it touches, which seasonal sale it can still join, a score and reasons.
  */
@@ -82,6 +83,7 @@
     var nWeeks = opts.weeks || 26;
     var tagNames = (opts.tagNames || []).map(norm);
     var first = nextMonday(today);
+    var myFest = opts.nextFest ? EVENTS.filter(function (e) { return e.id === opts.nextFest && e.kind === "nextfest"; })[0] || null : null;
 
     // Upcoming: exact dates by day, month-only counts by month.
     var byDay = {}, byMonth = {}, dated = [];
@@ -148,7 +150,7 @@
       // +1 on both sides so one game doesn't make a week "busy" in a small space.
       w.ratio = (w.expected + 1) / (med + 1);
       w.crowd = w.ratio <= 0.8 ? "quiet" : w.ratio >= 1.25 ? "busy" : "normal";
-      score(w);
+      score(w, myFest);
     });
 
     var picks = pickBest(weeks, 3);
@@ -157,12 +159,24 @@
       upcomingTotal: dated.length + Object.keys(byMonth).reduce(function (a, k) { return a + byMonth[k]; }, 0),
       undated: upcoming ? upcoming.undated || 0 : 0,
       truncated: !!(upcoming && upcoming.truncated), historyTruncated: !!(history && history.truncated),
-      knownUntil: KNOWN_UNTIL, fests: fests,
+      knownUntil: KNOWN_UNTIL, fests: fests, nextFest: myFest,
     };
   }
 
   /* Score 0–100: start at 70, add for a quiet week, take off for crowding and clashes. Each change is a reason. */
-  function score(w) {
+  /* Next Fest the game is in: Next Fest is for unreleased games, so launching
+     before it ends is out. Launching while its wishlists are fresh is the point. */
+  function festEffect(w, nf) {
+    var gap = daysBetween(nf.end, w.launch);
+    var when = fmtRange(nf.start, nf.end);
+    if (gap <= 0) return { adj: -50, why: { good: false, text: "Before your Next Fest ends (" + when + "): Next Fest is only for unreleased games, so you'd lose your demo slot" } };
+    var wk = gap <= 42 ? Math.floor(gap / 7) : Math.ceil(gap / 7);
+    if (gap <= 42) return { adj: 15, why: { good: true, text: (wk < 1 ? "Days" : wk + (wk === 1 ? " week" : " weeks")) + " after your Next Fest: launches while those wishlists are fresh" } };
+    if (gap <= 84) return { adj: 5, why: { good: true, text: wk + " weeks after your Next Fest: still close enough to use its momentum" } };
+    return { adj: -10, why: { good: false, text: wk + " weeks after your Next Fest: the wishlists you gained there will have cooled" } };
+  }
+
+  function score(w, nf) {
     var s = 70, why = [];
     var crowdAdj = Math.max(-30, Math.min(20, Math.round((1 - w.ratio) * 40)));
     s += crowdAdj;
@@ -172,6 +186,7 @@
     else why.push({ neutral: true, text: "A normal week: about " + fmtN(exp) + " releases under your tags expected" });
 
     w.events.forEach(function (e) {
+      if (nf && e.id === nf.id) return; // covered by festEffect below
       if (e.kind === "sale") { s -= 35; why.push({ good: false, text: "Clashes with the " + e.name + ": the store front is all discounts, and a game launched during it can't join it" }); }
       else if (e.kind === "nextfest") { s -= 25; why.push({ good: false, text: "Clashes with " + e.name + ": the front page is full of demos" }); }
       else if (e.kind === "holiday") { s -= 15; why.push({ good: false, text: e.name + ": press and creators are away" }); }
@@ -186,6 +201,7 @@
       s += 5;
       why.push({ good: true, text: "Released in time to join the " + w.nextSale.name + " (" + fmt(w.nextSale.start) + ") with a discount" });
     }
+    if (nf) { var fe = festEffect(w, nf); s += fe.adj; why.push(fe.why); }
     if (w.beyondKnown) why.push({ neutral: true, text: "Steam hasn't announced its events this far out yet" });
 
     w.score = Math.max(0, Math.min(100, Math.round(s)));

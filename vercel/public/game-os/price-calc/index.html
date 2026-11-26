@@ -1177,30 +1177,10 @@
 
     <div class="card" style="overflow-x:auto">
       <h3>Diagnostic Guidance</h3>
+      <p class="muted" id="demo-diag-note" style="margin-bottom:8px">Enter your demo numbers above and this shows only the advice that applies to them.</p>
       <table>
         <thead><tr><th>Signal</th><th>Likely Issue</th><th>Suggested Fix</th></tr></thead>
-        <tbody>
-          <tr>
-            <td>Store page → wishlist under 12%</td>
-            <td>Capsule art or trailer isn't hooking visitors</td>
-            <td>Revise capsule art, tighten trailer to first 10 seconds</td>
-          </tr>
-          <tr>
-            <td>Demo conversion under 15%</td>
-            <td>Demo doesn't represent the game's appeal, is buggy, or lacks a clear wishlist CTA at the end</td>
-            <td>Add an explicit end-of-demo wishlist prompt, cut weak opening sections</td>
-          </tr>
-          <tr>
-            <td>Session length far below target</td>
-            <td>Weak opening, onboarding friction, or early bug/crash</td>
-            <td>Rework first 5 minutes, playtest onboarding specifically</td>
-          </tr>
-          <tr>
-            <td>Completion rate under 30%</td>
-            <td>Pacing or difficulty drop-off before intended ending</td>
-            <td>Identify exact drop-off point via analytics, address that specific milestone</td>
-          </tr>
-        </tbody>
+        <tbody id="demo-diag-body"></tbody>
       </table>
     </div>
   </section>
@@ -1431,7 +1411,7 @@
     .scenario-best::before { content: "\25B2 "; }
     .scenario-worst::before { content: "\25BC "; }
     .reconcile-flag.flag-blocking, .reconcile-flag.flag-clear { background: #f0f0f0 !important; border: 1px solid #666; color: #000 !important; }
-    .export-blocked-note { border: 1px solid #666; border-left: 3px solid #000; background: #f0f0f0; }
+  .export-blocked-note { border: 1px solid #666; border-left: 3px solid #000; background: #f0f0f0; }
     a { color: #000; text-decoration: none; }
   }
 </style>
@@ -1494,6 +1474,7 @@
   /* Auto-fetched launch price (vs typed) visual distinction */
   input.comp-launch[data-fetched="true"] { background: rgba(45,212,191,0.08); border-color: var(--teal); }
   /* === BLOCKING / ACKNOWLEDGEMENT === */
+  tr.diag-ok td { color: var(--teal); font-size: 12px; }
   .export-blocked-note { border: 1px solid var(--coral); border-left: 3px solid var(--coral); background: rgba(255,107,138,0.06); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 16px; }
   .export-blocked-note h4 { font-family: var(--sans); font-size: 13px; font-weight: 600; color: var(--coral); margin-bottom: 4px; }
   .export-blocked-note p { font-family: var(--sans); font-size: 12px; color: var(--mid); }
@@ -2997,6 +2978,8 @@ function getDemoHealthScore() {
   sessionEl.textContent = targetSession > 0 ? r.sessionRatio.toFixed(0) + '%' : '—';
   sessionEl.style.color = r.sessionRatio >= 100 ? 'var(--teal)' : (r.sessionRatio >= 60 ? 'var(--gold)' : 'var(--coral)');
 
+  renderDemoDiagnostics({ visitors: visitors, downloads: downloads, playedWishlisted: playedWishlisted, avgSession: avgSession, targetSession: targetSession, completion: completion }, r);
+
   var healthEl = document.getElementById('demo-health-score');
   var healthLabelEl = document.getElementById('demo-health-label');
   if (visitors === 0 && downloads === 0) {
@@ -3008,6 +2991,38 @@ function getDemoHealthScore() {
   healthEl.style.color = r.score >= 80 ? 'var(--teal)' : (r.score >= 60 ? 'var(--teal)' : (r.score >= 40 ? 'var(--gold)' : 'var(--coral)'));
   healthLabelEl.textContent = r.label;
   return { score: r.score, multiplier: r.multiplier, label: r.label };
+}
+
+// Diagnostic rows, each with the check that decides whether it applies to the
+// user's own numbers. Rows that pass are not shown as problems.
+var DEMO_DIAG = [
+  { id: 'store', signal: 'Store page \u2192 wishlist under 12%', issue: 'Capsule art or trailer isn\u2019t hooking visitors', fix: 'Revise capsule art, tighten trailer to first 10 seconds',
+    has: function (d) { return d.visitors > 0; }, bad: function (d, r) { return r.storeRate < 12; }, ok: function (d, r) { return 'Store page converts ' + r.storeRate.toFixed(1) + '% of visitors to wishlists'; } },
+  { id: 'conv', signal: 'Demo conversion under 15%', issue: 'Demo doesn\u2019t represent the game\u2019s appeal, is buggy, or lacks a clear wishlist CTA at the end', fix: 'Add an explicit end-of-demo wishlist prompt, cut weak opening sections',
+    has: function (d) { return d.downloads > 0 && d.playedWishlisted > 0; }, bad: function (d, r) { return r.demoConvRate < 15; }, ok: function (d, r) { return r.demoConvRate.toFixed(1) + '% of demo players wishlist'; } },
+  { id: 'session', signal: 'Session length far below target', issue: 'Weak opening, onboarding friction, or early bug/crash', fix: 'Rework first 5 minutes, playtest onboarding specifically',
+    has: function (d) { return d.avgSession > 0 && d.targetSession > 0; }, bad: function (d, r) { return r.sessionRatio < 60; }, ok: function (d) { return 'Average session ' + d.avgSession + ' min against a ' + d.targetSession + ' min target'; } },
+  { id: 'completion', signal: 'Completion rate under 30%', issue: 'Pacing or difficulty drop-off before intended ending', fix: 'Identify exact drop-off point via analytics, address that specific milestone',
+    has: function (d) { return d.completion > 0; }, bad: function (d) { return d.completion < 30; }, ok: function (d) { return d.completion + '% finish the demo'; } }
+];
+function renderDemoDiagnostics(d, r) {
+  var body = document.getElementById('demo-diag-body'), note = document.getElementById('demo-diag-note');
+  if (!body) return;
+  var row = function (x, cls) { return '<tr' + (cls ? ' class="' + cls + '"' : '') + '><td>' + x.signal + '</td><td>' + x.issue + '</td><td>' + x.fix + '</td></tr>'; };
+  var measured = DEMO_DIAG.filter(function (x) { return x.has(d); });
+  if (!measured.length) {
+    body.innerHTML = DEMO_DIAG.map(function (x) { return row(x); }).join('');
+    if (note) note.textContent = 'Enter your demo numbers above and this shows only the advice that applies to them.';
+    return;
+  }
+  var bad = measured.filter(function (x) { return x.bad(d, r); });
+  var good = measured.filter(function (x) { return !x.bad(d, r); });
+  var html = bad.map(function (x) { return row(x); }).join('');
+  html += good.map(function (x) { return '<tr class="diag-ok"><td colspan="3">\u2713 ' + x.ok(d, r) + '. No change needed.</td></tr>'; }).join('');
+  body.innerHTML = html;
+  var unmeasured = DEMO_DIAG.length - measured.length;
+  if (note) note.textContent = (bad.length ? bad.length + ' of your numbers ' + (bad.length === 1 ? 'needs' : 'need') + ' attention.' : 'Your demo numbers look healthy.') +
+    (unmeasured ? ' Fill in the remaining fields to check the other ' + (unmeasured === 1 ? 'signal' : unmeasured + ' signals') + '.' : '');
 }
 
 function updateDemoStats() {
@@ -3296,6 +3311,7 @@ updateDlcTable();
 updateEaCalc();
 updateWishlist();
 renderReconciliation();
+try { getDemoHealthScore(); } catch (e) { renderDemoDiagnostics({}, {}); }
 renderDemoGating();
 
 // === RECONCILIATION & VALIDATION LAYER ===
@@ -4001,9 +4017,11 @@ function renderIssueAck(i) {
   return '<div class="ack-control"><input type="text" id="ack-input-' + i.id + '" placeholder="Reason for proceeding (required)"><button class="btn-ghost" onclick="acknowledgeIssue(\'' + i.id + '\')">Acknowledge &amp; proceed</button></div>';
 }
 
-function updateExportButtons(blocked) {
+// Exports always work. Open blocking issues are printed in the PDF and
+// flagged on the Summary instead of silently disabling the buttons.
+function updateExportButtons() {
   var btns = [document.getElementById('pdf-btn'), document.getElementById('save-workbook-btn'), document.getElementById('copy-link-btn'), document.getElementById('send-thesis-btn')];
-  btns.forEach(function(b){ if (b) b.disabled = blocked; });
+  btns.forEach(function(b){ if (b && b.textContent.indexOf('\u2026') < 0) b.disabled = false; });
 }
 
 // === SCENARIO PINNING & COMPARISON ===
@@ -4224,10 +4242,10 @@ function buildSummary() {
   var ackedBlocking = blockingIssues.filter(function(i){ return isAcknowledged(i); });
   var exportBlocked = blockingUnresolved.length > 0;
   var flagHtml = unresolvedCount > 0
-    ? '<div class="reconcile-flag flag-blocking">\u26A0 ' + unresolvedCount + ' unresolved pricing ' + (unresolvedCount === 1 ? 'issue' : 'issues') + (exportBlocked ? ' \u2014 export blocked until acknowledged' : '') + '</div>'
+    ? '<div class="reconcile-flag flag-blocking">\u26A0 ' + unresolvedCount + ' unresolved pricing ' + (unresolvedCount === 1 ? 'issue' : 'issues') + (exportBlocked ? ' \u2014 check these before you share the numbers' : '') + '</div>'
     : '<div class="reconcile-flag flag-clear">\u2713 All pricing checks reconciled</div>';
   var blockedHtml = exportBlocked
-    ? '<div class="export-blocked-note"><h4>Export blocked</h4><p>Resolve or acknowledge each blocking issue below to enable PDF and export: ' + blockingUnresolved.map(function(i){ return i.title; }).join('; ') + '.</p></div>'
+    ? '<div class="export-blocked-note"><h4>Open pricing ' + (blockingUnresolved.length === 1 ? 'issue' : 'issues') + '</h4><p>Your exports still work, and the PDF lists these as open: ' + blockingUnresolved.map(function(i){ return i.title; }).join('; ') + '. Fix or acknowledge them below to clear this note.</p></div>'
     : '';
   var issuesHtml = allRenderable.length > 0
     ? '<div class="card"><h3>' + (unresolvedCount > 0 ? 'Reconciliation Required' : 'Advisories') + '</h3>' + allRenderable.map(function(i){
@@ -4242,7 +4260,7 @@ function buildSummary() {
         return '<div class="ack-record"><div style="font-weight:600;font-size:13px">' + i.title + '</div><div class="issue-detail">Reason: "' + escapeHtml(ack.reason) + '"</div><div class="output-note">' + formatTimestamp(ack.timestamp) + '</div></div>';
       }).join('') + '</div>'
     : '';
-  updateExportButtons(exportBlocked);
+  updateExportButtons();
   var contentHrs = parseFloat(document.getElementById('content-hours-input').value) || 0;
   var contentBand = contentHrs > 0 ? getContentBand(contentHrs) : null;
   var contentMismatch = issues.filter(function(i){ return i.id === 'content-depth-conflict'; })[0];
