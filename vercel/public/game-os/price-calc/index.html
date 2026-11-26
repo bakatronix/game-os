@@ -993,6 +993,10 @@
 
     <div class="card" style="overflow-x:auto">
       <h3>Discount Staircase</h3>
+      <div class="sales-reality">
+        <strong>Sales lift less than they used to.</strong> Since 2021, a two-week sale adds about 20–32% to a 1–3-year-old game’s sales: about a third of the 2019 effect. Don’t count on a sale to rescue a slow launch. Keep most sales at 50% off or less, and make every sale a new lowest price.
+        <div class="output-note" style="margin-top:4px">Source: <a href="https://fragwyz.substack.com/p/steam-sales-have-lost-two-thirds" target="_blank" rel="noopener">Sulka Haro, Nov 24 2026</a> · 602 top Steam games with 1,000+ reviews, 2017–2025. Smaller games may differ.</div>
+      </div>
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap">
         <div>
           <label class="stat-label">Price Floor (% off max) <span class="tooltip-icon" title="The deepest discount you'll ever run long-term. Protects your price so a $19.99 game doesn't drift to $4.99 forever. The staircase below warns you when a stage would cross this floor.">?</span></label>
@@ -1002,7 +1006,7 @@
       </div>
       <div class="floor-warning" id="floor-warning" style="display:none"></div>
       <table class="stackable">
-        <thead><tr><th>Stage</th><th>When</th><th>Discount</th><th>Price</th><th>Purpose</th></tr></thead>
+        <thead><tr><th>Stage</th><th>When</th><th>Discount</th><th>Price</th><th>Expected effect</th><th>Purpose</th></tr></thead>
         <tbody id="staircase-body"></tbody>
       </table>
     </div>
@@ -1215,6 +1219,11 @@
       </div>
     </div>
 
+    <div class="sales-reality">
+      <strong>Launch 1.0 with a discount.</strong> Early Access games that launched 1.0 with a discount reached about 5.1x their Early Access player level in the launch month, against 2.8x for full-price 1.0 launches. (Games that used a discount tended to have smaller Early Access audiences, which inflates the gap.) For a first launch that isn’t leaving Early Access, a launch discount made no long-run difference.
+      <div class="output-note" style="margin-top:4px">Source: <a href="https://fragwyz.substack.com/p/steam-sales-have-lost-two-thirds" target="_blank" rel="noopener">Sulka Haro, Nov 24 2026</a></div>
+    </div>
+
     <div id="ea-framework"></div>
 
     <div class="card">
@@ -1348,7 +1357,7 @@
       </div>
       <div class="checklist-item">
         <h4>Discount Spike Patterns</h4>
-        <p>Expect 3—5x revenue spikes during first seasonal sales. If weaker than expected, revisit the discount staircase in Step 4.</p>
+        <p>A two-week sale now typically adds about 20–40% to that month’s sales: roughly 1.8x normal per day at 20% off, 2.7x at 80%+ off. Within two months sales are back to normal. If a sale did less, check it was a new lowest price; a repeated price sells about half as well. <a href="https://fragwyz.substack.com/p/steam-sales-have-lost-two-thirds" target="_blank" rel="noopener" class="source-link">Sulka Haro, 2026</a></p>
       </div>
       <div class="checklist-item">
         <h4>Long-Tail Revenue (Year 2+)</h4>
@@ -1546,6 +1555,7 @@ var BENCHMARK_SOURCES = [
   { id: 'steamworks-currencies', name: 'Steamworks — Supported Currencies', verified: '2026-03-15', url: 'https://partner.steamgames.com/doc/store/pricing/currencies', finding: 'Full list of Steam-supported currencies and regional pricing buckets. USD_MENA bloc details, Gulf state local currency handling (SAR, AED, KWD, QAR priced independently).' },
   { id: 'steamdb-matrix', name: 'SteamDB — March 2026 Pricing Matrix Update', verified: '2026-03-15', url: 'https://steamdb.info/blog/valve-price-matrix-2026/', finding: "Valve's March 2026 pricing matrix revision — first update since 2022. Conversion methods: FX, PPP, Multi-variable. MENA-USD at ~47% of US price under multi-variable method at $59.99 tier." },
   { id: 'steam-api', name: 'Steam Storefront API', verified: null, url: 'https://wiki.teamfortress.com/wiki/User:RJackson/StorefrontAPI', finding: 'Comp data can be auto-populated via the official Steam Storefront API. Launch price and content-hour figures require manual research (SteamDB, HowLongToBeat). See included steam-proxy.js.' },
+  { id: 'haro-sales', name: 'Sulka Haro — Steam sales have lost two thirds of their pull since 2020', verified: '2026-11-24', url: 'https://fragwyz.substack.com/p/steam-sales-have-lost-two-thirds', finding: 'Price histories of 602 top Steam games (2017–2025). A two-week sale at about 40% off lifted new reviews (a proxy for sales) by 74–95% in 2018–2020 but only 20–32% each year since 2021. Per sale day: about 1.8x normal at 20% off and 2.7x at 84% off; revenue per sale day is about 40% higher than full price at 20% off, about even near 40%, a third lower at 68% and over half lower at 84%. A new lowest price sells about twice as well as a repeated one; the first sale gets about 28% more lift; median first sale is 64 days after launch. A 1.0 launch discount helps Early Access games; for a first launch it made no long-run difference. Sample is top games (1,000+ reviews), not the long tail.' },
   { id: 'gsu', name: 'GameStudioUnlocked', verified: null, url: 'https://gamestudiounlocked.substack.com/', finding: 'Full pricing methodology and context.' },
   { id: 'next-fest', name: 'Steam Next Fest post-mortem research', verified: '2025-06-01', url: 'https://partner.steamgames.com/doc/marketing/nextfest', finding: 'Demo-driven wishlists convert to purchases at 18–25% vs 8–12% for wishlists added without playing a demo.' }
 ];
@@ -2787,6 +2797,28 @@ function pricingInvalidReason() {
   return '';
 }
 
+// What a two-week sale at this depth does, per Sulka Haro's 2026 analysis of
+// 602 top Steam games (2021+ data). Bands, not precise forecasts.
+function saleEffectText(pct) {
+  var p = pct * 100;
+  if (!(p > 0)) return '\u2014';
+  // The article's measured points, joined by straight lines (rounded, "about").
+  var lerp = function (pts, x) {
+    if (x <= pts[0][0]) return pts[0][1];
+    for (var i = 1; i < pts.length; i++) if (x <= pts[i][0]) { var a = pts[i - 1], b = pts[i]; return a[1] + (b[1] - a[1]) * (x - a[0]) / (b[0] - a[0]); }
+    return pts[pts.length - 1][1];
+  };
+  // % money per sale day vs full price, from the article's measured points; sales
+  // per day follow from it (money = sales x price), so the two always agree:
+  // 20% off -> 1.8x, 40% -> 1.7x, 68% -> 2.1x, 84% -> 2.7x (the article's 1.8x / 2.7x).
+  var money = lerp([[20, 44], [40, 0], [68, -33], [84, -57]], p); // 44% = the article's 1.8x at 20% off ("about 40% more")
+  var daily = (1 + money / 100) / (1 - Math.min(p, 95) / 100);
+  var m = Math.round(money / 10) * 10; // the source's precision: "about 40% more", "a third less"
+  var moneyTxt = Math.abs(money) < 8 ? 'about the same money per day as full price'
+    : (m > 0 ? 'about ' + m + '% more' : 'about ' + (-m) + '% less') + ' money per sale day than full price';
+  return 'About ' + daily.toFixed(1) + 'x normal sales per day; ' + moneyTxt + '.' + (p > 75 ? ' No lasting gain after the sale.' : '');
+}
+
 // === PRICE & DISCOUNT MODEL ===
 function updatePricing() {
   var target = parseFloat(document.getElementById('target-sale-price').value);
@@ -2847,11 +2879,11 @@ function updatePricing() {
 
   var floorPct = parseFloat(document.getElementById('price-floor').value) || 50;
   var staircase = [
-    { stage: 'Launch Week', when: 'Optional: 10—15%', pct: 0.15, purpose: 'Conversion momentum (below 20% = no wishlist email)' },
-    { stage: 'First Seasonal Sale', when: '60—90 days post-launch', pct: 0.20, purpose: 'First wishlist email trigger' },
-    { stage: 'Second Seasonal Sale', when: '~6 months', pct: 0.30, purpose: 'Deepening reach. Wait for sale segment.' },
-    { stage: 'One Year Post-Launch', when: '12 months', pct: 0.45, purpose: 'Catalog monetization. Standard for mature titles.' },
-    { stage: '2+ Years / Bundles', when: '24+ months', pct: 0.60, purpose: 'Long-tail revenue.' },
+    { stage: 'Launch Week', when: 'Optional: 10—15%', pct: 0.15, launch: true, purpose: 'Below 20% = no wishlist email. For a first launch, a launch discount made no long-run difference; for an Early Access 1.0 launch it clearly helps.' },
+    { stage: 'First Sale', when: '2—3 months after launch (median: 64 days)', pct: 0.20, purpose: 'Don\u2019t hold full price long. A game\u2019s first sale gets about 28% more lift than later sales at the same depth.' },
+    { stage: 'Second Sale', when: '~6 months', pct: 0.30, purpose: 'Must be a new lowest price: a price buyers have seen before sells about half as well.' },
+    { stage: 'One Year Post-Launch', when: '12 months', pct: 0.45, purpose: 'Another new low. Around 40% off earns about the same per day as full price; deeper sells more copies for less money.' },
+    { stage: '2+ Years / Bundles', when: '24+ months', pct: 0.60, purpose: 'Deep cuts sell more copies but less money and leave no lasting audience. Save them for old games, or a sequel or DLC launch.' },
   ];
   staircase.forEach(function (s) {
     s.price = shownPrice(launchPrice * (1 - s.pct));
@@ -2867,9 +2899,9 @@ function updatePricing() {
     staircase.map(function(s){
       var real = Math.round(s.realPct * 100), planned = Math.round(s.pct * 100);
       var discCell = real + '%' + (real !== planned ? ' <span class="output-note">(planned ' + planned + '%; rounding to a Steam price changes it)</span>' : '');
-      return '<tr><td data-label="Stage"><strong>' + s.stage + '</strong></td><td data-label="When">' + s.when + '</td><td data-label="Discount">' + discCell + '</td><td data-label="Price" style="color:var(--teal);font-weight:500">$' + s.price.toFixed(2) + '</td><td data-label="Purpose">' + s.purpose + '</td></tr>';
+      return '<tr><td data-label="Stage"><strong>' + s.stage + '</strong></td><td data-label="When">' + s.when + '</td><td data-label="Discount">' + discCell + '</td><td data-label="Price" style="color:var(--teal);font-weight:500">$' + s.price.toFixed(2) + '</td><td data-label="Expected effect">' + (s.launch ? 'Launch discount (see Purpose)' : saleEffectText(s.realPct)) + '</td><td data-label="Purpose">' + s.purpose + '</td></tr>';
     }).join('') +
-    '<tr class="floor-row"><td data-label="Stage"><strong>Price Floor</strong></td><td data-label="When">Long-term minimum</td><td data-label="Discount">' + floorPct + '%</td><td data-label="Price">' + fmtSnappedPrice(launchPrice * (1 - floorPct/100)) + '</td><td data-label="Purpose">Permanent price floor threshold</td></tr>';
+    '<tr class="floor-row"><td data-label="Stage"><strong>Price Floor</strong></td><td data-label="When">Long-term minimum</td><td data-label="Discount">' + floorPct + '%</td><td data-label="Price">' + fmtSnappedPrice(launchPrice * (1 - floorPct/100)) + '</td><td data-label="Expected effect">' + saleEffectText(floorPct / 100) + '</td><td data-label="Purpose">Permanent price floor threshold</td></tr>';
   updateRegionalTable();
   renderReconciliation();
   renderBreakEven();
@@ -5239,6 +5271,12 @@ function runSelfTest() {
   t('shownPrice(17.49) == 16.99', shownPrice(17.49) === 16.99);
   t('shownPrice(12.495) == 11.99', shownPrice(12.495) === 11.99);
 
+  // Sale-effect bands (Sulka Haro 2026)
+  t('saleEffect 20%: 1.8x, ~40% more money', /1\.8x/.test(saleEffectText(0.20)) && /40% more money/.test(saleEffectText(0.20)));
+  t('saleEffect 40%: about the same money', /same money/.test(saleEffectText(0.40)));
+  t('saleEffect 68%: ~35% less (a third)', /3[05]% less/.test(saleEffectText(0.68)));
+  t('saleEffect 84%: 2.7x, over half less, no lasting gain', /2\.7x/.test(saleEffectText(0.84)) && /(55|60)% less/.test(saleEffectText(0.84)) && /No lasting/.test(saleEffectText(0.84)));
+
   // Conversion rate tiers at boundaries
   t('conversion 4999 -> 0.15', PricingModel.getWishlistConversion(4999) === 0.15);
   t('conversion 5000 -> 0.18', PricingModel.getWishlistConversion(5000) === 0.18);
@@ -5592,6 +5630,7 @@ if (location.search && location.search.indexOf('selftest=1') !== -1) { runSelfTe
   .share-manual { white-space: normal; }
   .share-link-box { display: block; width: 100%; margin-top: 6px; font-family: var(--mono, monospace); font-size: 12px; }
   .print-appendix { display: none; }
+  .sales-reality { border-left: 3px solid var(--gold, #c79a2b); background: rgba(199,154,43,.08); padding: 10px 12px; border-radius: 6px; margin: 0 0 14px; font-size: 14px; line-height: 20px; }
   .comp-summary-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 8px 0 12px; }
   .comp-summary-table th, .comp-summary-table td { text-align: left; padding: 5px 6px; border-bottom: 1px solid var(--border, #e6d6b7); }
   @media (max-width: 600px) { .comp-summary-table { font-size: 12px; } .comp-summary-table th:nth-child(4), .comp-summary-table td:nth-child(4) { display: none; } }
