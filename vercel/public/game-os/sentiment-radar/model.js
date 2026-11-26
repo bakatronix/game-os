@@ -404,6 +404,106 @@
     return { n: n, share: wilson(spy.positive, n), medianHours: med, owners: spy.owners || null, source: spy.source || "https://steamspy.com/about" };
   }
 
+
+  /* ---------------- Phase 2: themes and the expectation gap ---------------- */
+
+  // A theme seen in fewer reviews than this is an anecdote, not a pattern; it isn't shown.
+  var MIN_THEME_REVIEWS = 3;
+  // The ledger cuts a row's meta at 4000 characters; stay under so the JSON stays whole.
+  var GAP_META_CHARS = 3800;
+
+  /**
+   * Shape the themes route's answer for the page: each theme gets its share of that side's reviews with a
+   * Wilson range. Gaps only count when there are enough negative reviews (MIN_NEG_N) and the theme is shown.
+   * res = { themes: [{ name, side, summary, count, quotes }], gaps: [{ claim, theme, why }], n: { pos, neg }, ... }
+   */
+  function themes(res) {
+    if (!res || !Array.isArray(res.themes)) return null;
+    var n = { pos: (res.n && res.n.pos) || 0, neg: (res.n && res.n.neg) || 0 };
+    function side(name, total) {
+      return res.themes.filter(function (t) { return t.side === name && t.count >= MIN_THEME_REVIEWS; })
+        .map(function (t) { return { name: t.name, summary: t.summary || "", count: t.count, n: total, share: wilson(t.count, total), quotes: t.quotes || [] }; })
+        .sort(function (a, b) { return b.count - a.count; });
+    }
+    var neg = side("negative", n.neg), pos = side("positive", n.pos);
+    var negEnough = n.neg >= MIN_NEG_N;
+    var gaps = !negEnough ? [] : (res.gaps || []).map(function (g) {
+      var t = neg.filter(function (x) { return x.name === g.theme; })[0];
+      return t ? { claim: g.claim, complaint: t.name, why: g.why || "", count: t.count, n: t.n, share: t.share, quotes: t.quotes } : null;
+    }).filter(Boolean);
+    return {
+      neg: neg, pos: pos, gaps: gaps, n: n, negEnough: negEnough, minNeg: MIN_NEG_N, minTheme: MIN_THEME_REVIEWS,
+      model: res.model || null, analysedAt: res.analysedAt || null, read: res.read || 0, window: res.window || null,
+      storeAvailable: !!(res.store && res.store.available),
+    };
+  }
+
+  /**
+   * The expectation_gap_flag ledger row: one row per analysis, value = number of flags (0 is recorded too),
+   * the flags in meta. Trimmed (quotes first, then the smallest flags) to fit the ledger's meta limit.
+   */
+  function gapSignal(t) {
+    if (!t || !t.negEnough || !t.storeAvailable) return null;
+    var flags = t.gaps.map(function (g) {
+      return { claim: g.claim, complaint: g.complaint, count: g.count, n: g.n, lo: round1(g.share.lo * 100), hi: round1(g.share.hi * 100),
+        quotes: g.quotes.slice(0, 2).map(function (q) { return { text: q.text, url: q.url || null }; }) };
+    }).sort(function (a, b) { return b.count - a.count; });
+    var found = flags.length;
+    var meta = { half: "resonance", source: "computed", method: "llm-themes", model: t.model, n: t.n.neg, read: t.read, window: t.window,
+      analysed_at: t.analysedAt, found: found, flags: flags };
+    var size = function () { return JSON.stringify(meta).length; };
+    while (size() > GAP_META_CHARS) {
+      var many = flags.filter(function (f) { return f.quotes.length > 1; });
+      if (many.length) many[many.length - 1].quotes.pop();
+      else if (flags.length) flags.pop();
+      else break;
+    }
+    if (flags.length < found) meta.trimmed = true;
+    return { key: "expectation_gap_flag", label: "Store claims that negative reviews contradict", value: found, unit: "units", meta: meta };
+  }
+
+  /* ---------------- Phase 2: refund rate (studio-entered, compared only with the game's own past) ---------------- */
+
+  /**
+   * input = { from, to, units, refunds } or { from, to, rate } (rate in percent). Counts give a Wilson range;
+   * a typed rate has no range. Returns null when the input doesn't make sense.
+   */
+  function refund(input) {
+    if (!input) return null;
+    var from = String(input.from || ""), to = String(input.to || "");
+    var okDate = function (d) { return /^\d{4}-\d{2}-\d{2}$/.test(d); };
+    if (!okDate(from) || !okDate(to) || from > to) return null;
+    var units = Number(input.units), refunds = Number(input.refunds), rate = Number(input.rate);
+    var window = from + "/" + to;
+    if (input.units !== "" && input.units != null && isFinite(units) && units > 0 && isFinite(refunds) && refunds >= 0 && refunds <= units && Math.floor(units) === units && Math.floor(refunds) === refunds) {
+      var w = wilson(refunds, units);
+      return { p: w.p, lo: w.lo, hi: w.hi, n: units, refunds: refunds, method: "wilson95", window: window };
+    }
+    if (input.rate !== "" && input.rate != null && isFinite(rate) && rate >= 0 && rate <= 100) return { p: rate / 100, lo: null, hi: null, n: null, refunds: null, method: "entered", window: window };
+    return null;
+  }
+
+  function refundSignal(r) {
+    if (!r) return null;
+    return { key: "refund_rate", label: "Refund rate (from Steamworks)", value: round1(r.p * 100), unit: "pct",
+      meta: { half: "resonance", source: "studio-entered", method: r.method, n: r.n, window: r.window,
+        lo: r.lo == null ? null : round1(r.lo * 100), hi: r.hi == null ? null : round1(r.hi * 100), refunds: r.refunds } };
+  }
+
+  /**
+   * Compare a refund rate with the game's previous entry (ledger entry for refund_rate). "higher"/"lower" only
+   * when both have ranges and they don't overlap; otherwise "no-clear-change" or "cant-tell" (no range).
+   */
+  function refundCompare(r, prev) {
+    if (!r || !prev || prev.value == null) return { status: "none" };
+    var m = prev.meta || {};
+    var before = { value: prev.value, lo: m.lo, hi: m.hi, window: m.window || null, at: prev.observedAt || null };
+    if (r.lo == null || m.lo == null || m.hi == null) return { status: "cant-tell", before: before };
+    var lo = r.lo * 100, hi = r.hi * 100;
+    var status = lo > m.hi ? "higher" : hi < m.lo ? "lower" : "no-clear-change";
+    return { status: status, before: before };
+  }
+
   return {
     MIN_GAME_REVIEWS: MIN_GAME_REVIEWS, MIN_RECENT_N: MIN_RECENT_N, MIN_WINDOW_COUNT: MIN_WINDOW_COUNT,
     MIN_PLAYTIME_N: MIN_PLAYTIME_N, MIN_NEG_N: MIN_NEG_N, MIN_VOCAB_REVIEWS: MIN_VOCAB_REVIEWS,
@@ -412,5 +512,7 @@
     wilson: wilson, poisson: poisson, change: change, median: median,
     mode: mode, updates: updates, splitAt: splitAt, decay: decay, velocity: velocity,
     playtime: playtime, vocabulary: vocabulary, snippet: snippet, signals: signals, steamspy: steamspy,
+    MIN_THEME_REVIEWS: MIN_THEME_REVIEWS, GAP_META_CHARS: GAP_META_CHARS,
+    themes: themes, gapSignal: gapSignal, refund: refund, refundSignal: refundSignal, refundCompare: refundCompare,
   };
 });

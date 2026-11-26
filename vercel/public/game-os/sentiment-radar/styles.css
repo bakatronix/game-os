@@ -175,3 +175,19 @@ ul.plain li { margin: 4px 0; }
 .chip button.nm { background: none; width: auto; height: auto; border-radius: 0; color: inherit; font: inherit; padding: 0; }
 .vocab h4 .range, h4 .range { text-transform: none; font-family: var(--font-sans); font-weight: 400; }
 .card h4 { margin: 12px 0 6px; font: 800 14px/1.2 var(--font-display); text-transform: uppercase; }
+
+/* Phase 2: themes, expectation gap, refund rate */
+.gap { border-left: 4px solid var(--status-healthy); padding: 4px 0 4px 12px; margin: 0 0 14px; }
+.gap.flagged { border-left-color: var(--status-concern); }
+.gap .verdict + .verdict { margin-top: 8px; }
+.gap .next { margin: 10px 0 0; font-weight: 700; color: var(--teal-deep); }
+.gapq { margin-top: 8px; font-size: 14px; }
+.gapq summary { cursor: pointer; color: var(--ink-secondary); font-weight: 600; }
+.gapq blockquote, .themes blockquote { margin: 6px 0 0 0; padding: 6px 10px; background: var(--sand); border-radius: 4px; font-size: 13px; color: var(--ink-secondary); overflow-wrap: anywhere; }
+.themes .note { margin: 6px 0 0; }
+.rf-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin: 6px 0 10px; }
+@media (max-width: 860px) { .rf-grid { grid-template-columns: 1fr 1fr; } }
+.rf-grid .inwrap { max-width: none; }
+.rf-grid .field-inline { min-width: 0; }
+.rf-grid input { width: 100%; min-width: 0; }
+.rf-read .verdict { font-size: 15px; }

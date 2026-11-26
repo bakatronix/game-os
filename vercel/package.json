@@ -24,6 +24,7 @@
     "test:session": "node tests/save-session.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.14.0",
     "@auth/drizzle-adapter": "^1.7.4",
     "@neondatabase/serverless": "^0.10.4",
     "dotenv": "^18.0.6",
