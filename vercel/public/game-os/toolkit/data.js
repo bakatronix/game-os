@@ -188,15 +188,6 @@ var COMMUNITY_SCAFFOLD = {
   },
 };
 
-var TEST_LOOP = {
-  control: { variant: 'A (Current)', capsule: 'Abyss creature silhouette on dark blue', copy: '"Dive. Die. Upgrade. Repeat."', conversionRate: 4.2 },
-  variants: [
-    { id: 'B', capsule: 'Bioluminescent base with diver', copy: '"Build your abyss. Survive its depths."', conversionRate: 5.1, lift: '+23%', winner: true },
-    { id: 'C', capsule: 'Action shot — combat vs. leviathan', copy: '"The ocean isn\'t empty. It\'s hunting."', conversionRate: 4.5, lift: '+7%', winner: false },
-  ],
-  liftNorm: { genreAvg: '+12%', topQuartile: '+22%' },
-};
-
 var PLAYTEST_PIPELINE = {
   sessions: [
     { id: 1, players: 8, date: '2025-05-10', duration: '45 min', focus: 'Core loop — diving, gathering, crafting, combat' },
@@ -521,22 +512,6 @@ var SENTIMENT_EXTENDED = {
     { phrase: 'boss fights intense', freq: 63, source: 'reviews', sentiment: 'positive' },
   ],
 };
-
-// === TEST LOOP EXTENSION (positioning variants) ===
-var POSITIONING_VARIANTS = [
-  {
-    id: 'A',
-    framing: 'The survival-crafting roguelike where every dive is a new run. Build an underwater base, fight leviathans, and upgrade between deaths.',
-    conversionLift: '+0%',
-    isControl: true,
-  },
-  {
-    id: 'B',
-    framing: 'Subnautica meets Hades. Descend into an ever-shifting ocean abyss, die trying, and build a stronger base for the next run.',
-    conversionLift: '+12%',
-    isControl: false,
-  },
-];
 
 // === BENCHMARK REFERENCE TABLE (for contextual hints) ===
 var BENCHMARKS = {

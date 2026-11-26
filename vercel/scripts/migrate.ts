@@ -454,6 +454,13 @@ async function main() {
        "status"='nodata', "statusLabel"='No data', "spark"=NULL,
        "metrics"='[{"label":"Demo players, 28d","value":"—"},{"label":"Wishlists per 100","value":"—"},{"label":"Median playtime","value":"—"}]'
      WHERE id='demo-command'`,
+    // Test Loop: before/after reads of store changes from Page Engine, plus off-Steam variant tests: top row, live tile.
+    `UPDATE "app" SET "group"='cxo', "sortOrder"=15, "stage"=NULL, "toolName"='Test Loop',
+       "cxoQuestion"='Did the change we made beat what it replaced?',
+       "description"='Read each store page change before and after from your Page Engine numbers, and test ads, posts and positioning lines off Steam. Better, worse or can''t tell, with a 95% range.',
+       "status"='nodata', "statusLabel"='No data', "spark"=NULL,
+       "metrics"='[{"label":"Last test","value":"—"},{"label":"Lift, points","value":"—"},{"label":"Verdict","value":"—"}]'
+     WHERE id='test-loop'`,
     // The remaining Seismic tools are extracted as standalone widgets too.
     `UPDATE "app" SET path='/game-os/'||id, anchor=NULL WHERE id IN
       ('thesis-builder','audience-map','page-engine','community-scaffold',

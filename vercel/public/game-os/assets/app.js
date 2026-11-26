@@ -740,6 +740,24 @@
         label: none ? 'No data yet' : 'Live'
       };
     },
+    'test-loop': function (G) {
+      // One test_lift row per read; the ledger snapshot keeps the latest.
+      var t = sig('test_lift');
+      var m = (t && t.meta) || {};
+      var v = m.verdict;
+      var pts = function (x) { return x == null ? '\u2014' : (x > 0 ? '+' : x < 0 ? '\u2212' : '') + Math.abs(Math.round(x * 10) / 10).toFixed(1); };
+      var names = { ctr: 'Click-through', v2w: 'Visits to wishlists', clicks: 'Click rate' };
+      return {
+        metrics: [
+          { label: 'Last test', value: t ? (names[m.metric] || 'Test') : '\u2014' },
+          { label: 'Lift, points', value: t ? pts(t.value) : '\u2014' },
+          { label: 'Verdict', value: v === 'better' ? 'Better' : v === 'worse' ? 'Worse' : v ? "Can't tell" : '\u2014' }
+        ],
+        spark: sigSpark('test_lift', 'bars'),
+        kind: !t ? 'demo' : v === 'worse' ? 'watch' : 'healthy',
+        label: t ? 'Live' : 'No data yet'
+      };
+    },
     'mobile-calc': function (G) {
       var l = sig('mobile_ltv_per_install');
       var c = sig('mobile_max_cpi_target');
@@ -844,7 +862,7 @@
      Remove an id once that tool reads and writes the game spine. */
   var UNDER_CONSTRUCTION = {
     'seismic': 1,
-    'community-scaffold': 1, 'test-loop': 1,
+    'community-scaffold': 1,
     'playtest-pipeline': 1,
     'long-tail-engine': 1, 'sequel-signal': 1, 'gate-log': 1
   };
