@@ -28,12 +28,10 @@ h3 { font: 800 16px/1.25 var(--font-display); text-transform: uppercase; margin:
 .note { font-size: 13px; color: var(--ink-muted); margin: 0 0 10px; }
 .muted { color: var(--ink-muted); }
 
-  border-radius: var(--radius-pill); padding: 4px 6px 4px 12px; font: 700 14px/20px var(--font-sans); }
 .inwrap { display: flex; align-items: stretch; border: 1.5px solid var(--line); border-radius: var(--radius-field); background: #fffaf0; }
 .inwrap:focus-within { border-color: var(--focus); box-shadow: 0 0 0 2px rgba(48,77,79,.18); }
 .inwrap .affix { padding: 8px 10px; color: var(--ink-muted); font-weight: 600; font-size: 14px; white-space: nowrap; align-self: center; }
 .inwrap input { flex: 1; min-width: 0; border: 0; background: transparent; padding: 9px 10px; font: 600 16px/22px var(--font-sans); color: #1f4e8c; outline: none; }
-  border: 1.5px solid var(--line); border-radius: var(--radius-field); max-height: 260px; overflow-y: auto; box-shadow: 0 6px 18px rgba(0,0,0,.12); }
 .feedback { font-size: 14px; color: var(--ink-secondary); }
 .feedback.err { color: var(--status-concern); }
 .assume { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 24px; margin-top: 10px; }
