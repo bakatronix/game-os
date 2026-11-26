@@ -419,6 +419,13 @@ async function main() {
        "status"='nodata', "statusLabel"='No data',
        "metrics"='[{"label":"Median revenue","value":"—"},{"label":"Over $100K","value":"—"},{"label":"Releases a year","value":"—"}]'
      WHERE id='market-scope'`,
+    // Sentiment Radar reads public Steam reviews (or the comps' before launch): top row, live tile.
+    `UPDATE "app" SET "group"='cxo', "sortOrder"=10, "stage"=NULL, "toolName"='Sentiment Radar',
+       "cxoQuestion"='What do players feel, and is it slipping?',
+       "description"='Reads public Steam reviews: a decay alarm when recent reviews fall below your all-time rating, review velocity, playtime at review and the words players use. Before you have reviews, it reads your comps.',
+       "status"='nodata', "statusLabel"='No data',
+       "metrics"='[{"label":"Recent vs all-time","value":"—"},{"label":"Reviews a day","value":"—"},{"label":"Early negatives","value":"—"}]'
+     WHERE id='sentiment-radar'`,
     // The remaining Seismic tools are extracted as standalone widgets too.
     `UPDATE "app" SET path='/game-os/'||id, anchor=NULL WHERE id IN
       ('thesis-builder','audience-map','page-engine','community-scaffold',
