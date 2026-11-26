@@ -278,6 +278,8 @@ The definition of done is the same for every tool. On top of the onboarding chec
 
 **Beat and version storage: propose before building.** The default proposal is ledger rows: key `beat` with value 1, or key `creative_version` with the version number, and the details in `meta` (`kind`, `date`, `type`, `channel`, `effort`, `note`, `asset`). That needs no schema change, and Momentum ignores keys it has no rule for. The alternative is a proper table, which needs a migration and the owner's agreement (§7). Ask before choosing.
 
+> **Decided 26 Nov 2026 (Jay): ledger rows.** The ledger is append-only, so every beat and version carries a stable `meta.id`. An edit appends a new row with the same id and a later `meta.updated`. A delete appends a row with `meta.deleted: true`. Readers keep the latest row per id and drop deleted ones (`PageModel.logsFromLedger` in `page-engine/model.js` does this). Read them with `GET /api/games/:id/signals?all=1&days=365`. That endpoint returns at most 5,000 rows, oldest first, so a longer window on a busy ledger can cut off the newest rows; one year keeps well inside that (the daily snapshot writes about 1,800 rows a year). Page Engine also keeps its own copy in tool-state. Other tools that log beats (for example creator coverage, §5.3) should write the same shape with `GOS.recordSignals`.
+
 **Journey:** `data_entered` (CSV imported or form saved) → `performance_viewed` → `beat_logged` or `result_actioned`.
 
 ### 5.3 Creator Match (`creator-match`)
