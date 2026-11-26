@@ -726,6 +726,20 @@
         label: l ? 'Live' : 'No data yet'
       };
     },
+    'demo-command': function (G) {
+      var p = sig('demo_players_28d'), r = sig('demo_wishlists_per_100'), t = sig('demo_median_playtime');
+      var none = !p && !r;
+      return {
+        metrics: [
+          { label: 'Demo players, 28d', value: p ? Math.round(p.value).toLocaleString('en-US') : '\u2014' },
+          { label: 'Wishlists per 100', value: r ? String(r.value) : '\u2014' },
+          { label: 'Median playtime', value: t ? Math.round(t.value) + ' min' : '\u2014' }
+        ],
+        spark: sigSpark('demo_wishlists_per_100'),
+        kind: none ? 'demo' : 'healthy',
+        label: none ? 'No data yet' : 'Live'
+      };
+    },
     'mobile-calc': function (G) {
       var l = sig('mobile_ltv_per_install');
       var c = sig('mobile_max_cpi_target');
@@ -832,7 +846,6 @@
     'seismic': 1,
     'community-scaffold': 1, 'test-loop': 1,
     'playtest-pipeline': 1,
-    'demo-command': 1,
     'long-tail-engine': 1, 'sequel-signal': 1, 'gate-log': 1
   };
 

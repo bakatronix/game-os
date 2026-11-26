@@ -447,6 +447,13 @@ async function main() {
        "status"='nodata', "statusLabel"='No data',
        "metrics"='[{"label":"Last festival","value":"—"},{"label":"Wishlist lift","value":"—"},{"label":"95% range","value":"—"}]'
      WHERE id='festival-radar'`,
+    // Demo Command: demo players from the demo's Steamworks export, read against Page Engine's wishlists: top row, live tile.
+    `UPDATE "app" SET "group"='cxo', "sortOrder"=14, "stage"=NULL, "toolName"='Demo Command',
+       "cxoQuestion"='Is the demo turning players into wishlists?',
+       "description"='Bring in your demo''s player numbers from Steamworks and read them against the full game''s wishlist adds: wishlists per 100 demo players, demo playtime, and each Steam Next Fest against the weeks before.',
+       "status"='nodata', "statusLabel"='No data', "spark"=NULL,
+       "metrics"='[{"label":"Demo players, 28d","value":"—"},{"label":"Wishlists per 100","value":"—"},{"label":"Median playtime","value":"—"}]'
+     WHERE id='demo-command'`,
     // The remaining Seismic tools are extracted as standalone widgets too.
     `UPDATE "app" SET path='/game-os/'||id, anchor=NULL WHERE id IN
       ('thesis-builder','audience-map','page-engine','community-scaffold',
