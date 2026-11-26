@@ -53,7 +53,8 @@ export async function POST(req: Request, { params }: Ctx) {
   try {
     await requireGameRole(r.user.id, id, "editor");
     const source = body.source ? String(body.source).slice(0, 64) : "manual";
-    const res = await reviseThesis(r.user.id, id, patch, source, body.note ? String(body.note).slice(0, 500) : null);
+    const base = Number.isInteger(body.baseVersion) && body.baseVersion >= 0 ? (body.baseVersion as number) : null;
+    const res = await reviseThesis(r.user.id, id, patch, source, body.note ? String(body.note).slice(0, 500) : null, base);
     return NextResponse.json(res, { status: res.changed.length ? 201 : 200, ...noStore });
   } catch (err) {
     return apiError(err);

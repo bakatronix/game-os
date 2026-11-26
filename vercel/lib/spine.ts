@@ -148,6 +148,7 @@ export async function reviseThesis(
   patch: Partial<Record<ThesisField, unknown>>,
   source: string,
   note?: string | null,
+  baseVersion?: number | null,
 ) {
   const db = getDb();
   const [latest] = await db
@@ -156,6 +157,24 @@ export async function reviseThesis(
     .where(eq(thesisVersions.gameId, gameId))
     .orderBy(desc(thesisVersions.version))
     .limit(1);
+
+  // A writer that read an older version (a Thesis Builder tab left open) must
+  // not silently undo fields someone else changed since. Fields only it touched
+  // are fine; a field changed on both sides is a conflict.
+  if (baseVersion != null && latest && latest.version > baseVersion) {
+    const [base] = await db
+      .select()
+      .from(thesisVersions)
+      .where(and(eq(thesisVersions.gameId, gameId), eq(thesisVersions.version, baseVersion)))
+      .limit(1);
+    const clashes = THESIS_FIELDS.filter((f) => f in patch && (base ? base[f] ?? null : null) !== (latest[f] ?? null));
+    if (clashes.length) {
+      throw new AccessError(
+        409,
+        `The thesis changed since you opened it (now v${latest.version}): ${clashes.join(", ")} ${clashes.length === 1 ? "was" : "were"} updated elsewhere. Reload to see the latest version, then make your edit again.`,
+      );
+    }
+  }
 
   const next: Record<ThesisField, string | null> = {
     audience: latest?.audience ?? null,

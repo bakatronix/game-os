@@ -104,6 +104,13 @@
   function wire(G, root) {
     var f = root.querySelector("#tb-form");
     if (!f) return;
+    // What the form showed when it was drawn, and from which version. Only the
+    // fields the user edited are sent, with that version, so a tab left open
+    // can't undo changes other tools made in the meantime.
+    var FIELDS = ["hook", "audience", "compSet", "priceHypothesis"];
+    var start = new FormData(f), shown = {};
+    FIELDS.forEach(function (k) { shown[k] = String(start.get(k) || ""); });
+    var baseVersion = (G.thesis && G.thesis.version) || 0;
     f.addEventListener("submit", function (e) {
       e.preventDefault();
       var msg = root.querySelector("#tb-msg");
@@ -116,12 +123,16 @@
       var btn = f.querySelector("button[type=submit]");
       btn.disabled = true;
       msg.textContent = "Saving…";
-      G.saveThesis({
+      var all = {
         hook: String(fd.get("hook") || ""),
         audience: String(fd.get("audience") || ""),
         compSet: textToComp(fd.get("compSet")),
         priceHypothesis: price,
-      }, "thesis-builder", String(fd.get("note") || "")).then(function (res) {
+      };
+      var patch = { baseVersion: baseVersion }, edited = 0;
+      FIELDS.forEach(function (k) { if (String(fd.get(k) || "") !== shown[k]) { patch[k] = all[k]; edited++; } });
+      if (!edited) { btn.disabled = false; msg.textContent = "Nothing changed — no new version."; return; }
+      G.saveThesis(patch, "thesis-builder", String(fd.get("note") || "")).then(function (res) {
         if (typeof window.gosTrack === "function") {
           window.gosTrack("journey_step", { tool_id: "thesis-builder", step_name: "thesis_saved", step_index: 2 });
         }

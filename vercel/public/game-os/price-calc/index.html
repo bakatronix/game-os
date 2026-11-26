@@ -4393,6 +4393,17 @@ var PERSIST_KEY = 'gameOsPriceCalc.v1';
 var ONBOARD_KEY = 'gameOsPriceCalc.onboarded';
 var PERSIST_SCHEMA = 2;
 var autosaveTimer = null;
+// While true nothing is written to this browser or the account: during Start
+// fresh (so the reload can't write the old workbook back), while viewing someone
+// else's shared link, and while switching to another game's workbook.
+var persistPaused = false;
+// The game this workbook belongs to. Each game keeps its own workbook.
+window.__wbGameId = null;
+function pauseSaving() {
+  persistPaused = true;
+  if (autosaveTimer) { clearTimeout(autosaveTimer); autosaveTimer = null; }
+  if (accountTimer) { clearTimeout(accountTimer); accountTimer = null; }
+}
 var isDemoMode = /\bdemo=1\b/.test(location.search);
 
 // Demo mode is a read-only, clearly-labelled walkthrough. It must never read
@@ -4462,7 +4473,7 @@ function showMigrationNotice(savedAt) {
   var banner = document.createElement('div');
   banner.className = 'restore-banner';
   banner.innerHTML = '<span><strong>Prices need re-fetching.</strong> Restored your session' + (savedAt ? ' \u2014 ' + relativeTime(savedAt) : '') + '. Fetched comp prices were cleared because a Steam price-unit bug was corrected, so re-fetch your comps to reload correct prices. Your manually entered data was kept.</span>' +
-    '<button class="btn-ghost" onclick="startFresh()">Start fresh</button>' +
+    '<button class="btn-ghost" onclick="confirmStartFresh()">Start fresh</button>' +
     '<button class="restore-dismiss" onclick="this.parentNode.remove()" aria-label="Dismiss">\u00D7</button>';
   var header = document.querySelector('header');
   if (header && header.parentNode) document.body.insertBefore(banner, header);
@@ -4606,10 +4617,11 @@ function restoreState(state, restoredFrom) {
 }
 
 function saveToLocalStorage() {
-  if (inDemo()) return;
+  if (inDemo() || persistPaused) return;
   try {
     var payload = serialiseState();
     payload.savedAt = Date.now();
+    payload.gameId = window.__wbGameId || null;
     payload.touched = !!(window.__userTouched || window.__restoredTouched);
     localStorage.setItem(PERSIST_KEY, JSON.stringify(payload));
   } catch(e) { /* storage unavailable or full — degrade to in-memory only */ }
@@ -4628,13 +4640,22 @@ function clearLocalStorage() {
 }
 
 function startFresh() {
+  pauseSaving();
   clearLocalStorage();
-  var go = function () { location.hash = ''; location.reload(); };
+  var g = window.__wbGameId;
+  try { if (g) localStorage.removeItem(PERSIST_KEY + ':' + g); } catch (e) {}
+  var go = function () { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { location.hash = ''; } location.reload(); };
   if (accountUser) {
-    fetch(ACCOUNT_URL, { method: 'PUT', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ state: { schema: PERSIST_SCHEMA, cleared: true, savedAt: Date.now() } }) }).then(go, go);
+    var cleared = JSON.stringify({ state: { schema: PERSIST_SCHEMA, cleared: true, savedAt: Date.now() } });
+    var put = function (url) { return fetch(url, { method: 'PUT', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: cleared }).catch(function () {}); };
+    Promise.all([put(ACCOUNT_URL), g ? put('/api/tool-state/pc-' + g) : null]).then(go, go);
   } else go();
 }
+function confirmStartFresh() {
+  if (window.confirm('Start a blank workbook?\n\nThis deletes the numbers you have entered for this game. This cannot be undone.')) startFresh();
+}
 function clearWorkbook() {
+  if (window.__viewingShare) { backToMyWorkbook(); return; } // never delete your own workbook from a shared view
   var comps = document.querySelectorAll('#comp-tbody .comp-card').length;
   var msg = 'Clear this workbook?\n\nThis deletes all ' + comps + ' comp' + (comps === 1 ? '' : 's') + ', every value you have entered, and your saved session, then resets the tool to its defaults. This cannot be undone.';
   if (!window.confirm(msg)) return;
@@ -4655,6 +4676,7 @@ function accountPayload() {
   var st = serialiseState();
   delete st.fetchCache; // a session cache, not workbook state
   st.savedAt = Date.now();
+  st.gameId = window.__wbGameId || null;
   return st;
 }
 function setAccountStatus(text, kind) {
@@ -4666,13 +4688,13 @@ function setAccountStatus(text, kind) {
   el.textContent = text; el.className = 'account-save-status ' + (kind || '');
 }
 function scheduleAccountSave() {
-  if (!accountReady || !accountUser || inDemo()) return;
+  if (!accountReady || !accountUser || inDemo() || persistPaused) return;
   if (accountTimer) clearTimeout(accountTimer);
   setAccountStatus('Saving\u2026', 'busy');
   accountTimer = setTimeout(function () { accountTimer = null; saveToAccount(); }, 2000);
 }
 function saveToAccount(keepalive) {
-  if (!accountUser || inDemo()) return;
+  if (!accountUser || inDemo() || persistPaused) return;
   var body;
   try { body = JSON.stringify({ state: accountPayload() }); } catch (e) { return; }
   fetch(ACCOUNT_URL, { method: 'PUT', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: body, keepalive: !!keepalive && body.length < 60000 })
@@ -4682,7 +4704,7 @@ function saveToAccount(keepalive) {
 }
 function initAccountSave() {
   if (inDemo() || !window.GOS || !GOS.ready) return;
-  GOS.ready.then(function () {
+  window.__accountLoaded = GOS.ready.then(function () {
     accountUser = !!GOS.user;
     if (!accountUser) {
       setAccountStatus('Not signed in: your work is saved in this browser only. Use Save workbook (.json) to keep a copy.', 'warn');
@@ -4697,6 +4719,7 @@ function initAccountSave() {
         if (server && !server.cleared && !sharing && (server.savedAt || 0) > localAt + 1000) {
           var migrated = migrateState(server);
           if (migrated) {
+            window.__wbGameId = server.gameId || null;
             restoreState(migrated, { savedAt: server.savedAt, source: 'account' });
             restorePinnedScenarios(migrated);
             saveToLocalStorage();
@@ -4726,11 +4749,94 @@ function relativeTime(ts) {
   return d + ' days ago';
 }
 
+function showShareViewBanner() {
+  var banner = document.createElement('div');
+  banner.className = 'restore-banner share-view-banner';
+  banner.innerHTML = '<span><strong>You\u2019re viewing a shared workbook.</strong> Changes here aren\u2019t saved, and your own workbook is untouched.</span>' +
+    '<button class="btn" onclick="keepSharedCopy()">Make this my workbook</button>' +
+    '<button class="btn-ghost" onclick="backToMyWorkbook()">Back to my workbook</button>';
+  var header = document.querySelector('header');
+  if (header && header.parentNode) document.body.insertBefore(banner, header);
+  else document.body.appendChild(banner);
+}
+function keepSharedCopy() {
+  if (!window.confirm('Replace your own workbook with this shared one?')) return;
+  persistPaused = false; window.__viewingShare = false;
+  window.__wbGameId = (window.GOS && GOS.game && GOS.game.id) || null;
+  try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+  window.__userTouched = true;
+  saveToLocalStorage(); saveToAccount();
+  var b = document.querySelector('.share-view-banner'); if (b) b.remove();
+  try { syncGameName(); } catch (e) {}
+}
+function backToMyWorkbook() {
+  try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { location.hash = ''; }
+  location.reload();
+}
+
+// ---- One workbook per game ----
+// The active workbook lives in the usual slots (this browser + account). When
+// the game bar switches game, the active one is parked under its game
+// (gameOsPriceCalc.v1:<id> and /api/tool-state/pc-<id>) and the new game's
+// workbook, or a blank one, is loaded.
+var gameSyncReady = false;
+function wbKey(id) { return PERSIST_KEY + ':' + id; }
+function syncWorkbookGame() {
+  if (inDemo() || persistPaused || !window.GOS) return;
+  var g = GOS.game && GOS.game.id;
+  if (!g) return;
+  if (!window.__wbGameId) { window.__wbGameId = g; if (window.__localSavedAt || window.__userTouched) { saveToLocalStorage(); saveToAccount(); } return; }
+  if (window.__wbGameId !== g) switchWorkbookGame(window.__wbGameId, g, GOS.game.title);
+}
+function switchWorkbookGame(from, to, toTitle) {
+  pauseSaving();
+  var fromTitle = (AppState.gameProfile && AppState.gameProfile.name) || 'the previous game';
+  var cur = serialiseState(); delete cur.fetchCache;
+  cur.savedAt = Date.now(); cur.gameId = from; cur.touched = true;
+  try { localStorage.setItem(wbKey(from), JSON.stringify(cur)); } catch (e) {}
+  var put = function (url, state) { return fetch(url, { method: 'PUT', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ state: state }) }).catch(function () { return null; }); };
+  var local = null; try { local = JSON.parse(localStorage.getItem(wbKey(to)) || 'null'); } catch (e) {}
+  var fetchNext = accountUser
+    ? Promise.all([put('/api/tool-state/pc-' + from, cur), fetch('/api/tool-state/pc-' + to, { credentials: 'same-origin' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; })])
+    : Promise.resolve([null, null]);
+  fetchNext.then(function (res) {
+    var server = res[1] && res[1].state;
+    var next = server && !server.cleared && (!local || local.cleared || (server.savedAt || 0) > (local.savedAt || 0)) ? server : (local && !local.cleared ? local : null);
+    var main;
+    if (next) { next.gameId = to; next.savedAt = Date.now(); main = next; try { localStorage.setItem(PERSIST_KEY, JSON.stringify(next)); } catch (e) {} }
+    else { main = { schema: PERSIST_SCHEMA, cleared: true, savedAt: Date.now() }; try { localStorage.removeItem(PERSIST_KEY); } catch (e) {} }
+    try { sessionStorage.setItem('gameOsPriceCalc.switched', JSON.stringify({ to: toTitle || '', from: fromTitle, found: !!next })); } catch (e) {}
+    return (accountUser ? put(ACCOUNT_URL, main) : Promise.resolve()).then(function () {
+      try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+      location.reload();
+    });
+  });
+}
+function showSwitchNotice() {
+  var raw = null; try { raw = sessionStorage.getItem('gameOsPriceCalc.switched'); sessionStorage.removeItem('gameOsPriceCalc.switched'); } catch (e) {}
+  if (!raw) return;
+  var n; try { n = JSON.parse(raw); } catch (e) { return; }
+  var banner = document.createElement('div');
+  banner.className = 'restore-banner';
+  banner.innerHTML = '<span>' + (n.found ? 'Loaded the pricing workbook for ' + escapeHtml(n.to) + '.' : 'New pricing workbook for ' + escapeHtml(n.to) + '.') +
+    ' Your ' + escapeHtml(n.from) + ' workbook is saved and comes back when you switch to it.</span>' +
+    '<button class="restore-dismiss" onclick="this.parentNode.remove()" aria-label="Dismiss">\u00D7</button>';
+  document.querySelectorAll('.restore-banner').forEach(function (b) { b.remove(); });
+  var header = document.querySelector('header');
+  if (header && header.parentNode) document.body.insertBefore(banner, header);
+  else document.body.appendChild(banner);
+}
+function onGameChange() {
+  if (!gameSyncReady) return;
+  syncWorkbookGame();
+  if (!persistPaused) syncGameName();
+}
+
 function showRestoreBanner(savedAt, lead) {
   var banner = document.createElement('div');
   banner.className = 'restore-banner';
   banner.innerHTML = '<span>' + (lead || 'Restored your previous session') + ' \u2014 ' + relativeTime(savedAt) + '.</span>' +
-    '<button class="btn-ghost" onclick="startFresh()">Start fresh</button>' +
+    '<button class="btn-ghost" onclick="confirmStartFresh()">Start fresh</button>' +
     '<button class="restore-dismiss" onclick="this.parentNode.remove()" aria-label="Dismiss">\u00D7</button>';
   var header = document.querySelector('header');
   if (header && header.parentNode) document.body.insertBefore(banner, header);
@@ -5075,8 +5181,13 @@ function initPersistence() {
   if (sharePayload) {
     var migratedShare = migrateState(sharePayload);
     if (migratedShare) {
+      // Someone else's workbook: show it, but save nothing until the user
+      // chooses to keep a copy, so their own workbook isn't overwritten.
+      pauseSaving();
+      window.__viewingShare = true;
       restoreState(migratedShare, { source: 'share' });
       if (migratedShare.__migrated) showMigrationNotice();
+      showShareViewBanner();
       initContextBanner();
       return; // hash takes precedence over localStorage
     }
@@ -5086,6 +5197,7 @@ function initPersistence() {
   if (saved) {
     var migratedSaved = migrateState(saved);
     if (migratedSaved) {
+      window.__wbGameId = saved.gameId || null;
       restoreState(migratedSaved, { savedAt: saved.savedAt || null, source: 'session' });
       window.__restoredSession = true;
       window.__localSavedAt = saved.savedAt || 0;
@@ -5103,7 +5215,12 @@ initPersistence();
 try { initStepUrl(); } catch (e) {}
 try { initAccountSave(); } catch (e) {}
 try { renderGenreChips(); } catch (e) {}
-if (window.GOS && GOS.ready) { GOS.ready.then(syncGameName, function () {}); if (GOS.onChange) GOS.onChange(syncGameName); }
+try { showSwitchNotice(); } catch (e) {}
+if (window.GOS && GOS.ready) {
+  // Work out which game's workbook this is only after the account copy has loaded.
+  (window.__accountLoaded || GOS.ready).then(function () { gameSyncReady = true; onGameChange(); }, function () { gameSyncReady = true; onGameChange(); });
+  if (GOS.onChange) GOS.onChange(onGameChange);
+}
 (function () {
   var main = document.querySelector('main') || document.body, t = null;
   try { jargonTips(main); } catch (e) {}
