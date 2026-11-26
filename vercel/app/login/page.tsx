@@ -110,6 +110,21 @@ export default async function LoginPage({
             Continue with Google
           </button>
         </form>
+        {/* Local development only: the test sign-in exists only when ENABLE_TEST_AUTH=true,
+            which is never set on the live site. Lets contributors run the app without
+            creating Google or Discord sign-in apps. */}
+        {process.env.ENABLE_TEST_AUTH === "true" && (
+          <form
+            action={async () => {
+              "use server";
+              await signIn("test", { redirectTo });
+            }}
+          >
+            <button type="submit" style={buttonStyle(INK_MUTED, CREAM)}>
+              Continue as test user (local only)
+            </button>
+          </form>
+        )}
         {/* Discord sign-in is paused until its OAuth setup is fixed; the provider stays configured. */}
         <button
           type="button"
