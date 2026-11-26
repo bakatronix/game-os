@@ -468,6 +468,13 @@ async function main() {
        "status"='nodata', "statusLabel"='No data', "spark"=NULL,
        "metrics"='[{"label":"Reviews vs launch","value":"—"},{"label":"95% bounds","value":"—"},{"label":"Players vs launch","value":"—"}]'
      WHERE id='long-tail-engine'`,
+    // Sequel Signal: an evidence board from the ledger and a draft thesis for the next game: top row, live tile.
+    `UPDATE "app" SET "group"='cxo', "sortOrder"=17, "stage"=NULL, "toolName"='Sequel Signal',
+       "cxoQuestion"='What should we make next: DLC, sequel, port, or something new?',
+       "description"='The evidence from your other tools: did marketing find the audience, did it stick, the expectation gap and the market today. No score. Then start the next game with a draft thesis.',
+       "status"='nodata', "statusLabel"='No data', "spark"=NULL,
+       "metrics"='[{"label":"Reach signals","value":"—"},{"label":"Resonance signals","value":"—"},{"label":"Gap flags","value":"—"}]'
+     WHERE id='sequel-signal'`,
     // The remaining Seismic tools are extracted as standalone widgets too.
     `UPDATE "app" SET path='/game-os/'||id, anchor=NULL WHERE id IN
       ('thesis-builder','audience-map','page-engine','community-scaffold',

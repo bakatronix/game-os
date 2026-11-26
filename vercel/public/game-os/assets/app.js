@@ -758,6 +758,28 @@
         label: t ? 'Live' : 'No data yet'
       };
     },
+    'sequel-signal': function (G) {
+      // An evidence board, not a score: how many Reach and Resonance signals the game has, and the expectation gap.
+      var snap = { steam_reviews: 'reach', steam_reviews_30d: 'reach', steam_review_pct: 'resonance', steam_review_pct_30d: 'resonance' };
+      var reach = 0, res = 0;
+      (G.ledger || []).forEach(function (s) {
+        var m = s && s.meta || {};
+        if (m.kind || s.key === 'expectation_gap_flag') return;
+        var h = m.half || snap[s.key];
+        if (h === 'reach') reach++; else if (h === 'resonance') res++;
+      });
+      var gap = sig('expectation_gap_flag');
+      return {
+        metrics: [
+          { label: 'Reach signals', value: String(reach) },
+          { label: 'Resonance signals', value: String(res) },
+          { label: 'Gap flags', value: gap && gap.value != null ? String(Math.round(gap.value)) : '\u2014' }
+        ],
+        spark: null,
+        kind: reach || res || gap ? 'healthy' : 'demo',
+        label: reach || res || gap ? 'Live' : 'No data yet'
+      };
+    },
     'long-tail-engine': function (G) {
       // Legs (Reach) and the player floor (Resonance), each sent only above its minimum.
       var l = sig('tail_legs_ratio'), f = sig('players_floor_ratio');
@@ -880,7 +902,7 @@
     'seismic': 1,
     'community-scaffold': 1,
     'playtest-pipeline': 1,
-    'sequel-signal': 1, 'gate-log': 1
+    'gate-log': 1
   };
 
   function widgetCard(a) {
