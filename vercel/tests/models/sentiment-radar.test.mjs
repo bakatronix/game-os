@@ -193,3 +193,85 @@ test("steamspy fallback gives a Wilson share and owners' median hours, or nothin
   assert.equal(M.steamspy(null), null);
   assert.equal(M.steamspy({ positive: 5, negative: 1, medianForeverMin: 0 }).medianHours, null);
 });
+
+/* ---------------- Phase 2: themes, expectation gap, refund rate ---------------- */
+
+const analysis = (over = {}) => ({
+  appid: 1, analysedAt: "2026-11-26T12:00:00Z", model: "claude-opus-5-5", read: 200, window: "2026-10-28/2026-11-26",
+  n: { pos: 80, neg: 120 }, store: { available: true, chars: 900 },
+  themes: [
+    { name: "combat feels shallow", side: "negative", summary: "s", count: 31, quotes: [{ text: "combat is shallow", url: "u1" }, { text: "no depth", url: "u2" }, { text: "x", url: null }] },
+    { name: "crashes", side: "negative", summary: "", count: 2, quotes: [] },
+    { name: "great art", side: "positive", summary: "", count: 40, quotes: [] },
+  ],
+  gaps: [{ claim: "deep tactical combat", theme: "combat feels shallow", why: "w" }, { claim: "stable", theme: "crashes", why: "" }],
+  ...over,
+});
+
+test("themes: shares with Wilson ranges, small themes hidden, gaps tied to shown themes", () => {
+  const t = M.themes(analysis());
+  assert.equal(t.neg.length, 1, "a 2-review theme is below MIN_THEME_REVIEWS");
+  assert.equal(t.neg[0].count, 31); assert.equal(t.neg[0].n, 120);
+  close(t.neg[0].share.p, 31 / 120, 1e-9);
+  assert.ok(t.neg[0].share.lo < t.neg[0].share.p && t.neg[0].share.hi > t.neg[0].share.p);
+  assert.equal(t.pos[0].n, 80);
+  assert.equal(t.gaps.length, 1, "the gap on a hidden theme is dropped");
+  assert.equal(t.gaps[0].complaint, "combat feels shallow");
+  assert.equal(M.themes(null), null);
+});
+
+test("themes: no gap check below MIN_NEG_N negative reviews", () => {
+  const t = M.themes(analysis({ n: { pos: 80, neg: M.MIN_NEG_N - 1 } }));
+  assert.equal(t.negEnough, false); assert.equal(t.gaps.length, 0);
+  assert.equal(M.gapSignal(t), null, "nothing recorded when there are too few negative reviews");
+});
+
+test("gapSignal: one row with every flag in meta, provenance, and 0 when no flags", () => {
+  const row = M.gapSignal(M.themes(analysis()));
+  assert.equal(row.key, "expectation_gap_flag"); assert.equal(row.value, 1); assert.equal(row.unit, "units");
+  assert.equal(row.meta.half, "resonance"); assert.equal(row.meta.source, "computed"); assert.equal(row.meta.method, "llm-themes");
+  assert.equal(row.meta.n, 120); assert.equal(row.meta.window, "2026-10-28/2026-11-26"); assert.equal(row.meta.model, "claude-opus-5-5");
+  const f = row.meta.flags[0];
+  assert.equal(f.claim, "deep tactical combat"); assert.equal(f.complaint, "combat feels shallow");
+  assert.equal(f.count, 31); assert.equal(f.n, 120); assert.ok(f.lo < 25.8 && f.hi > 25.8);
+  assert.equal(f.quotes.length, 2, "at most two quotes per flag");
+  const none = M.gapSignal(M.themes(analysis({ gaps: [] })));
+  assert.equal(none.value, 0); assert.deepEqual(none.meta.flags, []);
+  assert.equal(M.gapSignal(M.themes(analysis({ store: { available: false } }))), null, "no store text, no gap check, nothing recorded");
+});
+
+test("gapSignal: trimmed to fit the ledger's meta limit, value still counts every flag", () => {
+  const long = "x".repeat(140);
+  const themes = [], gaps = [];
+  for (let i = 0; i < 5; i++) {
+    themes.push({ name: "theme " + i, side: "negative", summary: "", count: 10 + i, quotes: [{ text: long, url: "https://steamcommunity.com/profiles/7656119800000000" + i + "/recommended/1/" }, { text: long, url: "https://steamcommunity.com/profiles/7656119800000001" + i + "/recommended/1/" }] });
+    gaps.push({ claim: "c".repeat(160), theme: "theme " + i, why: "" });
+  }
+  const row = M.gapSignal(M.themes(analysis({ themes, gaps })));
+  assert.ok(JSON.stringify(row.meta).length <= M.GAP_META_CHARS);
+  assert.equal(row.value, 5); assert.equal(row.meta.found, 5);
+  assert.ok(row.meta.flags.length >= 1);
+  assert.equal(row.meta.flags[0].count, 14, "biggest flag first, kept");
+});
+
+test("refund: counts give a Wilson range, a typed rate gives none, bad input gives null", () => {
+  const r = M.refund({ from: "2026-10-01", to: "2026-10-31", units: "400", refunds: "24", rate: "" });
+  close(r.p, 0.06, 1e-9); assert.ok(r.lo > 0 && r.hi < 0.1); assert.equal(r.n, 400); assert.equal(r.method, "wilson95");
+  const t = M.refund({ from: "2026-10-01", to: "2026-10-31", units: "", refunds: "", rate: "5.5" });
+  close(t.p, 0.055, 1e-9); assert.equal(t.lo, null); assert.equal(t.method, "entered");
+  assert.equal(M.refund({ from: "2026-11-01", to: "2026-10-01", rate: "5" }), null, "dates backwards");
+  assert.equal(M.refund({ from: "2026-10-01", to: "2026-10-31", units: "10", refunds: "11", rate: "" }), null, "more refunds than units");
+  assert.equal(M.refund({ from: "2026-10-01", to: "2026-10-31", rate: "120" }), null);
+  const row = M.refundSignal(r);
+  assert.equal(row.key, "refund_rate"); assert.equal(row.value, 6); assert.equal(row.unit, "pct");
+  assert.equal(row.meta.half, "resonance"); assert.equal(row.meta.source, "studio-entered"); assert.equal(row.meta.window, "2026-10-01/2026-10-31");
+});
+
+test("refundCompare: higher or lower only when the ranges don't overlap", () => {
+  const now = M.refund({ from: "2026-11-01", to: "2026-11-30", units: "1000", refunds: "120", rate: "" }); // 12% (10.1–14.2)
+  assert.equal(M.refundCompare(now, { value: 5, meta: { lo: 4, hi: 6.5 } }).status, "higher");
+  assert.equal(M.refundCompare(now, { value: 20, meta: { lo: 18, hi: 22 } }).status, "lower");
+  assert.equal(M.refundCompare(now, { value: 11, meta: { lo: 9, hi: 13 } }).status, "no-clear-change");
+  assert.equal(M.refundCompare(now, { value: 5, meta: {} }).status, "cant-tell");
+  assert.equal(M.refundCompare(now, null).status, "none");
+});

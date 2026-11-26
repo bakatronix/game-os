@@ -7,12 +7,14 @@
   var LS_KEY = "gos_sentiment_radar_v1";
   var ACCOUNT_URL = "/api/tool-state/" + TOOL_ID;
   var API = "/api/sentiment-radar";
+  var THEMES_API = "/api/sentiment-radar/themes";
+  var RERUN_MS = 24 * 3600 * 1000; // one theme analysis per game per day (the server keeps the same rule)
   var SEARCH = "/api/audience-map?part=search&q=";
   var MAX_COMPS = 5;          // comps read in one go; each is a separate set of Steam calls
   var MAX_COMP_REVIEWS = 200; // reviews read per comp
 
   /* ---------------- State (only settings; review text is never saved) ---------------- */
-  function emptyState() { return { gameId: null, comps: [], off: {}, lastRead: 0, savedAt: 0 }; }
+  function emptyState() { return { gameId: null, comps: [], off: {}, lastRead: 0, savedAt: 0, analysis: null }; }
   function normalise(s) {
     if (!s || typeof s !== "object") return null;
     var b = emptyState();
@@ -22,6 +24,8 @@
     b.gameId = s.gameId ? String(s.gameId) : null;
     b.lastRead = Number(s.lastRead) || 0;
     b.savedAt = Number(s.savedAt) || 0;
+    // Last theme analysis (phase 2), for one game: names, counts and short quotes from public reviews.
+    if (s.analysis && typeof s.analysis === "object" && s.analysis.gameId && s.analysis.res && Array.isArray(s.analysis.res.themes)) b.analysis = s.analysis;
     return b;
   }
   var S = (function () { try { return normalise(JSON.parse(localStorage.getItem(LS_KEY) || "null")); } catch (e) { return null; } })() || emptyState();
@@ -82,6 +86,7 @@
     var compSet = window.GOS && GOS.thesis && GOS.thesis.compSet;
     var md = M.mode(g, ledger, compSet);
     findingSeen = false;
+    T = { busy: false, err: null, code: null, tooFew: null };
     step("mode_selected", 1, { mode: md.mode, reason: md.reason || null });
     if (md.mode === "game") return runGame(md, g, ledger);
     return runComps(md);
@@ -313,12 +318,21 @@
       '<p class="method">Method: phrases of one to three words, counted once per review, separately for positive and negative reviews. Common words, your game&rsquo;s name and phrases in fewer than ' + M.MIN_PHRASE_REVIEWS + " reviews are left out; a shorter phrase is folded into a longer one that covers most of its reviews. Share ranges are 95% Wilson. Tap a phrase to see where it came from.</p></section>";
   }
 
+  function sendList() {
+    var list = M.signals(R).slice();
+    var res = R && R.mode === "game" ? savedAnalysis() : null;
+    var gap = res ? M.gapSignal(M.themes(res)) : null;
+    if (gap) list.push(gap);
+    return list;
+  }
+
   function sendCard() {
-    var list = M.signals(R);
+    var list = sendList();
     var all = ["sentiment_divergence", "review_velocity_28d", "playtime_at_review_median", "neg_review_early_share"];
     var have = list.map(function (x) { return x.key; });
     var skipped = all.filter(function (k) { return have.indexOf(k) < 0; });
-    return '<section class="card"><h3>Send to ' + esc(R.game.title) + "</h3>" +
+    if (savedAnalysis()) all.push("expectation_gap_flag");
+    return '<section class="card" id="send-card"><h3>Send to ' + esc(R.game.title) + "</h3>" +
       '<p class="note">Records ' + list.length + " figure" + (list.length === 1 ? "" : "s") + " in your game&rsquo;s signal ledger, each with its range, sample size and source." +
       (skipped.length ? " Not sent, because there&rsquo;s too little data: " + skipped.map(esc).join(", ") + "." : "") + "</p>" +
       '<div class="actions"><button class="btn" id="btn-send" type="button"' + (list.length ? "" : " disabled") + ">Send to game</button><span class=\"feedback\" id=\"send-msg\" role=\"status\"></span></div></section>";
@@ -331,10 +345,158 @@
     if (d.steamspy) s += '<section class="card">' + spyBlock(d.steamspy, "While Steam isn&rsquo;t answering") + "</section>";
     s += decayCard() + velocityCard() + playtimeCard() +
       vocabCard("Players&rsquo; own words make the best store copy. Use the positive phrases in your description and capsules; treat the negative ones as the list to fix or to answer in update notes.") +
-      sendCard();
+      themesCard() + refundCard() + sendCard();
     out.innerHTML = s;
     wireResults();
+    wireThemes();
+    wireRefund();
     about();
+  }
+
+  /* ---------------- Phase 2: themes and the expectation gap ---------------- */
+  var T = { busy: false, err: null, code: null, tooFew: null }; // request state; the result itself lives in S.analysis
+
+  function savedAnalysis() {
+    var g = R && R.game;
+    return g && S.analysis && S.analysis.gameId === g.id ? S.analysis.res : null;
+  }
+  function when(iso) {
+    var d = new Date(iso); if (isNaN(d)) return "";
+    return d.getDate() + " " + ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][d.getMonth()] + " " + d.getFullYear();
+  }
+  function quoteList(quotes) {
+    return quotes.map(function (q) {
+      return "<blockquote>&ldquo;" + esc(q.text) + "&rdquo;" + (q.url ? ' <a href="' + esc(q.url) + '" target="_blank" rel="noopener">Read review</a>' : "") + "</blockquote>";
+    }).join("");
+  }
+  function themeList(list, title, total) {
+    var s = "<h4>" + title + ' <span class="range">(' + num(total) + " reviews)</span></h4>";
+    if (!list.length) return s + '<p class="note">No theme came up in ' + M.MIN_THEME_REVIEWS + " or more reviews.</p>";
+    return s + '<ul class="phr themes">' + list.map(function (t) {
+      return '<li><details><summary><span class="p">' + esc(t.name) + '</span><span class="c">' + t.count + " of " + num(t.n) + " &middot; " + pc(t.share.p) +
+        ' <span class="range">(' + rng(t.share) + ")</span></span></summary>" + (t.summary ? '<p class="note">' + esc(t.summary) + "</p>" : "") + quoteList(t.quotes) + "</details></li>";
+    }).join("") + "</ul>";
+  }
+
+  function themesCard() {
+    var s = '<section class="card" id="themes-card"><h3>Themes and the expectation gap</h3>';
+    var res = savedAnalysis(), t = res ? M.themes(res) : null;
+    var age = res ? Date.now() - new Date(res.analysedAt).getTime() : Infinity;
+    var canRun = !T.busy && !(age < RERUN_MS);
+    if (T.busy) s += '<div class="loading">Grouping ' + num(R.data.read) + " reviews into themes. This takes up to a minute&hellip;</div>";
+    if (T.err) s += '<div class="notice ' + (T.code === "not-configured" ? "warn" : "bad") + '">' + esc(T.err) + "</div>";
+    if (T.tooFew) s += '<div class="notice warn">Too few reviews with text to group yet (' + num(T.tooFew.read) + " read; needs " + num(T.tooFew.min) + "). Nothing was sent.</div>";
+    if (!t && !T.busy) {
+      s += '<p class="note">Groups the ' + num(R.data.read) + " reviews read above into themes, then checks your Steam store page&rsquo;s claims against what unhappy players say. " +
+        "It sends only public text (these reviews and your store page) to Claude, Anthropic&rsquo;s AI model. Nothing you&rsquo;ve entered in Game OS is sent. Once a day per game.</p>";
+    }
+    if (t) {
+      var lines = [];
+      if (!t.storeAvailable) lines.push("Steam didn&rsquo;t return your store page text, so the expectation gap couldn&rsquo;t be checked. The themes below still stand.");
+      else if (!t.negEnough) lines.push("Too few negative reviews to check the expectation gap yet (n = " + t.n.neg + "; needs " + t.minNeg + ").");
+      else if (!t.gaps.length) lines.push("<b>No clear expectation gap.</b> None of the complaint themes contradicts a claim on your store page.");
+      t.gaps.forEach(function (g) {
+        lines.push('<b>Store page: &ldquo;' + esc(g.claim) + "&rdquo;.</b> " + g.count + " of " + num(g.n) + " negative reviews (" + pc(g.share.p) + ", " + rng(g.share) + ") say &ldquo;" + esc(g.complaint) + "&rdquo;." + (g.why ? " " + esc(g.why) : ""));
+      });
+      s += '<div class="gap' + (t.gaps.length ? " flagged" : "") + '">' + lines.map(function (l) { return '<p class="verdict">' + l + "</p>"; }).join("") +
+        (t.gaps.length ? '<p class="next">Next: either fix what the claim promises, or change the store copy so it promises what players actually get. A gap like this drags reviews down for every new buyer.</p>' : "") +
+        (t.gaps.length ? t.gaps.map(function (g) { return '<details class="gapq"><summary>Quotes for &ldquo;' + esc(g.complaint) + "&rdquo;</summary>" + quoteList(g.quotes) + "</details>"; }).join("") : "") + "</div>";
+      s += '<div class="vocab">' + '<div class="neg">' + themeList(t.neg, "Complaint themes", t.n.neg) + "</div>" + '<div class="pos">' + themeList(t.pos, "Praise themes", t.n.pos) + "</div></div>";
+      s += '<p class="method">Method: Claude (' + esc(t.model || "") + ") sorted " + num(t.read) + " recent reviews" + (t.window ? " (" + esc(t.window.replace("/", " to ")) + ")" : "") + " into themes and named the store claims they contradict. " +
+        "The counts are ours: each theme counts the reviews the model listed, checked against Steam&rsquo;s thumbs up or down, with a 95% Wilson range. Every quote is checked word for word against the review, and every claim against your store text; anything that didn&rsquo;t match was dropped. " +
+        "Themes from fewer than " + M.MIN_THEME_REVIEWS + " reviews aren&rsquo;t shown. An AI grouping is a reading aid: open the quotes before acting on a theme. Analysed " + when(t.analysedAt) + ".</p>";
+    }
+    s += '<div class="actions"><button class="btn' + (t ? "-ghost" : "") + '" id="btn-themes" type="button"' + (canRun ? "" : " disabled") + ">" + (t ? "Group again" : "Group reviews into themes") + "</button>" +
+      (t && age < RERUN_MS ? '<span class="feedback">You can group again after ' + new Date(new Date(t.analysedAt).getTime() + RERUN_MS).toLocaleString("en-GB", { weekday: "short", hour: "2-digit", minute: "2-digit" }) + ".</span>" : "") + "</div>";
+    return s + "</section>";
+  }
+
+  function rerenderThemes() {
+    var el = document.getElementById("themes-card"); if (!el) return;
+    var wrap = document.createElement("div"); wrap.innerHTML = themesCard();
+    el.replaceWith(wrap.firstChild);
+    var sc = document.getElementById("send-card");
+    if (sc) { var w2 = document.createElement("div"); w2.innerHTML = sendCard(); sc.replaceWith(w2.firstChild); wireSend(); }
+    wireThemes();
+  }
+
+  function wireThemes() {
+    var b = document.getElementById("btn-themes"); if (!b) return;
+    b.addEventListener("click", function () {
+      if (T.busy || !R || !R.game) return;
+      var g = R.game, id = runId;
+      T = { busy: true, err: null, code: null, tooFew: null };
+      track("themes_requested", { read: R.data.read });
+      rerenderThemes();
+      fetch(THEMES_API, { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ gameId: g.id }) })
+        .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return { ok: r.ok, status: r.status, j: j }; }); })
+        .then(function (x) {
+          // A paid-for answer is kept even if the page moved on; it's shown when this game is next read.
+          if (x.ok && !x.j.tooFew) { S.analysis = { gameId: g.id, res: x.j }; changed(); track("themes_loaded", { themes: (x.j.themes || []).length, gaps: (x.j.gaps || []).length, cached: !!x.j.cached }); }
+          if (id !== runId) return;
+          T.busy = false;
+          if (!x.ok) { T.err = x.j.error || "Couldn't group the reviews (HTTP " + x.status + ")."; T.code = x.j.code || null; }
+          else if (x.j.tooFew) T.tooFew = x.j;
+          rerenderThemes();
+        })
+        .catch(function (e) { if (id !== runId) return; T.busy = false; T.err = "Couldn't reach Game OS: " + e.message; rerenderThemes(); });
+    });
+  }
+
+  /* ---------------- Phase 2: refund rate ---------------- */
+  function refundCard() {
+    var prev = window.GOS && GOS.signal ? GOS.signal("refund_rate") : null;
+    var s = '<section class="card" id="refund-card"><h3>Your refund rate</h3>' +
+      '<p class="note">Your refund figures from Steamworks. Type them for one period; it&rsquo;s compared only with your own earlier entries, because there&rsquo;s no sourced norm for other games. Units give a range; a rate on its own doesn&rsquo;t. This stays in your game&rsquo;s ledger and is never sent to an AI model.</p>';
+    s += '<div class="rf-grid">' +
+      '<label class="field-inline"><span class="name">From</span><span class="inwrap"><input type="date" id="rf-from"></span></label>' +
+      '<label class="field-inline"><span class="name">To</span><span class="inwrap"><input type="date" id="rf-to"></span></label>' +
+      '<label class="field-inline"><span class="name">Units sold</span><span class="inwrap"><input type="number" min="1" step="1" inputmode="numeric" id="rf-units"></span></label>' +
+      '<label class="field-inline"><span class="name">Units refunded</span><span class="inwrap"><input type="number" min="0" step="1" inputmode="numeric" id="rf-refunds"></span></label>' +
+      '<label class="field-inline"><span class="name">Or the rate</span><span class="inwrap"><input type="number" min="0" max="100" step="0.1" inputmode="decimal" id="rf-rate"><span class="affix">%</span></span></label>' +
+      "</div>";
+    if (prev && prev.value != null) {
+      var hist = (prev.history || []).slice(-6).map(function (h) { return h.value + "% (" + when(h.observedAt) + ")"; }).join(", ");
+      s += '<p class="note">Earlier entries: ' + esc(hist || prev.value + "%") + ".</p>";
+    }
+    s += '<div id="rf-read" class="rf-read" role="status"></div>' +
+      '<div class="actions"><button class="btn" id="btn-refund" type="button" disabled>Save to game</button><span class="feedback" id="refund-msg" role="status"></span></div></section>';
+    return s;
+  }
+
+  function refundInput() {
+    var v = function (id) { var el = document.getElementById(id); return el ? el.value.trim() : ""; };
+    return { from: v("rf-from"), to: v("rf-to"), units: v("rf-units"), refunds: v("rf-refunds"), rate: v("rf-rate") };
+  }
+
+  function wireRefund() {
+    var card = document.getElementById("refund-card"); if (!card) return;
+    var btn = document.getElementById("btn-refund"), readEl = document.getElementById("rf-read"), msg = document.getElementById("refund-msg");
+    function update() {
+      var r = M.refund(refundInput());
+      btn.disabled = !r;
+      if (!r) { readEl.innerHTML = ""; return; }
+      var prev = window.GOS && GOS.signal ? GOS.signal("refund_rate") : null;
+      var c = M.refundCompare(r, prev);
+      var line = "<b>" + pc(r.p, 1) + " refunded</b>" + (r.lo != null ? " (" + pc(r.lo, 1) + "–" + pc(r.hi, 1) + ", n = " + num(r.n) + " units)" : " (no range: add units sold and refunded for one)") + ".";
+      if (c.status === "higher") line += " <b>Higher than your last entry</b> (" + c.before.value + "%), and the ranges don&rsquo;t overlap. Check the early-playtime share and the expectation gap above: if those rose too, the opening hours may not match what the store page promises.";
+      else if (c.status === "lower") line += " <b>Lower than your last entry</b> (" + c.before.value + "%), and the ranges don&rsquo;t overlap.";
+      else if (c.status === "no-clear-change") line += " No clear change from your last entry (" + c.before.value + "%); the ranges overlap.";
+      else if (c.status === "cant-tell") line += " Your last entry was " + c.before.value + "%. Without units sold for both periods, we can&rsquo;t tell whether that difference is more than chance.";
+      else line += " This is your first entry, so there&rsquo;s nothing to compare with yet.";
+      readEl.innerHTML = '<p class="verdict">' + line + "</p>";
+    }
+    card.addEventListener("input", update);
+    btn.addEventListener("click", function () {
+      var row = M.refundSignal(M.refund(refundInput()));
+      if (!row || !window.GOS || !GOS.game) return;
+      btn.disabled = true; msg.className = "feedback"; msg.textContent = "Saving to " + GOS.game.title + "…";
+      GOS.recordSignals(TOOL_ID, [row]).then(function () {
+        msg.textContent = "Saved to " + GOS.game.title + ".";
+        track("output_action", { action: "send_signals", what: "refund_rate", count: 1 });
+        step("result_actioned", 4, { action: "refund_saved" });
+      }).catch(function (e) { btn.disabled = false; msg.className = "feedback err"; msg.textContent = "Couldn't save: " + e.message; });
+    });
   }
 
   /* ---------------- Render: your comps ---------------- */
@@ -414,9 +576,13 @@
       if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, function () { fallbackCopy(text); done(); });
       else { fallbackCopy(text); done(); }
     });
+    wireSend();
+    wireTips();
+  }
+  function wireSend() {
     var send = document.getElementById("btn-send");
     if (send) send.addEventListener("click", function () {
-      var list = M.signals(R), msg = document.getElementById("send-msg");
+      var list = sendList(), msg = document.getElementById("send-msg");
       if (!list.length || !window.GOS || !GOS.game) return;
       send.disabled = true; msg.textContent = "Sending to " + GOS.game.title + "…";
       GOS.recordSignals(TOOL_ID, list).then(function () {
@@ -425,7 +591,6 @@
         step("result_actioned", 4, { action: "send_to_game" });
       }).catch(function (e) { send.disabled = false; msg.className = "feedback err"; msg.textContent = "Couldn't send: " + e.message; });
     });
-    wireTips();
   }
   function fallbackCopy(text) {
     var ta = document.createElement("textarea"); ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
@@ -448,6 +613,8 @@
       "<b>Minimums:</b> decay alarm " + M.MIN_RECENT_N + " reviews in 30 days; velocity " + M.MIN_WINDOW_COUNT + " reviews across both windows; playtime medians " + M.MIN_PLAYTIME_N + " reviews per side; early-exit share " + M.MIN_NEG_N + " negative reviews; phrases " + M.MIN_VOCAB_REVIEWS + " reviews per side and " + M.MIN_PHRASE_REVIEWS + " reviews per phrase. Below these the page says &ldquo;too few to read yet&rdquo; and sends nothing.",
       "<b>Sample:</b> up to 500 most recent reviews for your game and " + MAX_COMP_REVIEWS + " per comp, so playtime and phrases describe recent reviewers, not everyone who ever reviewed.",
       "<b>Known gap:</b> the 30-day share comes from Steam&rsquo;s histogram read in English, while the all-time share is Steam&rsquo;s own summary. If the two count different languages, the gap compares slightly different groups of reviewers.",
+      "<b>Themes and the expectation gap (optional):</b> when you ask, the text of the reviews read above and your store page&rsquo;s short description and About text go to Claude, Anthropic&rsquo;s AI model, which groups the reviews into themes and names store claims that complaints contradict. Only public text is sent; nothing you entered in Game OS. We recount every theme ourselves and check every quote and claim word for word. One analysis per game per day. The result is kept with your saved settings so you don&rsquo;t pay for it twice.",
+      "<b>Refund rate:</b> typed from Steamworks and kept in your game&rsquo;s ledger. It&rsquo;s compared only with your own earlier entries (we have no sourced norm for other games), and called higher or lower only when the two 95% Wilson ranges don&rsquo;t overlap. It is never sent to an AI model.",
       "<b>Reach or Resonance:</b> review velocity is Reach (are new players arriving?). The positive-share gap, playtime at review and early negative reviews are Resonance (do players stick?).",
     ];
     document.getElementById("about-list").innerHTML = items.map(function (x) { return "<li>" + x + "</li>"; }).join("");
