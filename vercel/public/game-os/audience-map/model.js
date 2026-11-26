@@ -116,5 +116,5 @@
     return lines.join("\n");
   }
 
-  return { communities: communities, neighbours: neighbours, tagVocabulary: tagVocabulary, phrases: phrases, summary: summary, words: words };
+  return { communities: communities, neighbours: neighbours, tagVocabulary: tagVocabulary, phrases: phrases, summary: summary, words: words, stopWords: STOP.slice() };
 });
