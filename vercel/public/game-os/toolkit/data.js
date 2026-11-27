@@ -256,37 +256,6 @@ var LAUNCH_RUNBOOK = {
   funnel: { impressions: 182000, pageVisits: 34000, wishlistsConverted: 18600, unitsSold: 4200, revenue: 62790, refundRate: '2.1%', ccu: { peak: 1240, current: 980 } },
 };
 
-var SEQUEL_SIGNAL = {
-  paths: [
-    { path: 'DLC', score: 82, evidence: [
-      'Strong franchise appetite (sentiment index 82/100)',
-      'Players requesting more biomes and bosses — expandable within existing engine',
-      'DLC has 60% margin vs. full sequel risk',
-      'Comp DLC attach rate: 22–38% in survival genre',
-    ]},
-    { path: 'Sequel', score: 64, evidence: [
-      'Validated audience exists and is hungry',
-      'Engine improvements and scope expansion possible',
-      'Higher risk: development timeline 2–3 years vs. 6 months for DLC',
-    ]},
-    { path: 'Port', score: 41, evidence: [
-      'Switch demand detected in community threads',
-      'Console port cost est. $80–120K — marginal ROI without further content',
-      'Better as a post-DLC move',
-    ]},
-    { path: 'Pivot', score: 18, evidence: [
-      'Core audience is engaged — no signal to abandon',
-      'Genre metrics remain healthy — saturation declining, not growing',
-    ]},
-  ],
-  recommendation: 'DLC',
-  nextThesisDraft: {
-    audience: 'Existing Echoes of the Abyss player base (est. 22,000 units) — proven buyers of underwater survival-roguelike. Secondary: Switch owners in the same demo.',
-    hook: 'The Abyss just got deeper. Three new biomes, a co-op mode, and a leviathan that remembers you.',
-    price: '$11.99 (DLC at ~60% of base game price, per comp norms)',
-  },
-};
-
 var POOL_SUMMARY = {
   totalGames: 1240,
   activeStudios: 87,
@@ -341,19 +310,6 @@ var QUADRANT = {
     { name: 'Coverage Response Rate', value: '14%', label: '', percentile: 82, weight: 'medium' },
     { name: 'Wishlist-to-Sale Rate', value: '8.1%', label: '', percentile: 74, weight: 'medium', family: 'wishlist', note: 'Resonance — what share of accumulated attention actually converts. Same metric family as Wishlist Velocity, opposite half.' },
   ],
-};
-
-// === EXPECTATION-DELIVERY GAP ===
-var EXPECTATION_GAP = {
-  refundRate: '3.8%',
-  refundRateComp: '2.8%',
-  gapVerdict: 'wide',
-  mismatchPhrases: 124,
-  topMismatchTerms: ['not what I expected', 'slower than it looks', 'too short', 'promised crafting, delivered combat'],
-  preLaunchSentiment: 78,
-  postLaunchSentiment: 64,
-  sentimentShift: -14,
-  recommendation: 'Review language flagged between your pre-launch positioning and post-launch reviews. The trailer and page copy may be selling a different experience than the game delivers. Tighten the expectation-delivery gap by cutting marketing claims that overpromise.',
 };
 
 // === MARKETING BEAT LOG ===

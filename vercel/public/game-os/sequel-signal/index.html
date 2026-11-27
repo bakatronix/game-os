@@ -1,24 +1,50 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sequel Signal — Game OS</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Source+Sans+3:wght@400;500;700&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/game-os/toolkit/tokens.css">
-  <link rel="stylesheet" href="/game-os/toolkit/sandstone.css?v=2">
-  <script src="/track.js" data-tool="sequel-signal" data-version="1"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sequel Signal — Game OS</title>
+<meta name="description" content="What should we make next: DLC, sequel, port, or something new? The evidence from your game's ledger, the expectation gap and the market today, then a draft thesis for the next game.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/game-os/toolkit/tokens.css">
+<link rel="stylesheet" href="/game-os/sequel-signal/styles.css?v=1">
+<script src="/track.js" data-tool="sequel-signal" data-version="2"></script>
+<script src="/game-os/toolkit/spine.js?v=2"></script>
 </head>
 <body>
-  <div class="widget-shell">
-    <div class="widget-breadcrumb"><a href="/game-os">&larr; Game OS</a> · Seismic</div>
-    <div id="widget-root"></div>
+
+<header class="top">
+  <div class="container">
+    <div class="gos-topbar">
+      <a class="gos-brand" href="/game-os" aria-label="Game OS home"><img src="/game-os/assets/logo.svg?v=6" alt="Game OS"></a>
+      <a class="gos-back" href="/game-os">&larr; Back to dashboard</a>
+    </div>
+    <div class="title-row">
+      <h1><span class="kicker">Post-launch</span>Sequel Signal</h1>
+      <div class="toolbar">
+        <button class="btn-small" id="btn-print" type="button">Print / PDF</button>
+      </div>
+    </div>
+    <p class="lead">What should we make next: DLC, sequel, port, or something new? This page lays out the evidence your other tools have gathered. It doesn&rsquo;t score the options or pick one for you.</p>
   </div>
-  <script src="/game-os/toolkit/data.js"></script>
-  <script src="/game-os/toolkit/toolkit.js"></script>
-  <script src="/game-os/sequel-signal/render.js"></script>
-  <script>bootWidget('sequel-signal');</script>
+</header>
+
+<main>
+  <div class="container">
+    <div id="gameBar"></div>
+    <div id="out"><p class="loading">Loading&hellip;</p></div>
+    <section class="card" id="next-card"></section>
+
+    <section class="card" id="about">
+      <h3>Where the evidence comes from</h3>
+      <ul class="plain" id="about-list"></ul>
+    </section>
+  </div>
+</main>
+
+<script src="/game-os/market-scope/model.js?v=1"></script>
+<script src="/game-os/sequel-signal/model.js?v=1"></script>
+<script src="/game-os/sequel-signal/app.js?v=1"></script>
 </body>
 </html>
