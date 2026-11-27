@@ -256,31 +256,6 @@ var LAUNCH_RUNBOOK = {
   funnel: { impressions: 182000, pageVisits: 34000, wishlistsConverted: 18600, unitsSold: 4200, revenue: 62790, refundRate: '2.1%', ccu: { peak: 1240, current: 980 } },
 };
 
-var LONG_TAIL = {
-  revenueByQuarter: [
-    { q: 'Q1', revenue: 124000, events: ['Launch'] },
-    { q: 'Q2', revenue: 78000, events: ['Spring Sale (20% off)'] },
-    { q: 'Q3', revenue: 52000, events: ['Bioluminescence Update'] },
-    { q: 'Q4', revenue: 48000, events: ['Autumn Sale (30% off)', 'Winter Sale (35% off)'] },
-    { q: 'Q5', revenue: 36000, events: ['Deep Trench DLC announce'] },
-    { q: 'Q6', revenue: 31000, events: ['Lunar Sale (25% off)'] },
-    { q: 'Q7', revenue: 28000, events: ['Co-op Update (major)'] },
-    { q: 'Q8', revenue: 24000, events: ['Summer Sale (40% off)'] },
-  ],
-  decayCurve: { actual: 78, compAvg: 82, interpretation: 'Better-than-average tail retention — content updates working' },
-  discountLadder: [
-    { depth: '20%', revenueLift: '+$14K', compAvg: '+$11K' },
-    { depth: '35%', revenueLift: '+$24K', compAvg: '+$19K' },
-    { depth: '50%', revenueLift: '+$31K', compAvg: '+$28K' },
-  ],
-  localizationROI: [
-    { market: 'Japan', wishlistsShare: '11%', localized: false, estRevenue: 38000 },
-    { market: 'China', wishlistsShare: '14%', localized: true, revenue: 112000 },
-    { market: 'Germany', wishlistsShare: '9%', localized: true, revenue: 48000 },
-    { market: 'Brazil', wishlistsShare: '7%', localized: false, estRevenue: 22000 },
-  ],
-};
-
 var SEQUEL_SIGNAL = {
   paths: [
     { path: 'DLC', score: 82, evidence: [

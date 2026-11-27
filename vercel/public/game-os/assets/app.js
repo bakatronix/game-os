@@ -758,6 +758,22 @@
         label: t ? 'Live' : 'No data yet'
       };
     },
+    'long-tail-engine': function (G) {
+      // Legs (Reach) and the player floor (Resonance), each sent only above its minimum.
+      var l = sig('tail_legs_ratio'), f = sig('players_floor_ratio');
+      var pc = function (s) { return s && s.value != null ? Math.round(s.value * 100) + '%' : '\u2014'; };
+      var rng = l && l.meta && l.meta.lo != null ? Math.round(l.meta.lo * 100) + '\u2013' + Math.round(l.meta.hi * 100) + '%' : '\u2014';
+      return {
+        metrics: [
+          { label: 'Reviews vs launch', value: pc(l) },
+          { label: '95% bounds', value: rng },
+          { label: 'Players vs launch', value: pc(f) }
+        ],
+        spark: sigSpark('tail_legs_ratio'),
+        kind: !l && !f ? 'demo' : 'healthy',
+        label: l || f ? 'Live' : 'No data yet'
+      };
+    },
     'mobile-calc': function (G) {
       var l = sig('mobile_ltv_per_install');
       var c = sig('mobile_max_cpi_target');
@@ -864,7 +880,7 @@
     'seismic': 1,
     'community-scaffold': 1,
     'playtest-pipeline': 1,
-    'long-tail-engine': 1, 'sequel-signal': 1, 'gate-log': 1
+    'sequel-signal': 1, 'gate-log': 1
   };
 
   function widgetCard(a) {
