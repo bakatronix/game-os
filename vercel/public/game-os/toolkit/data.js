@@ -232,22 +232,6 @@ var SENTIMENT_RADAR = {
   ],
 };
 
-var DEMO_COMMAND = {
-  conversionRate: 11.2,
-  conversionPercentile: 87,
-  totalPlayers: 1840,
-  wishlisted: 206,
-  purchased: 0, // pre-launch
-  timeSeries: [
-    { day: 'Day 1', players: 420, conversions: 47, rate: 11.2 },
-    { day: 'Day 2', players: 380, conversions: 43, rate: 11.3 },
-    { day: 'Day 3', players: 520, conversions: 58, rate: 11.2 },
-    { day: 'Day 4', players: 290, conversions: 32, rate: 11.0 },
-    { day: 'Day 5', players: 230, conversions: 26, rate: 11.3 },
-  ],
-  nextFest: { wishlists: 4120, rank: 'Top 15%', dates: '2025-10-06 to 2025-10-13' },
-};
-
 var WINDOW_PLANNER = {
   recommendedWeek: '2025-10-14',
   rationale: 'Clear of comp genre launches. Post-Next Fest momentum peak. Steam autumn sale is 6 weeks out — safe distance.',
